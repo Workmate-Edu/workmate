@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Welcome to Workmate - Complete Your Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .highlight {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #0070f3;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome to Workmate!</h2>
+        <p>Dear {{childName}},</p>
+        <p>Your parent, {{parentName}}, has added you to the Workmate educational platform. Workmate is an exciting learning platform that will help you in your educational journey!</p>
+        
+        <div class="highlight">
+            <p>To get started:</p>
+            <ol>
+                <li>Click the "Complete Registration" button below</li>
+                <li>Create your password</li>
+                <li>Start exploring your personalized learning dashboard</li>
+            </ol>
+        </div>
+
+        <a href="{{signupUrl}}" class="button">Complete Registration</a>
+
+        <p>If you have any questions, feel free to ask your parent or contact our support team.</p>
+
+        <p>We're excited to have you join us!</p>
+
+        <p>Best regards,<br>The Workmate Team</p>
+    </div>
+</body>
+</html>
