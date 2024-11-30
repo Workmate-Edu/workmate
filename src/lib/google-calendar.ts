@@ -65,7 +65,7 @@ export class GoogleCalendarService {
         responseStatus: (a.responseStatus as Attendee['responseStatus']) || 'needsAction',
         displayName: a.displayName || undefined
       })) || [],
-      meetLink: event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri
+      meetLink: event.hangoutLink ?? event.conferenceData?.entryPoints?.[0]?.uri ?? undefined
     }
   }
 
@@ -151,7 +151,7 @@ export class GoogleCalendarService {
       const updatedEvent: CalendarEvent = {
         ...event as CalendarEvent,
         googleEventId: response.data.id,
-        meetLink: response.data.hangoutLink || response.data.conferenceData?.entryPoints?.[0]?.uri,
+        meetLink: response.data.hangoutLink ?? response.data.conferenceData?.entryPoints?.[0]?.uri ?? undefined,
         isSynced: true,
         createdBy: this.userId
       }
@@ -181,7 +181,7 @@ export class GoogleCalendarService {
 
       const updatedEvent: Partial<CalendarEvent> = {
         ...event,
-        meetLink: response.data.hangoutLink || response.data.conferenceData?.entryPoints?.[0]?.uri,
+        meetLink: response.data.hangoutLink ?? response.data.conferenceData?.entryPoints?.[0]?.uri ?? undefined,
         isSynced: true
       }
 

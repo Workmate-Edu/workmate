@@ -200,6 +200,7 @@ export function GoogleCalendar({ userId, accessToken }: GoogleCalendarProps) {
           onUpdate={handleUpdateEvent}
           onDelete={handleDeleteEvent}
           isLoading={isLoading}
+          // Add any additional props here
         />
       )}
     </div>

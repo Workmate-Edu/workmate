@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarEvent, Attendee } from '@/models/event.model';
+import { CalendarEvent } from '@/models/event.model';
 
 interface EventDetailsDialogProps {
-  event: CalendarEvent | null;
+  event: CalendarEvent;
   onClose: () => void;
-  onUpdate: (eventId: string, updates: Partial<CalendarEvent>) => Promise<void>;
+  onUpdate: (updates: Partial<CalendarEvent>) => Promise<void>;
   onDelete: (eventId: string) => Promise<void>;
+  isLoading?: boolean;
 }
 
 const getResponseStatusColor = (status?: string) => {
@@ -39,11 +40,9 @@ const getResponseStatusText = (status?: string) => {
   }
 };
 
-export function EventDetailsDialog({ event, onClose, onUpdate, onDelete }: EventDetailsDialogProps) {
+export function EventDetailsDialog({ event, onClose, onUpdate, onDelete, isLoading }: EventDetailsDialogProps) {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-
-  if (!event) return null;
 
   const handleCopyLink = async () => {
     if (event.meetLink) {
@@ -53,95 +52,110 @@ export function EventDetailsDialog({ event, onClose, onUpdate, onDelete }: Event
     }
   };
 
-  const handleJoinMeeting = () => {
-    if (event.meetLink) {
-      window.open(event.meetLink, '_blank');
-    }
+  const handleDelete = async () => {
+    if (!event._id) return;
+    await onDelete(event._id);
   };
 
-  const handleDelete = async () => {
-    if (event.googleEventId) {
-      await onDelete(event.googleEventId);
-    }
+  const handleUpdate = async (updates: Partial<CalendarEvent>) => {
+    await onUpdate(updates);
+    setIsEditing(false);
   };
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{event.title}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-600">
-                {new Date(event.startTime).toLocaleString()} - {new Date(event.endTime).toLocaleString()}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Badge variant={event.type === 'meeting' ? 'default' : event.type === 'class' ? 'secondary' : 'outline'}>
-                {event.type}
-              </Badge>
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                Delete
-              </Button>
-            </div>
+          <div>
+            <h4 className="font-medium">Time</h4>
+            <p className="text-sm text-gray-500">
+              {new Date(event.startTime).toLocaleString()} - {new Date(event.endTime).toLocaleString()}
+            </p>
           </div>
 
           {event.description && (
-            <p className="text-gray-700">{event.description}</p>
+            <div>
+              <h4 className="font-medium">Description</h4>
+              <p className="text-sm text-gray-500">{event.description}</p>
+            </div>
           )}
 
           {event.meetLink && (
-            <div className="bg-gray-50 p-3 rounded-md space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Google Meet</span>
-                <div className="space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCopyLink}
-                  >
-                    {copied ? 'Copied!' : 'Copy Link'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleJoinMeeting}
-                  >
-                    Join
-                  </Button>
-                </div>
+            <div>
+              <h4 className="font-medium">Meeting Link</h4>
+              <div className="flex items-center gap-2">
+                <a
+                  href={event.meetLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-500 hover:underline"
+                >
+                  {event.meetLink}
+                </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </Button>
               </div>
-              <a
-                href={event.meetLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline text-sm break-all"
-              >
-                {event.meetLink}
-              </a>
             </div>
           )}
 
           {event.attendees && event.attendees.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Attendees ({event.attendees.length})</h4>
+            <div>
+              <h4 className="font-medium">Attendees</h4>
               <div className="space-y-2">
-                {event.attendees.map((attendee: Attendee, index: number) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${getResponseStatusColor(attendee.responseStatus)}`} />
-                      <span>{attendee.displayName || attendee.email}</span>
-                    </div>
-                    <span className="text-gray-500 text-xs">
+                {event.attendees.map((attendee) => (
+                  <div key={attendee.email} className="flex items-center justify-between">
+                    <span className="text-sm">{attendee.email}</span>
+                    <Badge className={getResponseStatusColor(attendee.responseStatus)}>
                       {getResponseStatusText(attendee.responseStatus)}
-                    </span>
+                    </Badge>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {event.recurrence && (
+            <div>
+              <h4 className="font-medium">Recurrence</h4>
+              <p className="text-sm text-gray-500">
+                Repeats {event.recurrence.frequency}
+                {event.recurrence.interval && event.recurrence.interval > 1 ? ` every ${event.recurrence.interval} ${event.recurrence.frequency}s` : ''}
+                {event.recurrence.until ? ` until ${new Date(event.recurrence.until).toLocaleDateString()}` : ''}
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Close
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isLoading}
+            >
+              Delete
+            </Button>
+            <Button
+              onClick={() => setIsEditing(true)}
+              disabled={isLoading}
+            >
+              Edit
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
