@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { ThemeToggle } from "./theme-toggle"
 import Image from "next/image"
 import { LanguageSelector } from "@/components/language-selector"
@@ -15,7 +15,6 @@ import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet"
 import { useAuth } from "../hooks/use-auth"
 import { useSession } from "next-auth/react"
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/router"
 
 const publicRoutes = [
   {
