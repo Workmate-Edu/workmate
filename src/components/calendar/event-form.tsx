@@ -12,17 +12,19 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 interface EventFormProps {
-  onSubmit: (event: Partial<CalendarEvent>) => Promise<void>
+  date: Date
+  onSubmit: (event: Omit<CalendarEvent, "createdBy" | "isSynced" | "_id">) => Promise<void>
   onCancel: () => void
+  isLoading: boolean
 }
 
-export function EventForm({ onSubmit, onCancel }: EventFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [event, setEvent] = useState<Partial<CalendarEvent>>({
-    type: 'meeting',
-    startTime: new Date().toISOString(),
-    endTime: new Date(Date.now() + 3600000).toISOString(),
-    attendees: []
+export function EventForm({ date, onSubmit, onCancel, isLoading }: EventFormProps) {
+  const [event, setEvent] = useState<Omit<CalendarEvent, "createdBy" | "isSynced" | "_id">>({
+    title: "",
+    description: "",
+    startTime: date.toISOString(),
+    endTime: date.toISOString(),
+    type: "meeting"
   })
   const [newAttendee, setNewAttendee] = useState('')
 
@@ -61,14 +63,11 @@ export function EventForm({ onSubmit, onCancel }: EventFormProps) {
     }
 
     try {
-      setIsLoading(true)
       await onSubmit(event)
       toast.success('Event created successfully')
     } catch (error: any) {
       console.error('Failed to create event:', error)
       toast.error('Failed to create event')
-    } finally {
-      setIsLoading(false)
     }
   }
 

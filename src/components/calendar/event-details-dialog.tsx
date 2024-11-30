@@ -7,10 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarEvent } from '@/models/event.model';
 
 interface EventDetailsDialogProps {
-  event: CalendarEvent;
+  event: CalendarEvent | null;
   onClose: () => void;
-  onUpdate: (updates: Partial<CalendarEvent>) => Promise<void>;
-  onDelete: (eventId: string) => Promise<void>;
+  onUpdate?: (updates: Partial<CalendarEvent>) => Promise<void>;
+  onDelete?: (eventId: string) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -45,7 +45,7 @@ export function EventDetailsDialog({ event, onClose, onUpdate, onDelete, isLoadi
   const [isEditing, setIsEditing] = useState(false);
 
   const handleCopyLink = async () => {
-    if (event.meetLink) {
+    if (event?.meetLink) {
       await navigator.clipboard.writeText(event.meetLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -53,38 +53,41 @@ export function EventDetailsDialog({ event, onClose, onUpdate, onDelete, isLoadi
   };
 
   const handleDelete = async () => {
-    if (!event._id) return;
-    await onDelete(event._id);
+    if (event?._id && onDelete) {
+      await onDelete(event._id);
+    }
   };
 
   const handleUpdate = async (updates: Partial<CalendarEvent>) => {
-    await onUpdate(updates);
-    setIsEditing(false);
+    if (onUpdate) {
+      await onUpdate(updates);
+      setIsEditing(false);
+    }
   };
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{event.title}</DialogTitle>
+          <DialogTitle>{event?.title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <h4 className="font-medium">Time</h4>
             <p className="text-sm text-gray-500">
-              {new Date(event.startTime).toLocaleString()} - {new Date(event.endTime).toLocaleString()}
+              {event?.startTime && new Date(event.startTime).toLocaleString()} - {event?.endTime && new Date(event.endTime).toLocaleString()}
             </p>
           </div>
 
-          {event.description && (
+          {event?.description && (
             <div>
               <h4 className="font-medium">Description</h4>
               <p className="text-sm text-gray-500">{event.description}</p>
             </div>
           )}
 
-          {event.meetLink && (
+          {event?.meetLink && (
             <div>
               <h4 className="font-medium">Meeting Link</h4>
               <div className="flex items-center gap-2">
@@ -107,7 +110,7 @@ export function EventDetailsDialog({ event, onClose, onUpdate, onDelete, isLoadi
             </div>
           )}
 
-          {event.attendees && event.attendees.length > 0 && (
+          {event?.attendees && event.attendees.length > 0 && (
             <div>
               <h4 className="font-medium">Attendees</h4>
               <div className="space-y-2">
@@ -123,7 +126,7 @@ export function EventDetailsDialog({ event, onClose, onUpdate, onDelete, isLoadi
             </div>
           )}
 
-          {event.recurrence && (
+          {event?.recurrence && (
             <div>
               <h4 className="font-medium">Recurrence</h4>
               <p className="text-sm text-gray-500">

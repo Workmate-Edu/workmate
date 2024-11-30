@@ -188,8 +188,10 @@ export function GoogleCalendar({ userId, accessToken }: GoogleCalendarProps) {
 
       {showEventForm && (
         <EventForm
+          date={date}
           onSubmit={handleCreateEvent}
           onCancel={() => setShowEventForm(false)}
+          isLoading={isLoading}
         />
       )}
 
