@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/user.model";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 export async function POST(req: Request) {
   try {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     user.password = hashedPassword;
     user.emailVerified = true;
     user.pendingParentInvite = false;
-    user.parentId = decoded.parentId;
+    user.parentId = new mongoose.Types.ObjectId(decoded.parentId);
 
     await user.save();
 

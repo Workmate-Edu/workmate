@@ -9,20 +9,14 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
 
-    // Remove the auth token cookie with all necessary options
-    response.cookies.delete('auth_token', {
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      httpOnly: true,
-      maxAge: 0 // Force immediate expiration
-    })
+    // Remove the auth token cookie
+    response.cookies.delete('auth_token')
 
     return response
   } catch (error) {
-    console.error('[Sign-out Error]:', error)
+    console.error('[SIGN_OUT_ERROR]', error)
     return NextResponse.json(
-      { error: 'Failed to sign out' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

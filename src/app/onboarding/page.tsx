@@ -87,53 +87,35 @@ export default function OnboardingPage() {
 
           <div className="space-y-4">
             <Label>I am a...</Label>
-            <RadioGroup
-              value={selectedRole}
-              onValueChange={setSelectedRole}
-              className="grid grid-cols-1 gap-4"
-            >
-              <label
-                className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer ${
-                  selectedRole === 'student' ? 'border-primary' : ''
-                }`}
+            <div className="grid grid-cols-1 gap-4">
+              <RadioGroup
+                name="role"
+                value={selectedRole}
+                onChange={(value) => setSelectedRole(value)}
               >
-                <div className="space-y-1">
-                  <div className="font-medium">Student</div>
-                  <div className="text-sm text-gray-500">
-                    I want to learn and connect with teachers
-                  </div>
-                </div>
-                <RadioGroupItem value="student" className="h-5 w-5" />
-              </label>
-
-              <label
-                className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer ${
-                  selectedRole === 'teacher' ? 'border-primary' : ''
-                }`}
-              >
-                <div className="space-y-1">
-                  <div className="font-medium">Teacher</div>
-                  <div className="text-sm text-gray-500">
-                    I want to teach and connect with students
-                  </div>
-                </div>
-                <RadioGroupItem value="teacher" className="h-5 w-5" />
-              </label>
-
-              <label
-                className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer ${
-                  selectedRole === 'parent' ? 'border-primary' : ''
-                }`}
-              >
-                <div className="space-y-1">
-                  <div className="font-medium">Parent</div>
-                  <div className="text-sm text-gray-500">
-                    I want to manage my children's education
-                  </div>
-                </div>
-                <RadioGroupItem value="parent" className="h-5 w-5" />
-              </label>
-            </RadioGroup>
+                <RadioGroupItem
+                  value="student"
+                  label="Student"
+                  className={`relative flex cursor-default select-none items-center rounded-lg px-3 py-4 border ${
+                    selectedRole === 'student' ? 'border-primary' : ''
+                  }`}
+                />
+                <RadioGroupItem
+                  value="teacher"
+                  label="Teacher"
+                  className={`relative flex cursor-default select-none items-center rounded-lg px-3 py-4 border ${
+                    selectedRole === 'teacher' ? 'border-primary' : ''
+                  }`}
+                />
+                <RadioGroupItem
+                  value="parent"
+                  label="Parent"
+                  className={`relative flex cursor-default select-none items-center rounded-lg px-3 py-4 border ${
+                    selectedRole === 'parent' ? 'border-primary' : ''
+                  }`}
+                />
+              </RadioGroup>
+            </div>
           </div>
 
           <Button

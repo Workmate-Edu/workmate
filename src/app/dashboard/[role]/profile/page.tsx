@@ -7,13 +7,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { FiMail, FiPhone, FiMapPin, FiUser, FiCamera, FiEdit2 } from "react-icons/fi"
 import Image from "next/image"
 import { useThemeContext } from "@/hooks/use-theme-context"
+import { useRouter } from "next/navigation"
 
 export default function ProfilePage() {
   const { theme } = useThemeContext()
+  const router = useRouter()
 
   // Mock data - would come from API in real app
   const profile = {
@@ -54,10 +56,25 @@ export default function ProfilePage() {
             <div className="space-y-6">
               <div className="flex items-center gap-6">
                 <div className="relative">
-                  <Avatar className="w-24 h-24">
-                    <AvatarImage src={profile.avatar} alt={profile.name} />
-                    <AvatarFallback>JD</AvatarFallback>
-                  </Avatar>
+                  <div className="w-24 h-24">
+                    {profile.avatar ? (
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage
+                          src={profile.avatar}
+                          alt={profile.name}
+                        />
+                        <AvatarFallback>
+                          {profile.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <Avatar className="h-24 w-24">
+                        <AvatarFallback>
+                          {profile.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
                   <Button
                     variant="outline"
                     size="icon"

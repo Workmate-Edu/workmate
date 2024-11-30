@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/user.model";
 import { TeacherMatcher } from "@/lib/matching/matcher";
 import { analyzeLearningStyle } from "@/lib/matching/learning-style";
-import type { MatchPreferences } from "@/lib/matching/types";
+import type { MatchPreferences, Teacher } from "@/lib/matching/types";
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    await connectDB();
+    const session = await auth();
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -21,8 +21,6 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { preferences, learningStyleAnswers } = body;
-
-    await connectDB();
 
     // Get student's learning style
     const learningStyle = analyzeLearningStyle(learningStyleAnswers);
@@ -43,9 +41,16 @@ export async function POST(req: Request) {
       "specializations",
     ]);
 
+    if (!teachers.length) {
+      return NextResponse.json({
+        matches: [],
+        learningStyle,
+      });
+    }
+
     // Find matches
     const matches = await TeacherMatcher.findMatches(
-      teachers,
+      teachers as unknown as Teacher[],
       preferences as MatchPreferences,
       learningStyle
     );
@@ -62,6 +67,10 @@ export async function POST(req: Request) {
           "ratings",
         ]);
 
+        if (!teacher) {
+          return null;
+        }
+
         return {
           ...match,
           teacher: {
@@ -71,17 +80,19 @@ export async function POST(req: Request) {
             subjects: teacher.subjects,
             experience: teacher.teachingExperience,
             hourlyRate: teacher.hourlyRate,
-            averageRating:
-              teacher.ratings.length > 0
-                ? teacher.ratings.reduce((a, b) => a + b, 0) / teacher.ratings.length
-                : null,
+            averageRating: teacher.ratings && teacher.ratings.length > 0
+              ? teacher.ratings.reduce((a, b) => a + b, 0) / teacher.ratings.length
+              : null,
           },
         };
       })
     );
 
+    // Filter out any null matches
+    const validMatches = topMatches.filter((match): match is NonNullable<typeof match> => match !== null);
+
     return NextResponse.json({
-      matches: topMatches,
+      matches: validMatches,
       learningStyle,
     });
   } catch (error) {

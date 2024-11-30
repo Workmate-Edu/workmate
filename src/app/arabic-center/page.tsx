@@ -119,7 +119,7 @@ export default function ArabicCenterPage() {
           <div className="mx-auto grid justify-center gap-8 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3 mt-16">
             <div className={cn(
               "relative overflow-hidden rounded-lg border p-2",
-              theme.background.card,
+              theme.background.light,
               theme.border
             )}>
               <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
@@ -136,7 +136,7 @@ export default function ArabicCenterPage() {
             </div>
             <div className={cn(
               "relative overflow-hidden rounded-lg border p-2",
-              theme.background.card,
+              theme.background.light,
               theme.border
             )}>
               <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
@@ -153,7 +153,7 @@ export default function ArabicCenterPage() {
             </div>
             <div className={cn(
               "relative overflow-hidden rounded-lg border p-2",
-              theme.background.card,
+              theme.background.light,
               theme.border
             )}>
               <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
@@ -192,7 +192,7 @@ export default function ArabicCenterPage() {
           <div className="mx-auto grid justify-center gap-8 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3 mt-16">
             <div className={cn(
               "relative overflow-hidden rounded-lg border p-2",
-              theme.background.card,
+              theme.background.light,
               theme.border
             )}>
               <div className="flex h-[200px] flex-col justify-between rounded-md p-6">
@@ -209,7 +209,7 @@ export default function ArabicCenterPage() {
             </div>
             <div className={cn(
               "relative overflow-hidden rounded-lg border p-2",
-              theme.background.card,
+              theme.background.light,
               theme.border
             )}>
               <div className="flex h-[200px] flex-col justify-between rounded-md p-6">
@@ -226,7 +226,7 @@ export default function ArabicCenterPage() {
             </div>
             <div className={cn(
               "relative overflow-hidden rounded-lg border p-2",
-              theme.background.card,
+              theme.background.light,
               theme.border
             )}>
               <div className="flex h-[200px] flex-col justify-between rounded-md p-6">

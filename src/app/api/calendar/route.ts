@@ -1,38 +1,61 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { GoogleCalendarService } from '@/lib/google-calendar'
+import { type Session } from 'next-auth'
+import { CalendarEvent } from '@/models/event.model'
+
+// Type guard to check if session has required properties
+function isValidSession(session: Session | null): session is Session & { 
+  user: { accessToken: string; id: string } 
+} {
+  return !!session?.user?.accessToken && !!session.user?.id
+}
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
-    if (!session?.user?.accessToken || !session.user?.id) {
+    if (!isValidSession(session)) {
       return NextResponse.json(
         { error: 'Unauthorized: Please sign in with Google' },
         { status: 401 }
       )
     }
 
-    const calendar = new GoogleCalendarService(session.user.id)
-    await calendar.initialize(session.user.accessToken)
+    const calendar = new GoogleCalendarService({
+      userId: session.user.id,
+      accessToken: session.user.accessToken
+    })
 
-    const event = await request.json()
+    const eventData = await request.json()
     console.log('Creating calendar event:', {
       userId: session.user.id,
-      event
+      eventData
     })
 
-    const createdEvent = await calendar.createEvent(event)
+    // Create event with required fields
+    const event: CalendarEvent = {
+      title: eventData.summary || eventData.title,
+      description: eventData.description,
+      startTime: eventData.start?.dateTime || eventData.startTime,
+      endTime: eventData.end?.dateTime || eventData.endTime,
+      type: eventData.type || 'meeting',
+      attendees: eventData.attendees?.map((a: { email: string; responseStatus?: string }) => ({
+        email: a.email,
+        responseStatus: a.responseStatus || 'needsAction'
+      })),
+      createdBy: session.user.id,
+      isSynced: true,
+      recurrence: eventData.recurrence,
+      meetLink: eventData.meetLink
+    }
+
+    const createdEvent = await calendar.createEvent('primary', event)
     return NextResponse.json(createdEvent)
-  } catch (error: any) {
-    console.error('Error creating calendar event:', {
-      error: error.message,
-      stack: error.stack
-    })
-    
+  } catch (error) {
+    console.error('Failed to create calendar event:', error)
     return NextResponse.json(
-      { error: `Failed to create calendar event: ${error.message}` },
+      { error: 'Failed to create calendar event' },
       { status: 500 }
     )
   }
@@ -40,38 +63,42 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.accessToken || !session.user?.id) {
+    const session = await auth()
+
+    if (!isValidSession(session)) {
       return NextResponse.json(
         { error: 'Unauthorized: Please sign in with Google' },
         { status: 401 }
       )
     }
 
-    const calendar = new GoogleCalendarService(session.user.id)
-    await calendar.initialize(session.user.accessToken)
+    const calendar = new GoogleCalendarService({
+      userId: session.user.id,
+      accessToken: session.user.accessToken
+    })
 
     const { searchParams } = new URL(request.url)
-    const timeMin = searchParams.get('timeMin') || new Date().toISOString()
-    const timeMax = searchParams.get('timeMax') || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const timeMin = searchParams.get('timeMin')
+    const timeMax = searchParams.get('timeMax')
 
-    console.log('Fetching calendar events:', {
-      userId: session.user.id,
-      timeMin,
-      timeMax
-    })
+    if (!timeMin || !timeMax) {
+      return NextResponse.json(
+        { error: 'Missing required timeMin and timeMax parameters' },
+        { status: 400 }
+      )
+    }
 
-    const events = await calendar.listEvents(timeMin, timeMax)
-    return NextResponse.json(events)
-  } catch (error: any) {
-    console.error('Error in calendar API:', {
-      error: error.message,
-      stack: error.stack
-    })
-    
+    const events = await calendar.getEvents(
+      'primary',
+      new Date(timeMin),
+      new Date(timeMax)
+    )
+
+    return NextResponse.json({ events })
+  } catch (error) {
+    console.error('Failed to list calendar events:', error)
     return NextResponse.json(
-      { error: `Failed to fetch calendar events: ${error.message}` },
+      { error: 'Failed to list calendar events' },
       { status: 500 }
     )
   }
@@ -79,38 +106,36 @@ export async function GET(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.accessToken || !session.user?.id) {
+    const session = await auth()
+
+    if (!isValidSession(session)) {
       return NextResponse.json(
         { error: 'Unauthorized: Please sign in with Google' },
         { status: 401 }
       )
     }
 
+    const calendar = new GoogleCalendarService({
+      userId: session.user.id,
+      accessToken: session.user.accessToken
+    })
+
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('eventId')
 
     if (!eventId) {
       return NextResponse.json(
-        { error: 'Event ID is required' },
+        { error: 'Missing required eventId parameter' },
         { status: 400 }
       )
     }
 
-    const calendar = new GoogleCalendarService(session.user.id)
-    await calendar.initialize(session.user.accessToken)
-
-    await calendar.deleteEvent(eventId)
-    return NextResponse.json({ message: 'Event deleted successfully' })
-  } catch (error: any) {
-    console.error('Error deleting calendar event:', {
-      error: error.message,
-      stack: error.stack
-    })
-    
+    await calendar.deleteEvent('primary', eventId)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Failed to delete calendar event:', error)
     return NextResponse.json(
-      { error: `Failed to delete calendar event: ${error.message}` },
+      { error: 'Failed to delete calendar event' },
       { status: 500 }
     )
   }

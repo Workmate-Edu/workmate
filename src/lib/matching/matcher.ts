@@ -1,16 +1,4 @@
-import { MatchPreferences, TeacherScore, TeacherAvailability, LearningStyleAssessment } from "./types";
-
-interface Teacher {
-  _id: string;
-  subjects: string[];
-  availability: TeacherAvailability[];
-  teachingExperience: number;
-  ratings: number[];
-  hourlyRate: number;
-  teachingStyle: LearningStyleAssessment;
-  languages: string[];
-  specializations: string[];
-}
+import { MatchPreferences, TeacherScore, TeacherAvailability, LearningStyleAssessment, Teacher } from "./types";
 
 export class TeacherMatcher {
   private static readonly WEIGHTS = {

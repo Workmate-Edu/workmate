@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/user.model";
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    await connectDB();
+    const session = await auth();
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -25,8 +25,6 @@ export async function POST(req: Request) {
       hourlyRate,
       availability,
     } = body;
-
-    await connectDB();
 
     const user = await User.findById(session.user.id);
 

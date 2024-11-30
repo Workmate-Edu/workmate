@@ -1,4 +1,4 @@
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { UserRole } from '@/types';
 
 interface IUser {
@@ -12,6 +12,9 @@ interface IUser {
   provider?: 'google' | 'credentials';
   subjects?: string[];
   bio?: string;
+  requirePasswordChange?: boolean;
+  parentId?: Types.ObjectId;
+  pendingParentInvite?: boolean;
   qualifications?: Array<{
     degree: string;
     institution: string;
@@ -19,12 +22,26 @@ interface IUser {
   }>;
   teachingExperience?: number;
   hourlyRate?: number;
+  ratings?: number[];
+  teachingStyle?: {
+    visual: number;
+    auditory: number;
+    kinesthetic: number;
+    readingWriting: number;
+  };
+  languages?: string[];
+  specializations?: string[];
   availability?: Array<{
     day: string;
-    startTime: string;
-    endTime: string;
+    slots: Array<{
+      start: string;
+      end: string;
+      isBooked: boolean;
+    }>;
   }>;
   grade?: string;
+  studentId?: string;
+  schoolName?: string;
   studentSubjects?: Array<{
     name: string;
     progress: number;
@@ -44,8 +61,6 @@ interface IUser {
     read: boolean;
     createdAt: Date;
   }>;
-  parentId?: mongoose.Types.ObjectId;
-  pendingParentInvite?: boolean;
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -89,6 +104,7 @@ const userSchema = new mongoose.Schema<IUser>({
     enum: ['stem', 'art', 'arabic'],
   }],
   bio: String,
+  requirePasswordChange: Boolean,
   qualifications: [{
     degree: String,
     institution: String,
@@ -96,15 +112,26 @@ const userSchema = new mongoose.Schema<IUser>({
   }],
   teachingExperience: Number,
   hourlyRate: Number,
+  ratings: [Number],
+  teachingStyle: {
+    visual: Number,
+    auditory: Number,
+    kinesthetic: Number,
+    readingWriting: Number,
+  },
+  languages: [String],
+  specializations: [String],
   availability: [{
-    day: {
-      type: String,
-      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
-    },
-    startTime: String,
-    endTime: String,
+    day: String,
+    slots: [{
+      start: String,
+      end: String,
+      isBooked: Boolean,
+    }],
   }],
   grade: String,
+  studentId: String,
+  schoolName: String,
   studentSubjects: [{
     name: String,
     progress: Number,

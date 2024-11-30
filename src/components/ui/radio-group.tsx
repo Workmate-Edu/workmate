@@ -13,10 +13,10 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({ children, name, value, o
       {React.Children.map(children, (child) => {
         if (!React.isValidElement(child)) return child;
         return React.cloneElement(child, {
-          name,
+          name: name as string,
           checked: child.props.value === value,
           onChange: () => onChange(child.props.value),
-        });
+        } as any);
       })}
     </div>
   );

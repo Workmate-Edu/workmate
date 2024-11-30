@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { JitsiMeeting } from '@jitsi/react-sdk'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { useAuth } from '@/hooks/use-auth'
 
 interface JitsiMeetingProps {
   roomName: string
@@ -12,6 +13,7 @@ interface JitsiMeetingProps {
 
 export function JitsiMeetingDialog({ roomName, displayName, onClose }: JitsiMeetingProps) {
   const [mounted, setMounted] = useState(false)
+  const { session } = useAuth()
 
   useEffect(() => {
     setMounted(true)
@@ -60,7 +62,8 @@ export function JitsiMeetingDialog({ roomName, displayName, onClose }: JitsiMeet
             ]
           }}
           userInfo={{
-            displayName
+            displayName,
+            email: session?.user?.email || ''
           }}
         />
       </DialogContent>

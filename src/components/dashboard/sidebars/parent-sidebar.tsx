@@ -39,10 +39,11 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
   ]
 
   const sidebarClasses = mobile
-    ? cn("h-full flex flex-col", theme.background.light)
+    ? cn("h-full flex flex-col", theme.background.light, theme.background.dark)
     : cn(
         "fixed inset-y-0 left-0 w-64 border-r",
         theme.background.light,
+        theme.background.dark,
         theme.border
       )
 
@@ -53,7 +54,9 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
           "flex items-center justify-center h-16 px-4 border-b",
           theme.border
         )}>
-          <h1 className={cn("text-xl font-bold", theme.text.light)}>Workmate</h1>
+          <h1 className={cn("text-xl font-bold", theme.text.light, theme.text.dark)}>
+            Workmate
+          </h1>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
@@ -69,6 +72,7 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
                     [theme.text.accent]: isActive,
                     "font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4/5 before:w-1 before:rounded-r": isActive,
                     [theme.text.light]: !isActive,
+                    [theme.text.dark]: !isActive,
                     "before:bg-primary": isActive
                   }
                 )}
@@ -83,18 +87,17 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
             )
           })}
         </nav>
-        <div className={cn("p-4 border-t", theme.border)}>
+        <div className="px-4 py-4 border-t">
           <Button
             variant="ghost"
             className={cn(
-              "w-full justify-start",
-              "text-red-600 dark:text-red-400",
-              "hover:text-red-700 dark:hover:text-red-300",
-              "hover:bg-red-50 dark:hover:bg-red-950/50"
+              "w-full justify-start hover:bg-gray-100 dark:hover:bg-gray-800",
+              theme.text.light,
+              theme.text.dark
             )}
             onClick={() => signOut()}
           >
-            <FiLogOut className="w-5 h-5 mr-3" />
+            <FiLogOut className={cn("w-5 h-5 mr-3", theme.text.muted)} />
             Sign Out
           </Button>
         </div>

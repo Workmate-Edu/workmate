@@ -9,9 +9,7 @@ import { Input } from "@/components/ui/input"
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi"
 import Link from "next/link"
 import toast from 'react-hot-toast'
-import Cookies from 'js-cookie'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '../../hooks/use-auth'
 import { signIn } from "next-auth/react"
 
 const formSchema = z.object({
@@ -31,7 +29,6 @@ export function SignInForm() {
   const [isGoogleLoading, setIsGoogleLoading] = React.useState<boolean>(false)
   const [error, setError] = React.useState<string>("")
   const [showPassword, setShowPassword] = React.useState<boolean>(false)
-  const { checkAuth } = useAuth()
 
   const handleGoogleSignIn = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -66,29 +63,11 @@ export function SignInForm() {
         return;
       }
 
-      console.log('Checking auth session...');
-      const session = await checkAuth();
-      console.log('Session:', session);
-      
-      if (!session?.user) {
-        console.error('No session user found');
-        toast.error('Authentication failed. Please try again.');
-        return;
-      }
-
-      // Redirect based on role
-      if (!session.user.role) {
-        console.log('No role found, redirecting to onboarding...');
-        router.push('/onboarding');
-      } else {
-        console.log(`Role found: ${session.user.role}, redirecting to dashboard...`);
-        router.push(`/dashboard/${session.user.role}`);
-      }
-
+      console.log('Redirecting to dashboard...');
+      router.push('/dashboard');
     } catch (error) {
-      console.error('Google sign-in error:', error);
-      toast.error('Failed to sign in with Google. Please try again.');
-      setError('Failed to sign in with Google');
+      console.error('Sign-in error:', error);
+      toast.error('An error occurred during sign-in');
     } finally {
       setIsGoogleLoading(false);
     }
@@ -107,44 +86,22 @@ export function SignInForm() {
       setIsLoading(true);
       setError("");
 
-      const response = await fetch("/api/auth/sign-in", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: values.email.toLowerCase(),
-          password: values.password,
-        }),
+      const result = await signIn("credentials", {
+        email: values.email.toLowerCase(),
+        password: values.password,
+        redirect: false,
       });
 
-      const data = await response.json();
-      console.log('Sign-in response:', data);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Authentication failed");
+      if (!result || result.error) {
+        toast.error("Invalid email or password")
+        return
       }
-
-      // Store token in cookie only
-      Cookies.set('auth_token', data.token, { 
-        expires: 7, // 7 days
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-      });
 
       // Show success message
       toast.success("Signed in successfully!");
 
-      // Check auth state to update context
-      await checkAuth();
-
       // Use Next.js router for navigation
-      const dashboardUrl = `/dashboard/${data.user.role}`;
-      console.log('Redirecting to:', dashboardUrl);
-      
-      // Use replace to prevent going back to sign-in page
-      router.replace(dashboardUrl);
+      router.push("/dashboard");
 
     } catch (error: any) {
       console.error('Sign-in error:', error);

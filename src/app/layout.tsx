@@ -7,8 +7,7 @@ import { ThemeContextProvider } from '../hooks/use-theme-context'
 import { Navbar } from '../components/navbar'
 import { Footer } from '../components/footer'
 import { Toaster } from 'sonner'
-import { AuthProvider } from '../hooks/use-auth'
-import { SessionProvider } from 'next-auth/react'
+import { AuthProvider } from '@/components/auth-provider'
 import { auth } from '@/lib/auth'
 
 const inter = Inter({ 
@@ -64,7 +63,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <AuthProvider>
+        <AuthProvider session={session}>
           <LanguageProvider>
             <ThemeProvider
               attribute="class"
@@ -73,16 +72,14 @@ export default async function RootLayout({
               disableTransitionOnChange
             >
               <ThemeContextProvider>
-                <SessionProvider session={session}>
-                  <Toaster />
-                  <div className="relative flex min-h-screen flex-col bg-background text-foreground">
-                    <Navbar />
-                    <main className="flex-1">
-                      {children}
-                    </main>
-                    <Footer />
-                  </div>
-                </SessionProvider>
+                <Toaster />
+                <div className="relative flex min-h-screen flex-col bg-background text-foreground">
+                  <Navbar />
+                  <main className="flex-1">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
               </ThemeContextProvider>
             </ThemeProvider>
           </LanguageProvider>

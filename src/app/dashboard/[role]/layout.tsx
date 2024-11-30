@@ -1,10 +1,18 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
-import { useEffect } from "react"
-import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import Loading from "@/app/loading"
+import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { AuthCheck } from "@/components/auth/auth-check"
+import { useSession } from "next-auth/react"
+
+type ValidRole = "student" | "teacher" | "parent"
+
+function isValidRole(role: string): role is ValidRole {
+  return ["student", "teacher", "parent"].includes(role)
+}
 
 export default function DashboardRoleLayout({
   children,
@@ -12,25 +20,33 @@ export default function DashboardRoleLayout({
   children: React.ReactNode
 }) {
   const params = useParams()
-  const { user, isLoading } = useAuth()
+  const { user } = useAuth()
+  const { status } = useSession()
   const router = useRouter()
+  const roleParam = params.role as string
 
   useEffect(() => {
-    if (!isLoading && user?.role !== params.role) {
+    if (status !== "loading" && user?.role !== roleParam) {
       router.push(`/dashboard/${user?.role}`)
     }
-  }, [user, isLoading, params.role, router])
+  }, [user, status, roleParam, router])
 
-  if (isLoading) {
-    return <Loading />
+  if (!isValidRole(roleParam)) {
+    return null
+  }
+
+  if (status === "loading") {
+    return <div>Loading...</div>
   }
 
   return (
-    <div className="flex h-full">
-      <DashboardSidebar role={params.role as string} />
-      <main className="flex-1 overflow-y-auto p-6">
-        {children}
-      </main>
-    </div>
+    <AuthCheck>
+      <div className="flex h-full min-h-screen">
+        <DashboardSidebar role={roleParam as ValidRole} />
+        <main className="flex-1 overflow-y-auto p-6">
+          {children}
+        </main>
+      </div>
+    </AuthCheck>
   )
 }

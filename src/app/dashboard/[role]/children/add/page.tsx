@@ -27,7 +27,7 @@ import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
-import toast from "@/components/ui/toast"
+import { Toast, ToastAction } from "@/components/ui/toast"
 
 const subjects = [
   // STEM Subjects

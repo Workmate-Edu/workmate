@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -5,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarEvent, Attendee } from '@/models/event.model';
 
 interface EventDetailsDialogProps {
-  event: CalendarEvent;
-  isOpen: boolean;
+  event: CalendarEvent | null;
   onClose: () => void;
+  onUpdate: (eventId: string, updates: Partial<CalendarEvent>) => Promise<void>;
+  onDelete: (eventId: string) => Promise<void>;
 }
 
 const getResponseStatusColor = (status?: string) => {
@@ -36,8 +39,11 @@ const getResponseStatusText = (status?: string) => {
   }
 };
 
-export function EventDetailsDialog({ event, isOpen, onClose }: EventDetailsDialogProps) {
+export function EventDetailsDialog({ event, onClose, onUpdate, onDelete }: EventDetailsDialogProps) {
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  if (!event) return null;
 
   const handleCopyLink = async () => {
     if (event.meetLink) {
@@ -53,8 +59,14 @@ export function EventDetailsDialog({ event, isOpen, onClose }: EventDetailsDialo
     }
   };
 
+  const handleDelete = async () => {
+    if (event.googleEventId) {
+      await onDelete(event.googleEventId);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{event.title}</DialogTitle>
@@ -67,9 +79,14 @@ export function EventDetailsDialog({ event, isOpen, onClose }: EventDetailsDialo
                 {new Date(event.startTime).toLocaleString()} - {new Date(event.endTime).toLocaleString()}
               </p>
             </div>
-            <Badge variant={event.type === 'meeting' ? 'default' : event.type === 'class' ? 'secondary' : 'outline'}>
-              {event.type}
-            </Badge>
+            <div className="flex gap-2">
+              <Badge variant={event.type === 'meeting' ? 'default' : event.type === 'class' ? 'secondary' : 'outline'}>
+                {event.type}
+              </Badge>
+              <Button variant="destructive" size="sm" onClick={handleDelete}>
+                Delete
+              </Button>
+            </div>
           </div>
 
           {event.description && (
