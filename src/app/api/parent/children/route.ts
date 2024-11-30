@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/user.model";
 import bcrypt from "bcryptjs";
@@ -8,7 +7,8 @@ import sendEmail from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    await connectDB();
+    const session = await auth();
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -30,8 +30,6 @@ export async function POST(req: Request) {
       emailOption,
       email,
     } = body;
-
-    await connectDB();
 
     // Get parent user
     const parent = await User.findById(session.user.id);
@@ -77,7 +75,7 @@ export async function POST(req: Request) {
     await parent.save();
 
     // Send appropriate email based on email option
-    if (emailOption === "generate") {
+    if (emailOption === "generate" && temporaryPassword) {
       // Send login credentials to parent
       await sendEmail({
         to: session.user.email,
@@ -87,11 +85,11 @@ export async function POST(req: Request) {
           parentName: session.user.name,
           childName: `${firstName} ${lastName}`,
           childEmail: emailToUse,
-          temporaryPassword: temporaryPassword,
+          temporaryPassword,
           loginUrl: `${process.env.NEXTAUTH_URL}/login`,
         }
       });
-    } else {
+    } else if (emailOption === "existing") {
       // Send invitation email to child's email
       await sendEmail({
         to: emailToUse,
@@ -126,7 +124,8 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    await connectDB();
+    const session = await auth();
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -135,8 +134,6 @@ export async function GET(req: Request) {
     if (session.user.role !== "parent") {
       return new NextResponse("Forbidden", { status: 403 });
     }
-
-    await connectDB();
 
     // Get parent user with populated children
     const parent = await User.findById(session.user.id).populate({

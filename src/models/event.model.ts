@@ -6,7 +6,14 @@ export interface Attendee {
   displayName?: string;
 }
 
-export interface IEvent {
+export interface Recurrence {
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval?: number;
+  daysOfWeek?: string[];
+  until?: string;
+}
+
+export interface CalendarEvent {
   _id?: string;
   googleEventId?: string;
   title: string;
@@ -16,12 +23,13 @@ export interface IEvent {
   type: 'class' | 'meeting' | 'office-hours';
   meetLink?: string;
   attendees?: Attendee[];
+  recurrence?: Recurrence;
   createdBy: string;
   isSynced: boolean;
   lastSyncTime?: string;
 }
 
-const eventSchema = new Schema<IEvent>({
+const eventSchema = new Schema<CalendarEvent>({
   googleEventId: { type: String },
   title: { type: String, required: true },
   description: { type: String },
@@ -41,6 +49,15 @@ const eventSchema = new Schema<IEvent>({
     },
     displayName: { type: String }
   }],
+  recurrence: {
+    frequency: { 
+      type: String,
+      enum: ['daily', 'weekly', 'monthly', 'yearly']
+    },
+    interval: { type: Number },
+    daysOfWeek: [{ type: String }],
+    until: { type: String }
+  },
   createdBy: { type: String, required: true },
   isSynced: { type: Boolean, default: false },
   lastSyncTime: { type: String }
@@ -49,7 +66,8 @@ const eventSchema = new Schema<IEvent>({
 });
 
 // Add index for faster queries
-eventSchema.index({ createdBy: 1, startTime: 1, endTime: 1 });
-eventSchema.index({ googleEventId: 1 }, { sparse: true });
+eventSchema.index({ googleEventId: 1 });
+eventSchema.index({ createdBy: 1 });
+eventSchema.index({ startTime: 1, endTime: 1 });
 
-export const Event = mongoose.models.Event || mongoose.model<IEvent>('Event', eventSchema);
+export const Event = mongoose.models.Event || model<CalendarEvent>('Event', eventSchema);

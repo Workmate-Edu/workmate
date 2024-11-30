@@ -40,3 +40,15 @@ export interface LearningStyleAssessment {
   kinesthetic: number;
   readingWriting: number;
 }
+
+export interface Teacher {
+  _id: string;
+  subjects: string[];
+  availability: TeacherAvailability[];
+  teachingExperience: number;
+  ratings: number[];
+  hourlyRate: number;
+  teachingStyle: LearningStyleAssessment;
+  languages: string[];
+  specializations: string[];
+}

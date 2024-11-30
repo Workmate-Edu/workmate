@@ -3,10 +3,37 @@
 import { createContext, useContext, useState } from "react"
 import { themes } from "@/lib/themes"
 
+type Theme = {
+  primary: string
+  secondary: string
+  accent: string
+  background: {
+    light: string
+    dark: string
+    accent: string
+  }
+  text: {
+    light: string
+    dark: string
+    accent: string
+    muted: string
+  }
+  border: string
+  gradients: {
+    primary: string
+    secondary: string
+  }
+  button: {
+    primary: string
+    secondary: string
+    outline: string
+  }
+}
+
 type ThemeContextType = {
   currentTheme: "arabic" | "stem"
   setCurrentTheme: (theme: "arabic" | "stem") => void
-  theme: typeof themes.arabic | typeof themes.stem
+  theme: Theme
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -21,7 +48,7 @@ export function ThemeContextProvider({
   const value = {
     currentTheme,
     setCurrentTheme,
-    theme: themes[currentTheme]
+    theme: themes[currentTheme] as Theme
   }
 
   return (

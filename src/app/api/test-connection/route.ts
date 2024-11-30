@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
 import mongoose from "mongoose";
+import connectDB from "@/lib/mongodb";
+
+interface MongooseError extends Error {
+  code?: string | number;
+}
 
 export async function GET() {
   try {
@@ -18,6 +22,11 @@ export async function GET() {
       99: "Uninitialized"
     };
     
+    // Ensure we have a valid connection and database
+    if (!mongoose.connection.db) {
+      throw new Error('Database connection not established');
+    }
+
     // Get list of collections
     const collections = await mongoose.connection.db.listCollections().toArray();
     const collectionNames = collections.map(col => col.name);
@@ -40,12 +49,22 @@ export async function GET() {
   } catch (error) {
     console.error("\n❌ Database connection error:", error);
     
+    // Type guard for Error objects
+    const isError = (err: unknown): err is Error => {
+      return err instanceof Error;
+    };
+
+    // Type guard for Mongoose errors
+    const isMongooseError = (err: unknown): err is MongooseError => {
+      return isError(err) && ('code' in err || err instanceof mongoose.Error);
+    };
+
     // Get detailed error information
     const errorDetails = {
-      message: error.message,
-      code: error.code,
-      name: error.name,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: isError(error) ? error.message : 'Unknown error occurred',
+      code: isMongooseError(error) ? error.code : undefined,
+      name: isError(error) ? error.name : 'UnknownError',
+      stack: process.env.NODE_ENV === 'development' && isError(error) ? error.stack : undefined
     };
     
     return NextResponse.json(

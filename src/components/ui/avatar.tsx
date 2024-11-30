@@ -1,53 +1,50 @@
+"use client"
+
 import * as React from "react"
+import * as AvatarPrimitive from "@radix-ui/react-avatar"
 
-interface AvatarProps {
-  src: string;
-  alt: string;
-  size?: number;
-}
+import { cn } from "@/lib/utils"
 
-export const Avatar: React.FC<AvatarProps> = ({ src, alt, size = 50 }) => {
-  return (
-    <img
-      src={src}
-      alt={alt}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        objectFit: "cover",
-      }}
-    />
-  );
-};
+const Avatar = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Root
+    ref={ref}
+    className={cn(
+      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+      className
+    )}
+    {...props}
+  />
+))
+Avatar.displayName = AvatarPrimitive.Root.displayName
 
-interface AvatarFallbackProps {
-  fallbackText: string;
-  size?: number;
-}
+const AvatarImage = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Image>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Image
+    ref={ref}
+    className={cn("aspect-square h-full w-full", className)}
+    {...props}
+  />
+))
+AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
-export const AvatarFallback: React.FC<AvatarFallbackProps> = ({ fallbackText, size = 50 }) => {
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        backgroundColor: "#ccc",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: size / 2,
-        color: "#fff",
-      }}
-    >
-      {fallbackText}
-    </div>
-  );
-};
+const AvatarFallback = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Fallback>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Fallback
+    ref={ref}
+    className={cn(
+      "flex h-full w-full items-center justify-center rounded-full bg-muted",
+      className
+    )}
+    {...props}
+  />
+))
+AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
-interface AvatarImageProps extends AvatarProps {}
-
-export const AvatarImage: React.FC<AvatarImageProps> = ({ src, alt, size }) => {
-  return <Avatar src={src} alt={alt} size={size} />;
-};
+export { Avatar, AvatarImage, AvatarFallback }

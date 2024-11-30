@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authConfig } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/user.model';
 
-export async function POST(request: Request) {
+export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
+    await connectDB();
+    const session = await auth();
     
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -24,9 +24,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    // Connect to database
-    await connectDB();
 
     // Update user
     const user = await User.findByIdAndUpdate(

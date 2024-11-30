@@ -13,7 +13,9 @@ import { Menu } from "lucide-react"
 import { Button } from "./ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet"
 import { useAuth } from "../hooks/use-auth"
+import { useSession } from "next-auth/react"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/router"
 
 const publicRoutes = [
   {
@@ -47,10 +49,19 @@ export function Navbar() {
   const { t } = useLanguage()
   const { setCurrentTheme } = useThemeContext()
   const [open, setOpen] = useState(false)
-  const { user, isAuthenticated, signOut } = useAuth()
+  const { user, signOut } = useAuth()
+  const { status } = useSession()
+  const router = useRouter()
   const isDashboard = pathname.startsWith('/dashboard')
 
   const dashboardLinks = user?.role ? getDashboardLinks(user.role) : []
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/sign-in')
+  }
+
+  const isAuthenticated = status === "authenticated"
 
   useEffect(() => {
     if (pathname.startsWith('/arabic-center')) {
@@ -127,7 +138,7 @@ export function Navbar() {
               !isDashboard && (
                 <Button 
                   variant="ghost" 
-                  onClick={() => signOut()}
+                  onClick={handleSignOut}
                   className="flex items-center gap-1"
                 >
                   <FiLogOut className="w-4 h-4" />
@@ -197,7 +208,7 @@ export function Navbar() {
                     {isAuthenticated ? (
                       <Button 
                         variant="ghost" 
-                        onClick={() => signOut()}
+                        onClick={handleSignOut}
                         className="flex items-center gap-1 justify-start"
                       >
                         <FiLogOut className="w-4 h-4" />

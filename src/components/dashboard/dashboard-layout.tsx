@@ -35,7 +35,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [pathname])
 
   return (
-    <div className={cn("min-h-screen", theme.background.default)}>
+    <div className={cn("min-h-screen", theme.background.light, theme.background.dark)}>
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <SidebarComponent />

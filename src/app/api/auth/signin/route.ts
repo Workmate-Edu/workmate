@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       email: body.email.toLowerCase() 
     }).select('+password');
 
-    if (!user) {
+    if (!user || !user.password) {
       return NextResponse.json(
         { error: 'Invalid email or password' }, 
         { status: 401 }

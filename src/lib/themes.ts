@@ -5,12 +5,16 @@ export const themes = {
     accent: "amber",
     background: {
       light: "bg-slate-50",
-      dark: "dark:bg-slate-900"
+      dark: "dark:bg-slate-900",
+      accent: "bg-emerald-100 dark:bg-emerald-900/50"
     },
     text: {
       light: "text-slate-900",
-      dark: "dark:text-slate-50"
+      dark: "dark:text-slate-50",
+      accent: "text-emerald-700 dark:text-emerald-300",
+      muted: "text-slate-500 dark:text-slate-400"
     },
+    border: "border-slate-200 dark:border-slate-800",
     gradients: {
       primary: "bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900",
       secondary: "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
@@ -27,12 +31,16 @@ export const themes = {
     accent: "violet",
     background: {
       light: "bg-slate-50",
-      dark: "dark:bg-slate-900"
+      dark: "dark:bg-slate-900",
+      accent: "bg-blue-100 dark:bg-blue-900/50"
     },
     text: {
       light: "text-slate-900",
-      dark: "dark:text-slate-50"
+      dark: "dark:text-slate-50",
+      accent: "text-blue-700 dark:text-blue-300",
+      muted: "text-slate-500 dark:text-slate-400"
     },
+    border: "border-slate-200 dark:border-slate-800",
     gradients: {
       primary: "bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900",
       secondary: "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"

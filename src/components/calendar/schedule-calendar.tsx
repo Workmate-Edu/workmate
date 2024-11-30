@@ -9,7 +9,7 @@ import { EventForm } from "./event-form"
 import { EventDetailsDialog } from './event-details-dialog';
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import type { CalendarEvent } from "@/lib/google-calendar"
+import type { CalendarEvent } from "@/models/event.model"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { signIn } from "next-auth/react"
@@ -104,14 +104,18 @@ export function ScheduleCalendar() {
   };
 
   // Handle event creation
-  const handleCreateEventSubmit = async (eventData: CalendarEvent) => {
+  const handleCreateEventSubmit = async (eventData: Omit<CalendarEvent, 'createdBy' | 'isSynced'>) => {
     setIsLoading(true);
     try {
       console.log('Submitting event data:', eventData);
       const response = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventData),
+        body: JSON.stringify({
+          ...eventData,
+          createdBy: session?.user?.id,
+          isSynced: false
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to create event');
@@ -210,6 +214,27 @@ export function ScheduleCalendar() {
     }
   }
 
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete event');
+      
+      toast.success('Event deleted successfully!');
+      setShowEventDetails(false);
+      setSelectedEvent(null);
+      fetchEvents();
+    } catch (error: any) {
+      console.error('Event deletion failed:', error);
+      toast.error('Failed to delete event');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       {showConnectGoogle && (
@@ -254,14 +279,14 @@ export function ScheduleCalendar() {
       )}
 
       {/* Event Details Dialog */}
-      {selectedEvent && (
+      {showEventDetails && (
         <EventDetailsDialog
           event={selectedEvent}
-          isOpen={showEventDetails}
           onClose={() => {
             setShowEventDetails(false);
             setSelectedEvent(null);
           }}
+          onDelete={selectedEvent?._id ? async () => await handleDeleteEvent(selectedEvent._id!) : undefined}
         />
       )}
 

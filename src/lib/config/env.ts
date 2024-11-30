@@ -44,13 +44,25 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });
 
+type EnvSchema = z.infer<typeof envSchema>
+
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv extends EnvSchema {}
+  }
+}
+
 // Function to validate environment variables
-function validateEnv() {
+export function validateEnv(): EnvSchema {
   try {
     const parsed = envSchema.parse(process.env);
     return parsed;
   } catch (error) {
-    console.error('❌ Invalid environment variables:', error.errors);
+    if (error instanceof z.ZodError) {
+      console.error('❌ Invalid environment variables:', error.errors);
+    } else {
+      console.error('❌ Error validating environment variables:', error);
+    }
     process.exit(1);
   }
 }
