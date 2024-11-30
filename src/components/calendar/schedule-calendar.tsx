@@ -279,14 +279,14 @@ export function ScheduleCalendar() {
       )}
 
       {/* Event Details Dialog */}
-      {showEventDetails && (
+      {showEventDetails && selectedEvent && (
         <EventDetailsDialog
           event={selectedEvent}
           onClose={() => {
             setShowEventDetails(false);
             setSelectedEvent(null);
           }}
-          onDelete={selectedEvent?._id ? async () => await handleDeleteEvent(selectedEvent._id!) : undefined}
+          onDelete={async (eventId) => await handleDeleteEvent(eventId)}
         />
       )}
 
