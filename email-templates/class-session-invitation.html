@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Session Invitation</title>
+</head>
+<body>
+  <table cellspacing="0" cellpadding="0" style="background-color: #f3f3fc; width: 100%; font-family: Arial, sans-serif;">
+    <tbody>
+      <tr>
+        <td align="center">
+          <div style="max-width: 670px; background-color: rgba(14, 252, 213, 0.329); padding: 5%; margin: 0 auto;">
+            <div style="background-color: white; border-radius: 12px; overflow: hidden; margin: 30px 0;">
+              <div style="background-color: #10b981; padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">Class Session Invitation</h1>
+              </div>
+
+              <div style="padding: 5%; text-align: left;">
+                <p style="color: #121212; line-height: 1.6;">Dear {{studentName}},</p>
+
+                <p style="color: #121212; line-height: 1.6;">
+                  {{teacherName}} has scheduled a {{sessionType}} for {{subject}}.
+                </p>
+
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: #121212;">Session Details:</h3>
+                  <p><strong>{{recurringBadge}}</strong></p>
+                  <p>{{scheduleInfo}}</p>
+                  <ul style="list-style: none; padding: 0; color: #121212; line-height: 1.6;">
+                    <li>📅 Date: {{sessionDate}}</li>
+                    <li>⏰ Time: {{sessionTime}}</li>
+                    <li>⌛ Duration: {{duration}} minutes</li>
+                    <li>📚 Subject: {{subject}} ({{area}})</li>
+                  </ul>
+
+                  <div style="{{scheduleDetailsStyle}}">
+                    <p>Schedule Details:</p>
+                    <ul style="list-style: none; padding: 0; color: #121212; line-height: 1.6;">
+                      <li>🔄 Pattern: {{schedulePattern}}</li>
+                      <li>📅 Days: {{scheduleDays}}</li>
+                      <li>🎯 Until: {{scheduleEndDate}}</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="{{meetingLink}}" 
+                     style="background-color: #0070f3; color: white; padding: 12px 24px; 
+                            text-decoration: none; border-radius: 6px; display: inline-block;
+                            cursor: pointer; transition: background-color 0.2s ease;
+                            font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    Join Class
+                  </a>
+                </div>
+
+                <div style="margin-top: 20px; text-align: center;">
+                  <p style="margin-bottom: 10px;">Add to Calendar:</p>
+                  <div style="display: flex; gap: 10px;">
+                    <a href="{{googleCalendarLink}}" 
+                       style="display: inline-block; padding: 8px 16px; background-color: #4285f4; color: white; text-decoration: none; border-radius: 4px;">
+                      Google Calendar
+                    </a>
+                    <a href="{{outlookCalendarLink}}"
+                       style="display: inline-block; padding: 8px 16px; background-color: #0078d4; color: white; text-decoration: none; border-radius: 4px;">
+                      Outlook Calendar
+                    </a>
+                  </div>
+                  <p style="margin-top: 10px; color: #666; font-size: 12px;">
+                    Or open the attached .ics file to add to your preferred calendar app
+                  </p>
+                </div>
+
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                  <p style="color: #121212; line-height: 1.6;">
+                    Please join the session on time. Make sure you have:
+                  </p>
+                  <ul style="color: #121212; line-height: 1.6;">
+                    <li>A stable internet connection</li>
+                    <li>Working microphone and camera</li>
+                    <li>Required learning materials</li>
+                  </ul>
+                </div>
+
+                <p style="color: #121212; line-height: 1.6; margin-top: 20px;">
+                  Best regards,<br>
+                  The Workmate Team
+                </p>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

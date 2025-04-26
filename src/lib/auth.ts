@@ -1,183 +1,164 @@
-import NextAuth from "next-auth"
-import type { NextAuthConfig } from "next-auth"
-import type { Account, Profile, User as NextAuthUser, Session } from "next-auth"
-import type { Adapter } from "@auth/core/adapters"
-import type { JWT } from "next-auth/jwt"
+import { type NextAuthOptions } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { MongoDBAdapter } from "@auth/mongodb-adapter"
-import GoogleProvider from "next-auth/providers/google"
+import { clientPromise, connectDB } from "./mongodb"
 import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
-import { getMongoClient } from "@/lib/mongodb"
-import User from "@/models/user.model"
-import { connectDB } from "@/lib/mongodb"
-import mongoose from "mongoose"
-import { createVerificationToken } from "./tokens"
-import sendEmail from "./email"
-
-// Define base types without recursion
-interface BaseUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  image?: string | null;
-  username?: string;
-  emailVerified?: boolean;
-  password?: string;
-  accessToken?: string;
-}
-
-// Extend next-auth module
-declare module "next-auth" {
-  interface User extends BaseUser {}
-  
-  interface Session {
-    user: BaseUser & {
-      accessToken?: string;
-    }
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT extends BaseUser {
-    accessToken?: string;
-  }
-}
+import { User } from "@/models/user"
+import { type UserRole } from "@/types/auth"
 
 if (!process.env.NEXTAUTH_SECRET) {
-  throw new Error("NEXTAUTH_SECRET must be set")
+  throw new Error('Please provide NEXTAUTH_SECRET environment variable')
 }
 
-export const authOptions: NextAuthConfig = {
-  adapter: MongoDBAdapter(getMongoClient()),
+if (!process.env.MONGODB_DB) {
+  throw new Error('Please provide MONGODB_DB environment variable')
+}
+
+export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+  adapter: MongoDBAdapter(clientPromise, {
+    databaseName: 'workmate',
+    collections: {
+      Users: 'users',
+      Accounts: 'accounts',
+      Sessions: 'sessions',
+      VerificationTokens: 'verification_tokens',
+    }
+  }),
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // Add this to refresh session every 24 hours
+  },
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
-          scope: "openid email profile https://www.googleapis.com/auth/calendar",
-        },
-      },
-    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
+        emailOrUsername: { label: "Email or Username", type: "text" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials): Promise<BaseUser | null> {
+      async authorize(credentials) {
+        if (!credentials?.emailOrUsername || !credentials?.password) {
+          throw new Error("Invalid credentials")
+        }
+
         try {
-          await connectDB();
-
-          if (!credentials?.email || !credentials?.password || 
-              typeof credentials.email !== 'string' || 
-              typeof credentials.password !== 'string') {
-            throw new Error("Missing required fields");
-          }
-
-          const user = await User.findOne({ email: credentials.email }).select("+password");
+          await connectDB()
+          
+          // Single query for all users including children
+          const user = await User.findOne({
+            $or: [
+              { email: credentials.emailOrUsername.toLowerCase() },
+              { username: credentials.emailOrUsername }
+            ]
+          }).select('+password')
 
           if (!user) {
-            throw new Error("No user found with this email");
+            throw new Error("No account found")
           }
 
-          if (!user.password) {
-            throw new Error("Please sign in with Google");
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          )
+
+          if (!isPasswordValid) {
+            throw new Error("Invalid password")
           }
 
-          const isValid = await bcrypt.compare(credentials.password, user.password);
-
-          if (!isValid) {
-            throw new Error("Invalid password");
-          }
-
+          // Return user with type info for children
           return {
-            id: user._id.toString(),
+            id: user._id,
+            name: user.name,
             email: user.email,
-            name: user.name || '',
-            role: user.role || "student",
-            username: user.username || user.email.split("@")[0],
-            emailVerified: user.emailVerified || false,
-            image: user.image || null,
-          };
-        } catch (error: any) {
-          throw new Error(error.message || "Authentication failed");
+            role: user.role,
+            type: user.learnerProfile?.type || 'independent',
+            parentId: user.learnerProfile?.parent // For child users
+          }
+        } catch (error) {
+          throw error
         }
       }
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     })
   ],
   callbacks: {
-    async signIn(params) {
-      const { user, account, profile } = params;
-      
-      if (!user?.email) {
-        return false;
-      }
-
-      if (account?.provider === "google") {
-        try {
-          await connectDB();
-          const existingUser = await User.findOne({ email: user.email });
-
-          if (!existingUser) {
-            const newUser = new User({
-              email: user.email,
-              name: user.name || '',
-              image: user.image || null,
-              emailVerified: true,
-              role: "student",
-              username: user.email.split("@")[0],
-            });
-            await newUser.save();
+    async jwt({ token, user, account, trigger }) {
+      try {
+        // Handle session updates
+        if (trigger === "update" && token.id) {
+          const refreshedUser = await User.findById(token.id)
+            .select('-password')
+            .lean()
+            .exec();
+            
+          if (refreshedUser) {
+            token.role = refreshedUser.role;
+            token.emailVerified = refreshedUser.emailVerified;
           }
-        } catch (error) {
-          console.error("Error in signIn callback:", error);
-          return false;
         }
-      }
-
-      return true;
-    },
-    async jwt({ token, user, account }): Promise<JWT> {
-      if (user) {
-        token.id = user.id || ''
-        token.email = user.email || ''
-        token.name = user.name || ''
-        token.role = (user as BaseUser).role || 'student'
-        token.image = user.image || null
-        if (account?.access_token) {
-          token.accessToken = account.access_token
+        
+        if (user) {
+          token.id = user.id;
+          token.role = user.role;
+          token.emailVerified = user.emailVerified;
+          token.username = user.username;
+          if (account?.accessToken) {
+            token.accessToken = account.accessToken;
+          }
         }
+        return token;
+      } catch (error) {
+        console.error("JWT callback error:", error);
+        return token;
       }
-      return token
     },
-    async session({ session, token }): Promise<Session> {
-      if (session?.user) {
-        session.user.id = token.id || ''
-        session.user.email = token.email || ''
-        session.user.name = token.name || ''
-        session.user.role = token.role || 'student'
-        session.user.image = token.image || null
-        if (token.accessToken) {
-          session.user.accessToken = token.accessToken
+    async session({ session, token }) {
+      if (token) {
+        session.user = {
+          ...session.user,
+          id: token.id as string,
+          role: token.role as UserRole,
+          emailVerified: token.emailVerified as boolean,
+          username: token.username as string | null,
+          accessToken: token.accessToken as string | undefined
         }
       }
       return session
     },
+    async redirect({ url, baseUrl }) {
+      // Don't redirect to sign-in page if already authenticated
+      if (url.includes('/sign-in') || url.includes('/sign-up')) {
+        return baseUrl + '/dashboard'
+      }
+      // Handle dashboard redirects
+      if (url.includes('/dashboard')) {
+        return url
+      }
+      // Default redirect
+      return baseUrl
+    }
   },
   pages: {
-    signIn: "/auth/signin",
+    signIn: "/sign-in",
     error: "/auth/error",
-    verifyRequest: "/auth/verify",
+    verifyRequest: "/auth/verify"
   },
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development"
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authOptions)
+// Export authOptions as default and named export
+export default authOptions;
+
+// Use authOptions in these helper functions
+export const getAuthSession = () => getServerSession(authOptions)
+
+export async function getCurrentUser() {
+  const session = await getAuthSession();
+  return session?.user;
+}

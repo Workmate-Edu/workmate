@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
-import { useThemeContext } from "@/hooks/use-theme-context"
+import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
 import {
   FiHome,
@@ -24,7 +24,7 @@ interface ParentSidebarProps {
 export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { theme } = useThemeContext()
+  const { theme } = useTheme()
   const { signOut } = useAuth()
 
   const navigation = [
@@ -39,12 +39,11 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
   ]
 
   const sidebarClasses = mobile
-    ? cn("h-full flex flex-col", theme.background.light, theme.background.dark)
+    ? cn("h-full flex flex-col", theme === 'dark' ? 'dark' : 'light')
     : cn(
         "fixed inset-y-0 left-0 w-64 border-r",
-        theme.background.light,
-        theme.background.dark,
-        theme.border
+        theme === 'dark' ? 'dark' : 'light',
+        theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
       )
 
   return (
@@ -52,9 +51,9 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
       <div className="flex flex-col h-full">
         <div className={cn(
           "flex items-center justify-center h-16 px-4 border-b",
-          theme.border
+          theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
         )}>
-          <h1 className={cn("text-xl font-bold", theme.text.light, theme.text.dark)}>
+          <h1 className={cn("text-xl font-bold", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
             Workmate
           </h1>
         </div>
@@ -68,11 +67,10 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
                 className={cn(
                   "w-full justify-start relative hover:bg-gray-100 dark:hover:bg-gray-800",
                   {
-                    [theme.background.accent]: isActive,
-                    [theme.text.accent]: isActive,
+                    [theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100']: isActive,
+                    [theme === 'dark' ? 'text-white' : 'text-gray-900']: isActive,
                     "font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4/5 before:w-1 before:rounded-r": isActive,
-                    [theme.text.light]: !isActive,
-                    [theme.text.dark]: !isActive,
+                    [theme === 'dark' ? 'text-gray-400' : 'text-gray-600']: !isActive,
                     "before:bg-primary": isActive
                   }
                 )}
@@ -80,7 +78,7 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
               >
                 <item.icon className={cn(
                   "w-5 h-5 mr-3",
-                  isActive ? theme.text.accent : theme.text.muted
+                  isActive ? (theme === 'dark' ? 'text-white' : 'text-gray-900') : (theme === 'dark' ? 'text-gray-400' : 'text-gray-600')
                 )} />
                 {item.name}
               </Button>
@@ -92,12 +90,11 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
             variant="ghost"
             className={cn(
               "w-full justify-start hover:bg-gray-100 dark:hover:bg-gray-800",
-              theme.text.light,
-              theme.text.dark
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             )}
             onClick={() => signOut()}
           >
-            <FiLogOut className={cn("w-5 h-5 mr-3", theme.text.muted)} />
+            <FiLogOut className={cn("w-5 h-5 mr-3", theme === 'dark' ? 'text-gray-400' : 'text-gray-600')} />
             Sign Out
           </Button>
         </div>

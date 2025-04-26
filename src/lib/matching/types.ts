@@ -52,3 +52,28 @@ export interface Teacher {
   languages: string[];
   specializations: string[];
 }
+
+export interface TeacherAssignment {
+  teacherId: string;
+  studentId?: string;
+  childId?: string;
+  parentId?: string;
+  assignedAt: Date;
+  subjects: {
+    name: string;
+    schedule: {
+      day: string;
+      startTime: string;
+      endTime: string;
+    };
+    progress: number;
+    lastSessionDate?: Date;
+    nextSessionDate?: Date;
+  }[];
+  communicationPreference: {
+    preferredTime: string;
+    timezone: string;
+    language: string;
+  };
+  status: 'active' | 'inactive';
+}

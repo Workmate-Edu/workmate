@@ -72,6 +72,7 @@ const userSchema = new mongoose.Schema<IUser>({
     type: String,
     required: [true, 'Email is required'],
     unique: true,
+    index: true // Remove duplicate index declaration
   },
   username: {
     type: String,
@@ -79,6 +80,7 @@ const userSchema = new mongoose.Schema<IUser>({
     sparse: true,
     lowercase: true,
     trim: true,
+    index: true, // Remove duplicate index declaration
     minlength: [3, 'Username must be at least 3 characters long'],
   },
   password: {

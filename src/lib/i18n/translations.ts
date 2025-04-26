@@ -41,6 +41,14 @@ export const translations = {
           roleRequired: "Please select a role.",
           generalError: "An error occurred. Please try again."
         }
+      },
+      verification: {
+        title: "Verify Your Email",
+        sent: "Verification email sent",
+        resend: "Resend verification email",
+        success: "Email verified successfully",
+        error: "Failed to verify email",
+        checkEmail: "Please check your email for verification link",
       }
     },
     hero: {
@@ -79,7 +87,7 @@ export const translations = {
       subtitle: "Explore our wide range of subjects taught by expert teachers",
       stem: {
         title: "STEM Education",
-        description: "Mathematics, Physics, Chemistry, Biology, Computer Science",
+        description: "Math, Physics, Chemistry, Biology, Computer Science",
         explore: "Explore STEM Subjects"
       },
       languages: {
@@ -149,6 +157,14 @@ export const translations = {
           roleRequired: "Da fatan za a zaɓi matsayi.",
           generalError: "Kuskure ya faru. Da fatan za a sake gwadawa."
         }
+      },
+      verification: {
+        title: "Tabbatar da Imel ɗinku",
+        sent: "An aika sakon tabbatarwa",
+        resend: "Sake aikan wasiƙar tabbatarwa",
+        success: "An tabbatar da imel ɗin",
+        error: "Ba a yi nasarar tabbatar da imel ba",
+        checkEmail: "Da fatan za a duba imel ɗinku don hanyar tabbatarwa",
       }
     },
     hero: {
@@ -187,7 +203,7 @@ export const translations = {
       subtitle: "Bincika darussan mu daban-daban da malamai ƙwarewa ke koyarwa",
       stem: {
         title: "Ilimin STEM",
-        description: "Lissafi, Fiziks, Kimiyya, Biyoloji, Kimiyyan Kwamfyuta",
+        description: "Math, Fiziks, Kimiyya, Biyoloji, Kimiyyan Kwamfyuta",
         explore: "Bincika Darussan STEM"
       },
       languages: {

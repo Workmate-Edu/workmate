@@ -1,90 +1,41 @@
-import "./globals.css"
-import { Inter, Poppins } from "next/font/google"
-import { Metadata } from "next"
-import { LanguageProvider } from '../components/providers/language-provider'
-import { ThemeProvider } from '../components/providers/theme-provider'
-import { ThemeContextProvider } from '../hooks/use-theme-context'
-import { Navbar } from '../components/navbar'
-import { Footer } from '../components/footer'
-import { Toaster } from 'sonner'
-import { AuthProvider } from '@/components/auth-provider'
-import { auth } from '@/lib/auth'
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
+import Nav from "@/components/nav";
+import { Footer } from "@/components/footer";
+import { AuthProvider } from "@/providers/auth-provider";
+// import { Providers } from "@/providers/providers";
+import 'react-phone-input-2/lib/style.css';
+import { Providers } from "./providers";
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
+const inter = Inter({ subsets: ["latin"] });
 
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-poppins',
-})
-
-export const metadata: Metadata = {
-  title: 'Workmate - Your Intelligent Study Partner',
-  description: 'Connect with expert teachers for personalized learning experiences',
-  icons: {
-    icon: [
-      {
-        url: '/favicon.ico',
-        type: 'image/x-icon',
-      },
-      {
-        url: '/favicon-32x32.png',
-        sizes: '32x32',
-        type: 'image/png',
-      },
-      {
-        url: '/favicon-16x16.png',
-        sizes: '16x16',
-        type: 'image/png',
-      },
-    ],
-    apple: [
-      {
-        url: '/apple-touch-icon.png',
-        sizes: '180x180',
-        type: 'image/png',
-      },
-    ],
-  },
-  manifest: '/site.webmanifest',
-  themeColor: '#ffffff',
+interface RootLayoutProps {
+  children: React.ReactNode;
 }
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const session = await auth()
+export const metadata: Metadata = {
+  title: "Workmate - African Languages & STEM Education",
+  description: "Learn African languages and explore Science & Technology through an African lens",
+};
 
+export default function RootLayout({
+  children,
+}: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <AuthProvider session={session}>
-          <LanguageProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <ThemeContextProvider>
-                <Toaster />
-                <div className="relative flex min-h-screen flex-col bg-background text-foreground">
-                  <Navbar />
-                  <main className="flex-1">
-                    {children}
-                  </main>
-                  <Footer />
-                </div>
-              </ThemeContextProvider>
-            </ThemeProvider>
-          </LanguageProvider>
-        </AuthProvider>
+      <body className={inter.className}>
+        <Providers>
+          <div className="relative min-h-screen flex flex-col">
+            <Nav />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+          <Toaster />
+        </Providers>
       </body>
     </html>
-  )
+  );
 }

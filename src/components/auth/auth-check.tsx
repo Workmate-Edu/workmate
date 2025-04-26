@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { useSession } from 'next-auth/react';
 
 interface AuthCheckProps {
   children: React.ReactNode
@@ -12,36 +11,30 @@ interface AuthCheckProps {
 export function AuthCheck({ children }: AuthCheckProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuth();
-  const { status } = useSession();
+  const { user, status } = useAuth();
 
   useEffect(() => {
-    if (status === "loading") return
+    if (status === "loading") return;
 
     // If not authenticated, redirect to sign in
     if (status === "unauthenticated") {
-      router.replace('/sign-in')
-      return
+      router.replace('/sign-in');
+      return;
     }
 
-    // Check if we're in a dashboard route
+    // Only check role matching for dashboard routes
     if (pathname?.startsWith('/dashboard/')) {
-      const routeRole = pathname.split('/')[2]
-      
-      // If user's role doesn't match the route, redirect to their correct dashboard
-      if (routeRole !== user?.role) {
-        router.replace(`/dashboard/${user?.role}`)
+      const routeRole = pathname.split('/')[2];
+      if (user && routeRole && routeRole !== user.role) {
+        router.replace(`/dashboard/${user.role}`);
       }
     }
-  }, [pathname, status, user, router])
+  }, [pathname, status, user, router]);
 
-  if (status === "loading") {
-    return <div>Loading...</div>
-  }
-
+  // Don't show loading state here since parent components handle it
   if (status === "unauthenticated") {
-    return null
+    return null;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }

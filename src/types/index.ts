@@ -42,3 +42,33 @@ export interface RegisterData extends LoginCredentials {
   name: string;
   role: UserRole;
 }
+
+import type { LucideIcon } from 'lucide-react'
+
+export interface Language {
+  name: string
+  description: string
+  level: string[]
+  cultural: string
+  icon: string
+}
+
+export interface StemTopic {
+  title: string
+  description: string
+  icon: LucideIcon
+  subjects: string[]
+  modules: string[]
+}
+
+export interface Feature {
+  icon: LucideIcon
+  title: string
+  description: string
+}
+
+export interface Testimonial {
+  name: string
+  role: string
+  content: string
+}

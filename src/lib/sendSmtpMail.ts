@@ -1,101 +1,49 @@
 // utils/sendEmail.ts
 import fs from 'fs';
 import path from 'path';
-import axios from 'axios';
+import transporter from './smtp';  // Import your SMTP configuration
 
 const loadTemplate = (templateName: string): string => {
-  try {
-    const filePath = path.join(process.cwd(), 'email-templates', `${templateName}.html`);
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`Template ${templateName} not found at ${filePath}`);
-    }
-    return fs.readFileSync(filePath, 'utf-8');
-  } catch (error) {
-    console.error(`Error loading template ${templateName}:`, error);
-    throw error;
-  }
+  const filePath = path.join(process.cwd(), 'email-templates', `${templateName}.html`);
+  return fs.readFileSync(filePath, 'utf-8');
 };
 
 interface EmailPayload {
   to: string;
   subject: string;
-  template: string;
-  replacements: Record<string, string>;
+  template: string;  // The template name (e.g. "signup")
+  replacements: Record<string, string>;  // Data to replace dynamic fields in the template
+  attachments?: Array<{
+    filename: string;
+    content: string;
+  }>;
 }
 
 const sendEmail = async ({ to, subject, template, replacements }: EmailPayload) => {
   try {
-    // Load and process the email template
+    // Load the email template
     let htmlContent = loadTemplate(template);
+
+    // Replace placeholders with actual data
     Object.keys(replacements).forEach((key) => {
-      const regex = new RegExp(`{{${key}}}`, 'g');
+      const regex = new RegExp(`{{${key}}}`, 'g');  // Look for {{key}} in the HTML
       htmlContent = htmlContent.replace(regex, replacements[key]);
     });
 
-    // Get and validate environment variables
-    const token = "Zoho-enczapikey wSsVR6118kGkC6l9nz2lIuhpzQ9UU1v/RER1iwOk7n7/H6iRpcc8lxCcBgXySPcWEDJsFTNDoep7yUpT2jcGht0omQpUCSiF9mqRe1U4J3x17qnvhDzOXWtYlhSBKIsJxwhjmGVkFMBu";
-    const bounceAddress = process.env.ZEPTOMAIL_BOUNCE_ADDRESS?.trim() || "bounce@diboruwa.com";
-    const fromAddress = process.env.ZEPTOMAIL_FROM_ADDRESS?.trim() || "noreply@diboruwa.com";
-
-    // Prepare the Zeptomail API request
-    const emailPayload = {
-      bounce_address: bounceAddress,
-      from: {
-        address: fromAddress,
-        name: "Workmate Learning"
-      },
-      to: [
-        {
-          email_address: {
-            address: to,
-            name: replacements.name || to.split('@')[0]
-          }
-        }
-      ],
-      subject: subject,
-      htmlbody: htmlContent
+    // Define email options
+    const mailOptions = {
+      from: '"Workmate Team" <noreply@workmateteam.com>',  // Sender info
+      to,
+      subject,
+      html: htmlContent,  // The processed HTML with dynamic data replaced
     };
 
-    console.log('Sending email with payload:', JSON.stringify(emailPayload, null, 2));
-
-    // Send email using Zeptomail API
-    const response = await axios({
-      method: 'post',
-      url: 'https://api.zeptomail.com/v1.1/email',
-      headers: {
-        'accept': 'application/json',
-        'content-type': 'application/json',
-        'authorization': token
-      },
-      data: emailPayload
-    });
-
-    if (response.status === 200) {
-      console.log('Email sent successfully:', {
-        requestId: response.data.request_id,
-        message: response.data.message,
-        to: emailPayload.to[0].email_address.address,
-        subject: emailPayload.subject
-      });
-      return response.data;
-    } else {
-      throw new Error(`Zeptomail API returned status ${response.status}`);
-    }
-
+    // Send the email using nodemailer
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent: ', info.response);
   } catch (error) {
     console.error('Error sending email:', error);
-    if (axios.isAxiosError(error) && error.response) {
-      console.error('Zeptomail API Error:', {
-        status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers
-      });
-      // Throw the actual error message from Zeptomail if available
-      if (error.response.data && error.response.data.message) {
-        throw new Error(error.response.data.message);
-      }
-    }
-    throw error;
+    throw new Error('Failed to send email');
   }
 };
 
