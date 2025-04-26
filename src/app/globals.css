@@ -4,31 +4,38 @@
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
+    /* Brand Colors */
+    --background: 220 16% 98%;  /* #F9FAFB */
+    --foreground: 217 33% 17%;  /* #1E293B */
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 217 33% 17%;
  
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
+    --popover-foreground: 217 33% 17%;
  
-    /* Primary: Royal Blue - Trust, Knowledge, Professionalism */
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary: Golden Yellow - Brand Identity */
+    --primary: 39 100% 48%;  /* #F4A300 */
+    --primary-foreground: 217 33% 17%;
  
-    /* Secondary: Sage Green - Growth, Learning, Calm */
-    --secondary: 150 42.4% 44.1%;
-    --secondary-foreground: 210 40% 98%;
- 
-    /* Muted: Soft Gray - Clean, Professional */
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    /* Accent: Warm Terracotta - Creativity, Energy */
-    --accent: 12 76.4% 61.2%;
-    --accent-foreground: 210 40% 98%;
- 
+    /* Secondary/Accent: Vibrant Purple */
+    --secondary: 262 84% 58%;  /* #7C3AED */
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Accent matches Secondary for consistency */
+    --accent: 262 84% 58%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Supporting Colors */
+    --success: 142 69% 58%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* Muted: Softer Gray - Gentle contrast */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 14% 46%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
@@ -41,27 +48,19 @@
   }
  
   .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 40% 98%;
+    --background: 217 33% 17%;
+    --foreground: 220 16% 98%;
  
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 40% 98%;
+    /* Brighter variants for dark mode */
+    --primary: 39 100% 55%;
+    --primary-foreground: 217 33% 17%;
  
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
+    --secondary: 262 84% 65%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 280 84% 70%;
+    --accent-foreground: 0 0% 100%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
  
@@ -95,4 +94,37 @@
   .bg-grid-slate-700 {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.1)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
   }
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.4; }
+  }
+
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .animate-float-slow {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-slower {
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 4s ease-in-out infinite;
+  }
+
+  .animate-pulse-slower {
+    animation: pulse-slow 6s ease-in-out infinite;
+  }
 }
+
+

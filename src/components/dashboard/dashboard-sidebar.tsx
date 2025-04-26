@@ -13,6 +13,7 @@ import {
   FiUser,
 } from "react-icons/fi"
 import { ComingSoonWrapper } from "@/components/ui/coming-soon"
+import { TeacherSidebarNav, teacherNavItems } from "./teacher/sidebar-nav"
 
 const roleRoutes = {
   parent: [
@@ -71,41 +72,46 @@ function getFeatureKey(href: string): FeatureKey | undefined {
 }
 
 interface DashboardSidebarProps {
-  role: keyof typeof roleRoutes
+  role: "student" | "teacher" | "parent"
 }
 
 export function DashboardSidebar({ role }: DashboardSidebarProps) {
-  const pathname = usePathname()
-  const routes = roleRoutes[role]
-  const enabledMap = enabledFeatures[role as keyof typeof enabledFeatures] || {}
-
   return (
-    <nav className="flex w-64 flex-col border-r bg-background px-4 py-6">
-      <div className="space-y-4">
-        {routes.map((route) => {
-          const featureKey = getFeatureKey(route.href)
-          return (
-            <ComingSoonWrapper
-              key={route.href}
-              isEnabled={featureKey ? enabledMap[featureKey] : false}
-              feature={`${route.label} feature coming soon!`}
-            >
-              <Link
-                href={route.href}
-                className={cn(
-                  "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  pathname === route.href
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-accent"
-                )}
-              >
-                <route.icon className="h-5 w-5" />
-                <span>{route.label}</span>
-              </Link>
-            </ComingSoonWrapper>
-          )
-        })}
+    <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:border-r lg:bg-gray-100/40 lg:pt-5 lg:pb-4">
+      <div className="flex flex-col flex-1 gap-y-5 overflow-y-auto px-6">
+        {role === "teacher" && (
+          <TeacherSidebarNav items={teacherNavItems} />
+        )}
+        {role !== "teacher" && (
+          <nav className="flex w-64 flex-col border-r bg-background px-4 py-6">
+            <div className="space-y-4">
+              {roleRoutes[role].map((route) => {
+                const featureKey = getFeatureKey(route.href)
+                return (
+                  <ComingSoonWrapper
+                    key={route.href}
+                    isEnabled={featureKey ? enabledFeatures.teacher[featureKey] : false}
+                    feature={`${route.label} feature coming soon!`}
+                  >
+                    <Link
+                      href={route.href}
+                      className={cn(
+                        "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        usePathname() === route.href
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-accent"
+                      )}
+                    >
+                      <route.icon className="h-5 w-5" />
+                      <span>{route.label}</span>
+                    </Link>
+                  </ComingSoonWrapper>
+                )
+              })}
+            </div>
+          </nav>
+        )}
       </div>
-    </nav>
+    </aside>
   )
 }

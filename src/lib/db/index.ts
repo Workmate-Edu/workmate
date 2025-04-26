@@ -1,17 +1,28 @@
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
-import * as schema from './schema/event'
+import mongoose from 'mongoose'
 
-// Check if the DATABASE_URL environment variable is set
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set')
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/workmate'
+
+let cached = global.mongoose
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null }
 }
 
-// Create the PostgreSQL connection
-const client = postgres(process.env.DATABASE_URL)
+export async function connectToDatabase() {
+  if (cached.conn) {
+    return cached.conn
+  }
 
-// Create the database instance
-export const db = drizzle(client, { schema })
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    }
 
-// Export the schema for use in other files
-export { schema }
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      return mongoose
+    })
+  }
+
+  cached.conn = await cached.promise
+  return cached.conn
+}

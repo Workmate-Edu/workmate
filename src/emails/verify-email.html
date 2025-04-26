@@ -53,7 +53,19 @@
         <div class="content">
             <p>Hi {{name}},</p>
             
-            <p>Thank you for creating a Workmate account. To complete your registration and verify your email address, please click the button below:</p>
+            <p>Thank you for creating a {{role}} account with Workmate. To complete your registration and verify your email address, please click the button below:</p>
+            
+            {{#if role === 'parent'}}
+            <p>Once verified, you'll be able to manage your children's educational journey and track their progress.</p>
+            {{/if}}
+            
+            {{#if role === 'teacher'}}
+            <p>Once verified, you'll be able to manage your classes and start engaging with your students.</p>
+            {{/if}}
+            
+            {{#if role === 'student'}}
+            <p>Once verified, you'll be able to access your courses and start learning.</p>
+            {{/if}}
             
             <p style="text-align: center;">
                 <a href="{{verificationLink}}" class="button" style="color: white;">Verify Email Address</a>

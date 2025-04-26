@@ -54,8 +54,8 @@ export default function STEMPage() {
         { name: "Robotics", icon: <Cog className="w-6 h-6" />, description: "Build automated systems" }
       ]
     },
-    mathematics: {
-      title: "Mathematics",
+    math: {
+      title: "Math",
       description: "Develop strong analytical and problem-solving skills",
       icon: <Calculator className="w-16 h-16 text-primary" />,
       topics: [
@@ -74,7 +74,7 @@ export default function STEMPage() {
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-primary mb-6">STEM Education</h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Embark on a journey through Science, Technology, Engineering, and Mathematics with expert guidance and hands-on learning.
+            Embark on a journey through Science, Technology, Engineering, and Math with expert guidance and hands-on learning.
           </p>
         </div>
 

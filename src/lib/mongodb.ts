@@ -1,84 +1,85 @@
-import mongoose from 'mongoose';
-import { MongoClient, MongoClientOptions } from 'mongodb';
+import { MongoClient } from 'mongodb'
+import mongoose from 'mongoose'
 
-declare global {
-  var mongoose: {
-    conn: mongoose.Connection | null;
-    promise: Promise<mongoose.Connection> | null;
-  };
-  var mongoClientPromise: Promise<MongoClient> | undefined;
+// Import all models to ensure they're registered
+import "@/models/child"
+import "@/models/child-assessment"
+import "@/models/initial-assessment"
+import "@/models/user"
+
+if (!process.env.MONGODB_URI) {
+  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
 }
 
-if (!process.env.MONGODB_URI && !process.env.MONGODB_URI_PRODUCTION) {
-  throw new Error(
-    'Please define the MONGODB_URI or MONGODB_URI_PRODUCTION environment variable inside .env.local'
-  );
+const uri = process.env.MONGODB_URI
+const options = {
+  connectTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 30000
 }
 
-const MONGODB_URI = (process.env.MONGODB_URI || process.env.MONGODB_URI_PRODUCTION || '').trim();
-
-// Mongoose connection options
-const mongooseOptions: mongoose.ConnectOptions = {
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  serverSelectionTimeoutMS: 10000,
-};
-
-// MongoDB client options
-const mongoClientOptions: MongoClientOptions = {
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  serverSelectionTimeoutMS: 10000,
-};
+let client: MongoClient
+let clientPromise: Promise<MongoClient>
 
 if (process.env.NODE_ENV === 'development') {
-  if (!global.mongoose) {
-    global.mongoose = { conn: null, promise: null };
+  let globalWithMongo = global as typeof globalThis & {
+    _mongoClientPromise?: Promise<MongoClient>
   }
+
+  if (!globalWithMongo._mongoClientPromise) {
+    client = new MongoClient(uri, options)
+    globalWithMongo._mongoClientPromise = client.connect()
+  }
+  clientPromise = globalWithMongo._mongoClientPromise
+} else {
+  client = new MongoClient(uri, options)
+  clientPromise = client.connect()
 }
 
-export async function connectDB(): Promise<mongoose.Connection> {
+export { clientPromise }
+
+// Mongoose connection for models
+export async function connectDB() {
   try {
     if (mongoose.connection.readyState === 1) {
-      console.log('🟢 Using existing MongoDB connection');
-      return mongoose.connection;
+      console.log('Already connected to MongoDB')
+      return
     }
 
-    if (!global.mongoose.promise) {
-      console.log('🟡 Creating new MongoDB connection...');
-      global.mongoose.promise = mongoose.connect(MONGODB_URI, mongooseOptions).then(m => m.connection);
-    }
-
-    const conn = await global.mongoose.promise;
-    console.log('🟢 MongoDB connected successfully');
-    return conn;
+    await mongoose.connect(process.env.MONGODB_URI)
+    console.log('Connected to MongoDB')
   } catch (error) {
-    console.error('❌ Error connecting to MongoDB:', error);
-    throw error;
+    console.error('MongoDB connection error:', error)
+    throw error
   }
 }
 
-// For NextAuth.js MongoDB Adapter
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  if (!global.mongoClientPromise) {
-    client = new MongoClient(MONGODB_URI, mongoClientOptions);
-    global.mongoClientPromise = client.connect();
+// Cleanup function for tests
+export async function disconnect() {
+  try {
+    await mongoose.disconnect()
+    console.log('✅ MongoDB disconnected')
+  } catch (error) {
+    console.error('❌ MongoDB disconnection error:', error)
+    throw error
   }
-  clientPromise = global.mongoClientPromise;
-} else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(MONGODB_URI, mongoClientOptions);
-  clientPromise = client.connect();
 }
 
-// Export a function to get the MongoClient promise
-export function getMongoClient() {
-  return clientPromise;
-}
+// Set up mongoose event listeners
+mongoose.connection.on('connected', () => {
+  console.log('🟢 MongoDB connection established')
+})
 
-export default connectDB;
+mongoose.connection.on('error', (err) => {
+  console.error('🔴 MongoDB connection error:', err)
+})
+
+mongoose.connection.on('disconnected', () => {
+  console.log('🟡 MongoDB disconnected')
+})
+
+process.on('SIGINT', async () => {
+  await mongoose.connection.close()
+  process.exit(0)
+})

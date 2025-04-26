@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Session Created</title>
+</head>
+<body>
+  <table cellspacing="0" cellpadding="0" style="background-color: #f3f3fc; width: 100%; font-family: Arial, sans-serif;">
+    <tbody>
+      <tr>
+        <td align="center">
+          <div style="max-width: 670px; background-color: rgba(14, 252, 213, 0.329); padding: 5%; margin: 0 auto;">
+            <div style="background-color: white; border-radius: 12px; overflow: hidden; margin: 30px 0;">
+              <div style="background-color: #10b981; padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">Class Session Created</h1>
+              </div>
+
+              <div style="padding: 5%; text-align: left;">
+                <p style="color: #121212; line-height: 1.6;">Dear {{teacherName}},</p>
+
+                <p style="color: #121212; line-height: 1.6;">
+                  You have successfully scheduled a {{sessionType}} for {{subject}} ({{area}}).
+                </p>
+
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: #121212;">Session Details:</h3>
+                  {{recurringBadge}}
+                  <p>{{scheduleInfo}}</p>
+                  <p><strong>Date:</strong> {{sessionDate}}</p>
+                  <p><strong>Time:</strong> {{sessionTime}}</p>
+                  <p><strong>Duration:</strong> {{duration}} minutes</p>
+                  <p><strong>Students ({{studentsCount}}):</strong> {{students}}</p>
+                  <p><strong>Meeting Link:</strong> <a href="{{meetingLink}}">{{meetingLink}}</a></p>
+                  <div style="{{recurringInfoStyle}}">
+                    <h4>Schedule Information:</h4>
+                    <p>Days: {{scheduleDays}}</p>
+                    <p>Until: {{scheduleEndDate}}</p>
+                    <p>Total Sessions: {{totalSessions}}</p>
+                  </div>
+                </div>
+
+                <div style="{{warningStyle}}">
+                  <p>{{meetingWarning}}</p>
+                </div>
+
+                <p style="color: #121212; line-height: 1.6;">
+                  Preparation Checklist:
+                </p>
+                <ul style="color: #121212; line-height: 1.6;">
+                  <li>Review student materials</li>
+                  <li>Test your audio and video</li>
+                  <li>Join a few minutes early</li>
+                  <li>Have your teaching materials ready</li>
+                </ul>
+
+                <p style="color: #121212; line-height: 1.6;">
+                  Best regards,<br>
+                  The Workmate Team
+                </p>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
