@@ -587,7 +587,7 @@ export default function StudentDashboard() {
       )}
 
       {/* Recent Activity & Upcoming - Stack on mobile, side by side on larger screens */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* <div className="grid gap-6 md:grid-cols-2">
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
           <div className="space-y-4">
@@ -634,7 +634,7 @@ export default function StudentDashboard() {
             </div>
           )}
         </Card>
-      </div>
+      </div> */}
 
       <AlertDialog 
         open={!!assessmentToDelete}
