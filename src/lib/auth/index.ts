@@ -1,3 +1,8 @@
-export { authConfig } from './config'
-export { auth, getCurrentUser } from './utils'
-export type { AuthSession } from './utils'
+import { getServerSession } from "next-auth"
+import { authOptions } from "./auth-options"
+
+export async function auth() {
+  return await getServerSession(authOptions)
+}
+
+export { authOptions }

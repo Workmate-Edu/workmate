@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import User from '../src/models/user.model';
-import connectDB from '../src/lib/mongodb';
+import { User } from '../src/models/user.model';
+import { connectDB } from '../src/lib/mongodb';
 
 async function generateUsernames() {
   try {

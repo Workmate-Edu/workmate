@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getAuthSession } from "@/lib/auth";
 import bcrypt from "bcryptjs";
-import connectDB from "@/lib/mongodb";
-import User from "@/models/user.model";
+import { connectDB } from "@/lib/mongodb";
+import { User } from '@/models/user.model'
 
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const session = await auth();
+    const session = await getAuthSession();
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });

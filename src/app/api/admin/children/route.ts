@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth/auth-options"
 import { connectDB } from "@/lib/mongodb"
-import { Child } from "@/models/child"
+import { User } from "@/models/user.model"
+import { Types, Document } from "mongoose"
+
+interface Subject {
+  name: string
+  area?: string
+  _id?: string
+}
+
+interface Child {
+  _id: string
+  name: string
+  email: string
+  grade: string
+  subjects: Subject[]
+  parent?: {
+    name: string
+    email: string
+  }
+}
 
 export async function GET() {
   try {
@@ -12,41 +32,27 @@ export async function GET() {
 
     await connectDB()
 
-    const children = await Child.find()
+    const children = await User.find({ role: 'student', registeredAs: 'child' })
       .populate('parent', 'name email')
-      .populate({
-        path: 'assignedTeacher.teacherId',
-        select: 'name email teacherProfile.rating teacherProfile.subjects'
-      })
-      .select('name grade subjects assessmentHistory assignedTeacher status')
       .lean()
 
-    const formattedChildren = children.map(child => ({
-      id: child._id,
+    return NextResponse.json((children as any[]).map(child => ({
+      id: child._id?.toString(),
       name: child.name,
+      email: child.email,
       type: 'child',
       grade: child.grade,
-      subjects: child.subjects.map(s => s.name),
+      subjects: (child.subjects || []).map((s: Subject) => s.name),
       parent: {
         name: child.parent?.name,
         email: child.parent?.email
-      },
-      assignedTeacher: child.assignedTeacher ? {
-        id: child.assignedTeacher.teacherId._id,
-        name: child.assignedTeacher.teacherId.name,
-        email: child.assignedTeacher.teacherId.email,
-        rating: child.assignedTeacher.teacherId.teacherProfile?.rating,
-        subjects: child.assignedTeacher.subjects.map(s => s.name),
-        assignedAt: child.assignedTeacher.assignedAt,
-        status: child.assignedTeacher.status
-      } : undefined,
-      status: child.status,
-      assessmentStatus: child.assessmentStatus
-    }))
-
-    return NextResponse.json({ children: formattedChildren })
+      }
+    })))
   } catch (error) {
-    console.error('[CHILDREN_GET]', error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error('Error fetching children:', error)
+    return NextResponse.json(
+      { error: "Failed to fetch children" },
+      { status: 500 }
+    )
   }
 }

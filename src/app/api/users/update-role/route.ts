@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/user.model';
+import { getAuthSession } from '@/lib/auth';
+import { connectDB } from '@/lib/mongodb';
+import { User } from '@/models/user.model'
 
 export async function PUT(request: Request) {
   try {
     await connectDB();
-    const session = await auth();
+    const session = await getAuthSession();
     
     if (!session?.user?.id) {
       return NextResponse.json(

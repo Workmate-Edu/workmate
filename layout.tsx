@@ -1,10 +1,9 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { AuthCheck } from "@/components/auth/auth-check"
 import { useSession } from "next-auth/react"
 
@@ -19,11 +18,11 @@ export default function DashboardRootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const params = useParams()
+  const params = useParams() as { role?: string } | null // <- tell TS params might be null
   const { user } = useAuth()
   const { status } = useSession()
   const router = useRouter()
-  const role = params.role as string
+  const role = params?.role ?? "" // <- safe access
 
   useEffect(() => {
     if (status !== "loading" && user?.role !== role) {

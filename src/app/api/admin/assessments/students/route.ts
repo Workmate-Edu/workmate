@@ -1,47 +1,42 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
-import { InitialAssessment } from "@/models/initial-assessment"
+import { Types } from "mongoose"
+import { ChildAssessment, ChildAssessmentDocument } from "@/models/child-assessment.model"
+
+interface StudentAssessment extends Omit<ChildAssessmentDocument, '_id'> {
+  _id: Types.ObjectId
+  studentId: {
+    name: string
+    email: string
+    _id: Types.ObjectId
+  }
+}
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (session?.user?.role !== 'admin') {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     await connectDB()
 
-    const assessments = await InitialAssessment.find({ 
-      status: 'pending' 
-    })
-    .populate('studentId', 'name email studentProfile.assignedTeachers')
-    .populate({
-      path: 'assignedTeacher.teacherId',
-      select: 'name email teacherProfile.rating'
-    })
-    .lean()
+    const assessments = await ChildAssessment
+      .find()
+      .populate('studentId', 'name email')
+      .lean()
 
-    return NextResponse.json({ 
-      assessments: assessments.map(a => ({
+    return NextResponse.json({
+      assessments: (assessments as any[]).map(a => ({
         ...a,
-        _id: a._id.toString(),
+        _id: new Types.ObjectId(a._id).toString(),
         student: {
-          name: a.studentId.name,
-          email: a.studentId.email
-        },
-        teacher: a.assignedTeacher ? {
-          name: a.assignedTeacher.teacherId?.name,
-          email: a.assignedTeacher.teacherId?.email,
-          rating: a.assignedTeacher.teacherId?.teacherProfile?.rating,
-          assignedAt: a.assignedTeacher.assignedAt
-        } : null,
-        completedAt: a.createdAt
+          name: a.studentId?.name,
+          email: a.studentId?.email,
+          id: new Types.ObjectId(a.studentId?._id).toString()
+        }
       }))
     })
   } catch (error) {
-    console.error('[STUDENT_ASSESSMENTS_GET]', error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error('Error fetching student assessments:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch assessments' },
+      { status: 500 }
+    )
   }
 }

@@ -268,12 +268,9 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
   console.log("Subject progress", subjectProgresses)
 
   const handleProgressUpdate = () => {
-    // Refetch progress after update
+    // Refetch all subject progress after update
     if (student?.subjects?.length > 0) {
-      const activeSubject = student.subjects.find(s => s.isTeaching)
-      if (activeSubject) {
-        fetchStudentProgress(activeSubject._id)
-      }
+      fetchAllSubjectProgress();
     }
   }
 
@@ -349,7 +346,7 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
             <p className="text-muted-foreground">{student.email}</p>
             <div className="flex items-center gap-2 mt-2">
               <Badge>{student.type}</Badge>
-              <Badge variant={student.status === 'active' ? 'success' : 'secondary'}>
+              <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
                 {student.status}
               </Badge>
             </div>

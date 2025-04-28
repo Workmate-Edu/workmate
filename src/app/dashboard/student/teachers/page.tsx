@@ -7,6 +7,8 @@ import { MessageCircle, Star, Clock, GraduationCap } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import Link from "next/link"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+
 
 interface Subject {
   name: string;
@@ -53,7 +55,7 @@ export default function TeachersPage() {
   }
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div><LoadingSpinner /></div>
   }
 
   return (
