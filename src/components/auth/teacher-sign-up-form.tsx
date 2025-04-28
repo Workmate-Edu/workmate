@@ -14,6 +14,7 @@ import { genderOptions } from "@/lib/constants/general"
 import { X } from "lucide-react"
 import { BasicInfoStep, SubjectsStep, QualificationsStep } from "./teacher-sign-up-steps"
 import { Stepper } from "@/components/ui/stepper"
+import { TermsAgreement } from "./terms-agreement"
 
 const teacherFormSchema = z.object({
   name: z.string().min(2),
@@ -335,6 +336,8 @@ export function TeacherSignUpForm() {
             qualifications={qualifications}
           />
         )}
+
+        <TermsAgreement />
 
         <div className="flex justify-between pt-4">
           {currentStep > 0 && (

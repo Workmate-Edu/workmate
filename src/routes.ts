@@ -5,6 +5,8 @@
  */
 export const publicRoutes = [
   "/",
+  "/privacy",
+  "/terms",
   "/about",
   "/courses",
   "/arabic-center",

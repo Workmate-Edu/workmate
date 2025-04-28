@@ -28,6 +28,7 @@ import type { StepProps, LearningPreferencesStepProps, Option } from "@/types/fo
 import type { ParentFormData } from "@/types/auth"
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import { TermsAgreement } from "./terms-agreement"
 
 
 const ageGroupOptions = [
@@ -555,6 +556,8 @@ export function ParentSignUpForm() {
             setChildren={setChildren}
           />
         )} */}
+
+        <TermsAgreement />
 
         <div className="flex justify-between pt-4">
           {currentStep > 0 && (

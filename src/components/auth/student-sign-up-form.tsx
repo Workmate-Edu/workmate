@@ -12,8 +12,7 @@ import { Stepper } from "@/components/ui/stepper"
 import { BasicInfoStep, EducationStep, SubjectsStep } from "./student-sign-up-steps"
 import { educationLevels, gradesByLevel } from "@/lib/constants/education" // Add this import
 import { genderOptions, ageGroups } from "@/lib/constants/general"
-
-// ...existing schema and constants...
+import { TermsAgreement } from "./terms-agreement"
 
 const studentFormSchema = z.object({
   // ...base fields
@@ -260,6 +259,8 @@ export function StudentSignUpForm() {
             subjectAreas={subjectAreas}
           />
         )}
+
+        <TermsAgreement />
 
         <div className="flex justify-between pt-4">
           {currentStep > 0 && (
