@@ -33,7 +33,7 @@ export function Testimonials() {
   }, [])
 
   return (
-    <div className="hidden w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 lg:flex lg:flex-col lg:justify-between p-8">
+    <div className="hidden w-1/2 bg-gradient-to-br from-violet-600 via-violet-700 to-violet-900 lg:flex lg:flex-col lg:justify-between p-8">
       <div className="flex items-center text-lg font-medium text-white">
         <Link href="/" className="text-xl font-bold hover:text-white/90">WorkMate</Link>
       </div>

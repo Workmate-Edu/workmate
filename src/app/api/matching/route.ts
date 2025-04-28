@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import connectDB from "@/lib/mongodb";
-import User from "@/models/user.model";
+import { connectDB } from '@/lib/mongodb'
+import { User } from '@/models/user.model'
 import { TeacherMatcher } from "@/lib/matching/matcher";
 import { analyzeLearningStyle } from "@/lib/matching/learning-style";
 import type { MatchPreferences, Teacher } from "@/lib/matching/types";

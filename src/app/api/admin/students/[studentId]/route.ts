@@ -1,74 +1,37 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth/auth-options"
 import { connectDB } from "@/lib/mongodb"
-import { User } from "@/models/user"
-import { InitialAssessment } from "@/models/initial-assessment"
-import { ChildAssessment } from "@/models/child-assessment"
-import authOptions from "@/lib/auth"
-import { StudentProgress } from "@/models/student-progress"
+import { User } from "@/models/user.model"
+import { Types } from "mongoose"
 
-export async function GET(req: Request, { params }: { params: { studentId: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { studentId: string } }
+) {
   try {
-    const session = await getServerSession(authOptions)
-    if (session?.user?.role !== 'admin') {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     await connectDB()
 
-    const [student, progressData] = await Promise.all([
-      User.findById(params.studentId)
-        .select('name email username isActive gender studentProfile createdAt')
-        .populate({
-          path: 'studentProfile.assignedTeachers.teacherId',
-          select: 'name email subjects teacherProfile.rating'
-        })
-        .lean(),
-
-      StudentProgress.find({ studentId: params.studentId })
-        .sort({ weekNumber: -1 })
-        .lean()
-    ])
-
-    if (!student) {
-      return NextResponse.json({ error: "Student not found" }, { status: 404 })
+    if (!Types.ObjectId.isValid(params.studentId)) {
+      return NextResponse.json({ error: "Invalid student ID" }, { status: 400 });
     }
 
-    // Map current teacher assignments
-    const subjectTeacherMap = student.studentProfile?.assignedTeachers?.reduce((acc, at) => {
-      at.subjects.forEach(s => {
-        acc[`${s.name}-${s.area}`.toLowerCase()] = {
-          teacherId: at.teacherId._id,
-          name: at.teacherId.name,
-          email: at.teacherId.email,
-          rating: at.teacherId.teacherProfile?.rating,
-          assignedAt: at.startDate
-        }
-      })
-      return acc
-    }, {}) || {}
+    const student = await User
+      .findById(new Types.ObjectId(params.studentId))
+      .populate('studentProfile.parent', 'name email')
+      .populate('studentProfile.assignedTeachers.teacherId', 'name email')
+      .lean();
 
-    // Group progress by subject
-    const progressBySubject = progressData.reduce((acc, progress) => {
-      const key = `${progress.subjectId}`.toLowerCase();
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push({
-        weekNumber: progress.weekNumber,
-        scores: progress.scores,
-        averageScore: progress.averageScore,
-        createdAt: progress.createdAt
-      });
-      return acc;
-    }, {});
+    if (!student) {
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
+    }
 
-    // Format student data
     const formattedStudent = {
-      id: student._id,
+      _id: student._id.toString(),
       name: student.name,
       email: student.email,
       username: student.username,
+      role: student.role,
       type: student.studentProfile?.registeredAs || 'independent',
       status: student.isActive ? 'active' : 'inactive',
       gender: student.gender,
@@ -76,60 +39,23 @@ export async function GET(req: Request, { params }: { params: { studentId: strin
       subjects: student.studentProfile?.subjects?.map(s => ({
         name: s.name,
         area: s.area,
-        progress: s.progress || 0,
-        teacher: subjectTeacherMap[`${s.name}-${s.area}`.toLowerCase()] || null,
-        isAssigned: Boolean(subjectTeacherMap[`${s.name}-${s.area}`.toLowerCase()]),
-        progressHistory: progressBySubject[`${s.area}-${s.name}`.toLowerCase()] || []
       })) || [],
-      assessmentStatus: student.studentProfile?.assessmentStatus || 'none',
-      assessments: [],
-      currentAssignments: Object.entries(subjectTeacherMap).map(([key, value]) => {
-        const [name, area] = key.split('-')
-        return {
-          subject: { name, area },
-          teacher: {
-            id: value.teacherId,
-            name: value.name
-          }
-        }
-      }),
+      parent: student.studentProfile?.parent ? {
+        id: student.studentProfile.parent._id.toString(),
+        name: student.studentProfile.parent.name,
+        email: student.studentProfile.parent.email
+      } : null,
       createdAt: student.createdAt
-    }
+    };
 
-    // Get assessments separately
-    const assessments = await Promise.all([
-      InitialAssessment.findOne({ studentId: params.studentId })
-        .sort({ createdAt: -1 })
-        .lean(),
-      ChildAssessment.findOne({ childId: params.studentId })
-        .sort({ createdAt: -1 })
-        .lean()
-    ])
-
-    const [initialAssessment, childAssessment] = assessments
-
-    // Add assessment if exists
-    if (initialAssessment || childAssessment) {
-      const assessment = initialAssessment || childAssessment
-      formattedStudent.assessments.push({
-        id: assessment._id,
-        type: initialAssessment ? 'initial' : 'child',
-        status: assessment.status,
-        createdAt: assessment.createdAt,
-        submittedAt: assessment.submittedAt,
-        responses: assessment.responses
-      })
-    }
-
-    console.log('Sending formatted student with progress:', formattedStudent)
-
-    return NextResponse.json(formattedStudent)
+    console.log('Sending formatted student:', formattedStudent);
+    return NextResponse.json(formattedStudent);
 
   } catch (error) {
-    console.error('[STUDENT_DETAILS_ERROR]', error)
+    console.error('[STUDENT_DETAILS_ERROR]', error);
     return NextResponse.json(
       { error: "Failed to fetch student details" },
       { status: 500 }
-    )
+    );
   }
 }

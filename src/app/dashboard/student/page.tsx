@@ -380,7 +380,7 @@ export default function StudentDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">Welcome, {session?.user?.name}</h1>
         <Button 
-          onClick={() => router.push('/dashboard/messages')}
+          onClick={() => router.push('/dashboard/student/messages')}
           variant="outline"
           className="w-full sm:w-auto"
         >
@@ -536,7 +536,7 @@ export default function StudentDashboard() {
                         <Badge variant="outline">Under Review</Badge>
                       ) : assessment.status === 'assigned' ? (
                         <div className="text-right">
-                          <Badge variant="success">Teacher Assigned</Badge>
+                          <Badge variant="default">Teacher Assigned</Badge>
                           <p className="text-sm text-muted-foreground mt-1">
                             {assessment.assignedTeacher?.name}
                           </p>

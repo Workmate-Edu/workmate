@@ -60,8 +60,7 @@ export async function GET(
   } catch (error) {
     console.error('[STUDENT_ASSESSMENTS_ERROR]', error)
     return NextResponse.json({ 
-      error: "Failed to fetch assessments",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: "Failed to fetch assessments",      details: process.env.NODE_ENV
     }, { status: 500 })
   }
 }

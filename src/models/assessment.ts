@@ -115,4 +115,6 @@ teacherAssessmentSchema.set('toJSON', {
 // Add an index for faster queries
 teacherAssessmentSchema.index({ studentId: 1, status: 1 });
 
-export const TeacherAssessment = mongoose.models.TeacherAssessment || mongoose.model('TeacherAssessment', teacherAssessmentSchema);
+const TeacherAssessment = mongoose.models.TeacherAssessment || mongoose.model('TeacherAssessment', teacherAssessmentSchema);
+
+export { TeacherAssessment, TeacherAssessment as Assessment };

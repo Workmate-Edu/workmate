@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
 import { generateVerificationToken } from "@/lib/tokens"
-import { sendVerificationEmail } from "@/lib/email-service"
+import sendEmail from "@/lib/sendSmtpMail"
 
 export async function POST(req: Request) {
   try {
@@ -26,10 +26,14 @@ export async function POST(req: Request) {
     const token = await generateVerificationToken(user._id)
 
     // Send new verification email
-    await sendVerificationEmail({
-      email: user.email,
-      name: user.name,
-      token
+    await sendEmail({
+      to: user.email,
+      template: 'verify-email',
+      subject: 'Verify your email address',
+      replacements: {
+        name: user.name,
+        token
+      }
     })
 
     return NextResponse.json({ success: true })

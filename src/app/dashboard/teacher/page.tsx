@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { Users, BookOpen, Star, Clock, GraduationCap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface Student {
   id: string
@@ -21,14 +22,24 @@ interface Student {
 
 export default function TeacherDashboard() {
   const [assignedStudents, setAssignedStudents] = useState<Student[]>([])
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<{
+    totalStudents: number
+    activeClasses: number
+    completedSessions: number
+    teachingHours: number
+    averageRating: number
+    upcomingSessions: number
+    subjects: Array<{}>
+    assignedStudents?: Student[]
+  }>({
     totalStudents: 0,
     activeClasses: 0,
     completedSessions: 0,
     teachingHours: 0,
     averageRating: 0,
     upcomingSessions: 0,
-    subjects: []
+    subjects: [],
+    assignedStudents: []
   })
   const [loading, setLoading] = useState(true)
 
@@ -74,11 +85,7 @@ export default function TeacherDashboard() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (
@@ -151,7 +158,7 @@ export default function TeacherDashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Completed Lessons</p>
-              <p className="text-2xl font-bold">{stats?.completedLessons || 0}</p>
+              <p className="text-2xl font-bold">{stats?.completedSessions || 0}</p>
             </div>
           </CardContent>
         </Card>

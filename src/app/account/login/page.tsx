@@ -9,8 +9,8 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(
-    searchParams.get("error") === "CredentialsSignin" 
-      ? "Invalid credentials" 
+    searchParams?.get("error") === "CredentialsSignin"
+      ? "Invalid credentials"
       : null
   );
 
