@@ -8,12 +8,6 @@ import type { UserRole } from "@/types/auth"
 
 const userTypes = [
   {
-    role: "teacher" as UserRole,
-    title: "I'm a Teacher",
-    description: "Create lessons, connect with students, and grow your teaching business",
-    icon: School
-  },
-  {
     role: "student" as UserRole,
     title: "I'm a Student",
     description: "Find expert teachers and start your learning journey",
@@ -24,6 +18,12 @@ const userTypes = [
     title: "I'm a Parent",
     description: "Manage your children's education and connect with teachers",
     icon: Users
+  },
+  {
+    role: "teacher" as UserRole,
+    title: "I'm a Teacher",
+    description: "Create lessons, connect with students, and grow your teaching business",
+    icon: School
   }
 ]
 

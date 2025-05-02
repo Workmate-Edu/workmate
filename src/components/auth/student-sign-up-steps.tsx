@@ -6,6 +6,8 @@ import { BaseSignUpFields } from "./base-sign-up-form"
 import { educationLevels, gradesByLevel } from "@/lib/constants/education"
 import { genderOptions, ageGroups } from "@/lib/constants/general"
 import type { StepProps } from "@/types/form"
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 export function BasicInfoStep({ register, errors, isSubmitting, setValue }: StepProps) {
   return (
@@ -15,6 +17,28 @@ export function BasicInfoStep({ register, errors, isSubmitting, setValue }: Step
         errors={errors}
         isSubmitting={isSubmitting}
       />
+
+      <div>
+        <Label>Phone Number</Label>
+        <div className="relative">
+          <PhoneInput
+            country={'ng'}
+            inputProps={{
+              name: 'phone',
+              required: true,
+            }}
+            onChange={(value) => setValue('phone', `+${value}`)}
+            disabled={isSubmitting}
+            containerClass="w-full"
+            inputClass="!pl-14 !w-full !h-10 !text-sm !rounded-md !border !border-input !bg-background !text-foreground"
+            buttonClass="!border-0 !bg-transparent !absolute !left-3 !top-1/2 !-translate-y-1/2 z-10"
+            dropdownClass="!bg-white !text-black !z-[1000]"
+          />
+          {errors.phone && (
+            <p className="text-sm text-red-500 mt-1">{errors.phone.message}</p>
+          )}
+        </div>
+      </div>
 
       <div>
         <Label>Gender</Label>
