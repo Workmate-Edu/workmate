@@ -15,6 +15,8 @@ import { X } from "lucide-react"
 import { BasicInfoStep, SubjectsStep, QualificationsStep } from "./teacher-sign-up-steps"
 import { Stepper } from "@/components/ui/stepper"
 import { TermsAgreement } from "./terms-agreement"
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 const teacherFormSchema = z.object({
   name: z.string().min(2),
@@ -22,6 +24,7 @@ const teacherFormSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   gender: z.string().min(1, "Please select your gender"),
+  phone: z.string().min(10, "Phone number is required").regex(/^\+/, "Phone number must include country code"),
   subjectAreas: z.array(z.string()).min(1, "Select at least one subject area"),
   subjects: z.array(z.object({
     area: z.string(),
@@ -30,6 +33,18 @@ const teacherFormSchema = z.object({
   experience: z.string().min(1, "Years of experience required"),
   education: z.string().min(1, "Education qualification required"),
   bio: z.string().min(20, "Bio should be at least 20 characters"),
+  teacherProfile: z.object({
+    subjects: z.array(z.object({
+      area: z.string(),
+      subjects: z.array(z.string())
+    })),
+    qualifications: z.array(z.object({
+      degree: z.string(),
+      institution: z.string(),
+      year: z.number()
+    })),
+    bio: z.string()
+  })
 })
 
 const subjectAreas = [
@@ -80,11 +95,17 @@ export function TeacherSignUpForm() {
       email: "",
       password: "",
       gender: "",
+      phone: "",
       subjectAreas: [],
       subjects: [],
       experience: "",
       education: "",
-      bio: ""
+      bio: "",
+      teacherProfile: {
+        subjects: [],
+        qualifications: [],
+        bio: ""
+      }
     }
   })
 
@@ -159,34 +180,6 @@ export function TeacherSignUpForm() {
       setIsSubmitting(true);
       console.log('Submitting data:', data); // Log final form data
 
-      // const teacherData = {
-      //   name: data.name,
-      //   username: data.username, // Include username
-      //   email: data.email,
-      //   password: data.password,
-      //   role: "teacher",
-      //   gender: data.gender,
-      //   teacherProfile: {
-      //     subjects: data.subjects.map(subject => ({
-      //       area: subject.area,
-      //       subjects: subject.subjects,
-      //       level: "intermediate",
-      //       yearsOfExperience: parseInt(data.experience)
-      //     })),
-      //     qualifications: [{
-      //       degree: data.education,
-      //       institution: "",
-      //       year: new Date().getFullYear(),
-      //     }],
-      //     verificationStatus: 'pending',
-      //     adminVerified: false,
-      //     rating: 0,
-      //     reviews: [],
-      //     availability: [],
-      //     bio: data.bio,
-      //   }
-      // };
-
       const teacherData = {
         name: data.name,
         username: data.username,
@@ -194,6 +187,7 @@ export function TeacherSignUpForm() {
         password: data.password,
         role: "teacher",
         gender: data.gender,
+        phone: data.phone,
         teacherProfile: {
           subjects: data.subjects.map(subject => ({
             area: subject.area,
@@ -212,7 +206,6 @@ export function TeacherSignUpForm() {
           bio: data.bio,
         }
       };
-      
 
       console.log('Processed teacher data:', teacherData);
       // Debug logs
@@ -259,7 +252,7 @@ export function TeacherSignUpForm() {
     
     switch (currentStep) {
       case 0:
-        isValid = await trigger(["name", "email", "password", "gender"])
+        isValid = await trigger(["name", "email", "password", "gender", "phone"])
         break
       case 1:
         isValid = await trigger(["subjectAreas", "subjects"])

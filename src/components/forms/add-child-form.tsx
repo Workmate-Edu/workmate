@@ -14,6 +14,8 @@ import { genderOptions } from "@/lib/constants/general"
 import { Badge } from "@/components/ui/badge"
 import { X, Eye, EyeOff } from "lucide-react"
 import { Label } from "@/components/ui/label"
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 const ageGroupOptions = [
   { value: '3-5', label: '3-5 years' },
@@ -53,6 +55,7 @@ const childFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  phone: z.string().min(10, "Phone number is required"),
   gender: z.string().min(1, "Gender is required"),
   educationLevel: z.string().min(1, "Education level is required"),
   grade: z.string().min(1, "Grade is required"),
@@ -82,6 +85,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
       name: "",
       username: "",
       password: "",
+      phone: "",
       gender: "",
       educationLevel: "",
       grade: "",
@@ -125,6 +129,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
             name: data.child.name,
             username: data.child.username,
             password: "",
+            phone: data.child.phone,
             gender: data.child.gender,
             educationLevel: data.child.educationLevel,
             grade: data.child.grade,
@@ -190,6 +195,28 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
 
       <Input placeholder="Child's Username" {...form.register("username")} />
       {form.formState.errors.username && <p className="text-sm text-red-500">{form.formState.errors.username.message}</p>}
+
+      <div>
+        <Label>Phone Number</Label>
+        <div className="relative">
+          <PhoneInput
+            country={'ng'}
+            inputProps={{
+              name: 'phone',
+              required: true,
+            }}
+            onChange={(value) => form.setValue('phone', `+${value}`)}
+            disabled={isLoading}
+            containerClass="w-full"
+            inputClass="!pl-14 !w-full !h-10 !text-sm !rounded-md !border !border-input !bg-background !text-foreground"
+            buttonClass="!border-0 !bg-transparent !absolute !left-3 !top-1/2 !-translate-y-1/2 z-10"
+            dropdownClass="!bg-white !text-black !z-[1000]"
+          />
+          {form.formState.errors.phone && (
+            <p className="text-sm text-red-500 mt-1">{form.formState.errors.phone.message}</p>
+          )}
+        </div>
+      </div>
 
       <div className="relative">
         <Input

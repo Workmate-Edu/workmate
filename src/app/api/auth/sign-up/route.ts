@@ -5,31 +5,126 @@ import bcrypt from "bcryptjs";
 import { generateVerificationToken } from "@/lib/tokens";
 import sendEmail from "@/lib/sendSmtpMail";
 
+const getRoleSpecificContent = (role: string, user: any) => {
+  switch (role) {
+    case 'teacher':
+      return {
+        template: 'teacher-signup',
+        subject: 'Welcome to Workmate - Teacher Application',
+        data: {
+          baseUrl: process.env.NEXTAUTH_URL,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          verificationLink: `${process.env.NEXTAUTH_URL}/verify-email?token=${user.verificationToken}`,
+          subjects: user.teacherProfile.subjects
+            .map((s: any) => s.subjects.join(', '))
+            .join(', '),
+          qualifications: user.teacherProfile.qualifications
+            .map((q: any) => q.degree)
+            .join(', ')
+        }
+      };
+
+    case 'student':
+      return {
+        template: 'student-signup',
+        subject: 'Welcome to Workmate - Student Account',
+        data: {
+          baseUrl: process.env.NEXTAUTH_URL,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          verificationLink: `${process.env.NEXTAUTH_URL}/verify-email?token=${user.verificationToken}`,
+          grade: user.studentProfile.grade,
+          subjects: user.studentProfile.subjects
+            .map((s: any) => s.name)
+            .join(', ')
+        }
+      };
+
+    case 'parent':
+      return {
+        template: 'parent-signup',
+        subject: 'Welcome to Workmate - Parent Account',
+        data: {
+          baseUrl: process.env.NEXTAUTH_URL,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          verificationLink: `${process.env.NEXTAUTH_URL}/verify-email?token=${user.verificationToken}`,
+          childrenDetails: user.parentProfile?.children?.length 
+            ? `<div class="info-card">
+                <h3>Children's Accounts</h3>
+                <p>You'll receive separate emails with their credentials.</p>
+              </div>`
+            : ''
+        }
+      };
+  }
+};
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const { phone, role } = body;
+
+    // Validate phone for teachers
+    if (role === 'teacher') {
+      if (!phone || !phone.startsWith('+')) {
+        return NextResponse.json({ 
+          error: "Phone number must include country code" 
+        }, { status: 400 });
+      }
+    }
+
+    // Debug log
+    console.log('Received phone number:', phone);
+
+    // Improve phone validation
+    if (!phone) {
+      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+    }
+
+    // Clean and validate phone number
+    const cleanPhone = phone.trim();
+    const hasCountryCode = cleanPhone.startsWith('+') || cleanPhone.startsWith('00');
+
+    if (!hasCountryCode) {
+      return NextResponse.json({ 
+        error: "Phone number must include country code starting with + or 00" 
+      }, { status: 400 });
+    }
+
+    if (cleanPhone.length < 10) {
+      return NextResponse.json({ 
+        error: "Phone number is too short" 
+      }, { status: 400 });
+    }
+
+    // Normalize phone number to always use + format
+    const normalizedPhone = cleanPhone.startsWith('00') 
+      ? `+${cleanPhone.slice(2)}` 
+      : cleanPhone;
+
+    // Update the body with normalized phone
+    body.phone = normalizedPhone;
 
     const {
       name,
       email,
       username,
       password,
-      role,
       gender,
       grade,
       registeredAs = "independent",
       children = [],
-      phone,
       teacherProfile = {}, 
     } = body;
 
     if (!name || !username || !password || !role || !gender) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-
-    if (!phone || !phone.startsWith("+") || phone.length < 10) {
-      return NextResponse.json({ error: "Phone number must include country code" }, { status: 400 });
-    }   
 
     await connectDB();
 
@@ -56,6 +151,7 @@ export async function POST(req: Request) {
       role,
       gender,
       emailVerified: false,
+      phone: normalizedPhone,
     };
 
     // 🧒 Student (independent or child)
@@ -90,6 +186,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Subjects are required for teacher sign-up" }, { status: 400 });
       }
 
+      userData.phone = phone;
       userData.teacherProfile = {
         subjects: teacherSubjects.map((s: any) => ({
           area: s.area,
@@ -102,6 +199,7 @@ export async function POST(req: Request) {
         availability: teacherProfile.availability || [],
         reviews: [],
         bio: teacherProfile.bio || "",
+        phone,
       };
     }
 
@@ -167,18 +265,13 @@ export async function POST(req: Request) {
 
     await user.save();
 
-    // Send verification email (not for children)
+    const emailConfig = getRoleSpecificContent(role, user);
+    
     await sendEmail({
       to: user.email,
-      subject: "Verify Your Email - Workmate",
-      template: "signup",
-      replacements: {
-        name: user.name,
-        email: user.email,
-        username: user.username,
-        verificationLink: `${process.env.NEXTAUTH_URL}/verify-email?token=${token}`,
-        role: user.role,
-      },
+      subject: emailConfig.subject,
+      template: emailConfig.template,
+      replacements: emailConfig.data
     });
 
     const { password: _, ...userWithoutPassword } = user.toObject();

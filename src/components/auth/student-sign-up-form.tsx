@@ -13,30 +13,22 @@ import { BasicInfoStep, EducationStep, SubjectsStep } from "./student-sign-up-st
 import { educationLevels, gradesByLevel } from "@/lib/constants/education" // Add this import
 import { genderOptions, ageGroups } from "@/lib/constants/general"
 import { TermsAgreement } from "./terms-agreement"
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 const studentFormSchema = z.object({
-  // ...base fields
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  // Student specific fields
+  name: z.string().min(2, "Name is required"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Valid email required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  phone: z.string().min(10, "Phone number is required"),
+  gender: z.string().min(1, "Gender is required"),
+  ageGroup: z.string().min(1, "Age group is required"), // Add validation
   educationLevel: z.string().min(1, "Education level is required"),
-  grade: z.string().min(1, "Grade/Year level is required"),
-  subjectAreas: z.array(z.string())
-    .min(1, "Select at least one subject area")
-    .default([]),
-  // subjects: z.array(z.string())
-  //   .min(1, "Select at least one subject")
-  //   .default([]),
-    subjects: z.array(z.object({
-      name: z.string(),
-      area: z.string()
-    }))
-    .min(1, "Select at least one subject")
-    .default([]),    
-  gender: z.string().min(1, "Please select your gender"),
-  ageGroup: z.string().min(1, "Please select your age group"),
-})
+  grade: z.string().min(1, "Grade is required"),
+  subjectAreas: z.array(z.string()).min(1, "Select at least one subject area"),
+  subjects: z.array(z.string()).min(1, "Select at least one subject")
+});
 
 const subjectAreas = [
   { 
@@ -64,16 +56,31 @@ const subjectAreas = [
 ]
 
 export function StudentSignUpForm() {
-  const router = useRouter()
   const [currentStep, setCurrentStep] = React.useState(0)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [selectedLevel, setSelectedLevel] = React.useState("")
   const [selectedAreas, setSelectedAreas] = React.useState<string[]>([])
   const [selectedSubjects, setSelectedSubjects] = React.useState<string[]>([])
-  const [selectedLevel, setSelectedLevel] = React.useState<string>("")
+  const router = useRouter()
 
   const form = useForm<z.infer<typeof studentFormSchema>>({
     resolver: zodResolver(studentFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      username: "",
+      password: "",
+      phone: "",
+      gender: "",
+      ageGroup: "",
+      educationLevel: "",
+      grade: "",
+      subjectAreas: [],
+      subjects: []
+    }
   })
+
+  const { register, handleSubmit, formState: { errors }, setValue, trigger } = form
 
   const availableSubjects = React.useMemo(() => {
     return selectedAreas.flatMap(area => {
@@ -106,18 +113,6 @@ export function StudentSignUpForm() {
     });
   }
 
-  // const handleSubjectToggle = (subjectValue: string) => {
-  //   setSelectedSubjects(current => {
-  //     const newSubjects = current.includes(subjectValue)
-  //       ? current.filter(s => s !== subjectValue)
-  //       : [...current, subjectValue]; // Added missing ternary operator part
-      
-  //     // Update form value immediately
-  //     form.setValue("subjects", newSubjects);
-  //     return newSubjects;
-  //   });
-  // }
-
   const handleSubjectToggle = (subjectValue: string) => {
     setSelectedSubjects(current => {
       const newSubjects = current.includes(subjectValue)
@@ -141,57 +136,63 @@ export function StudentSignUpForm() {
   }
   
 
-  const handleNext = async () => {
-    let isValid = false
-    
-    switch (currentStep) {
-      case 0:
-        isValid = await form.trigger(["name", "email", "password", "gender", "ageGroup"])
-        break
-      case 1:
-        isValid = await form.trigger(["educationLevel", "grade"])
-        break
-      case 2:
-        isValid = await form.trigger(["subjectAreas", "subjects"])
-        if (isValid) {
-          await handleSubmit()
-          return
-        }
-        break
+  const handleNext = () => {
+    if (currentStep === steps.length - 1) {
+      // On last step, directly call onSubmit with form values
+      onSubmit(form.getValues());
+      return;
     }
+    setCurrentStep((prev) => prev + 1);
+  };
 
-    if (isValid) {
-      setCurrentStep((prev) => prev + 1)
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
     }
-  }
+  };
 
-  const handleBack = () => setCurrentStep((prev) => prev - 1)
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: z.infer<typeof studentFormSchema>) => {
     try {
-      setIsSubmitting(true)
-      const data = form.getValues()
-      
-      const response = await fetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, role: "student" }),
-        // Generate subject objects with area and name
-        // body: JSON.stringify({ ...data, role: "student", subjects: subjectObjects })
-      })
+      setIsSubmitting(true);
+
+      const formData = {
+        ...data,
+        role: 'student',
+        studentProfile: {
+          grade: data.grade,
+          subjects: selectedSubjects.map(subject => ({
+            name: subject,
+            area: selectedAreas.find(area => 
+              subjectAreas.find(a => a.value === area)?.subjects.some(s => s.value === subject)
+            ) || "",
+            progress: 0
+          }))
+        }
+      };
+
+      console.log('Form values:', formData);
+
+      const response = await fetch('/api/auth/sign-up', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error("Failed to create account")
+        throw new Error(result.error || "Failed to create account");
       }
 
-      toast.success("Account created! Please check your email for verification.")
-      router.push(`/verify-pending?email=${encodeURIComponent(data.email)}`)
+      toast.success("Account created! Please verify your email.");
+      router.push(`/verify-email/pending?role=student&email=${encodeURIComponent(data.email)}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create account")
+      console.error('Signup error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to create account");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const steps = [
     "Basic Information",
@@ -218,7 +219,7 @@ export function StudentSignUpForm() {
         }}
       />
 
-      <form className="space-y-6">
+      <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
         {currentStep === 0 && (
           <BasicInfoStep 
             form={form}
@@ -267,7 +268,7 @@ export function StudentSignUpForm() {
             <Button
               type="button"
               variant="outline"
-              onClick={handleBack}
+              onClick={() => setCurrentStep(prev => prev - 1)}
               disabled={isSubmitting}
             >
               Back

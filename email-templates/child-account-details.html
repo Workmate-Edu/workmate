@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Child's Workmate Account Details</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #F9FAFB;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .email-header {
+            background-color: #F4A300;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .email-content {
+            padding: 32px 24px;
+            color: #1E293B;
+        }
+
+        .button-primary {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #F4A300;
+            color: #1E293B;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 16px 0;
+        }
+
+        .credentials-card {
+            background-color: #F5F7FA;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            border: 1px dashed #E2E8F0;
+        }
+
+        .email-footer {
+            background-color: #F5F7FA;
+            padding: 24px;
+            text-align: center;
+            color: #64748B;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1 style="color: #1E293B; margin: 0; font-size: 24px; font-weight: 600;">
+                Your Child's Account Details
+            </h1>
+        </div>
+
+        <div class="email-content">
+            <p>Dear {{parentName}},</p>
+            
+            <p>Here are the login details for your child's Workmate account:</p>
+
+            <div class="credentials-card">
+                <h3 style="margin-top: 0;">Account Information</h3>
+                <p><strong>Child's Name:</strong> {{childName}}</p>
+                <p><strong>Username:</strong> {{childUsername}}</p>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="{{loginUrl}}" class="button-primary">
+                    Access Account
+                </a>
+            </div>
+
+            <div style="margin-top: 24px;">
+                <p style="color: #DC2626; font-size: 14px;">
+                    <strong>Important:</strong> Please keep this information secure and help your child log in for the first time.
+                </p>
+            </div>
+        </div>
+
+        <div class="email-footer">
+            <p>© 2024 Workmate. All rights reserved.</p>
+            <p>This is an automated message, please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

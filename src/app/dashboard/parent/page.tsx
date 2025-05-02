@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
-import { BookOpen, GraduationCap, Users, MessageSquare } from "lucide-react"
+import { BookOpen, GraduationCap, Users, MessageSquare, Plus } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -57,7 +57,15 @@ export default function ParentDashboardPage() {
 
   return (
     <div className="container py-8">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Welcome back, {session?.user?.name}</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Welcome back, {session?.user?.name}</h1>
+        <Button asChild>
+          <Link href="/dashboard/parent/children/add">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Child
+          </Link>
+        </Button>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {children.map((child) => (
@@ -135,10 +143,16 @@ export default function ParentDashboardPage() {
       </div>
 
       {children.length === 0 && !loading && (
-        <Card className="p-6 text-center">
+        <Card className="p-12 text-center">
           <Users className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
           <h3 className="text-lg font-semibold">No Children Registered</h3>
-          <p className="text-muted-foreground mt-1">Your registered children will appear here</p>
+          <p className="text-muted-foreground mt-1 mb-6">Start managing your child's education journey</p>
+          <Button asChild size="lg">
+            <Link href="/dashboard/parent/children/add">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Your First Child
+            </Link>
+          </Button>
         </Card>
       )}
     </div>

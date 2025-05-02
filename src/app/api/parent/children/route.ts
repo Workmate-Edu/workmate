@@ -54,6 +54,7 @@ export async function POST(req: Request) {
       name,
       username,
       password,
+      phone,
       gender,
       educationLevel,
       grade,
@@ -61,8 +62,13 @@ export async function POST(req: Request) {
       subjects
     } = await req.json();
 
-    if (!name || !username || !password || !gender || !educationLevel || !grade || !ageGroup || !subjects?.length) {
+    if (!name || !username || !password || !phone || !gender || !educationLevel || !grade || !ageGroup || !subjects?.length) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+
+    // Validate phone number
+    if (!phone.startsWith('+')) {
+      return NextResponse.json({ error: "Phone number must include country code" }, { status: 400 });
     }
 
     const normalizedUsername = username.toLowerCase();
@@ -80,6 +86,7 @@ export async function POST(req: Request) {
       username: normalizedUsername,
       email: generatedEmail,
       password: hashedPassword,
+      phone, // Add phone number
       role: "student",
       gender,
       emailVerified: true,
@@ -87,6 +94,7 @@ export async function POST(req: Request) {
         registeredAs: "child",
         parent: session.user.id,
         grade,
+        phone, // Add phone to student profile
         subjects: subjects.map((s: any) => ({
           name: s.name,
           area: s.area,
