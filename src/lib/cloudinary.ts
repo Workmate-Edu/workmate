@@ -34,3 +34,19 @@ export const uploadToCloudinary = async (file: File) => {
     throw error;
   }
 };
+
+export function getCloudinaryUrl(url: string, options: { download?: boolean } = {}) {
+  if (!url) return ''
+  
+  // Convert to download URL if needed
+  if (options.download) {
+    return url.replace('/upload/', '/upload/fl_attachment/')
+  }
+
+  // For PDFs and other documents, ensure they're accessible
+  if (url.includes('/raw/upload/')) {
+    return url.replace('/raw/upload/', '/upload/fl_attachment/')
+  }
+
+  return url
+}

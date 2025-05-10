@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { pusherServer } from "@/lib/pusher";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { v2 as cloudinary } from 'cloudinary';
+import mongoose from "mongoose";
 
 // Edit message
 export async function PATCH(
@@ -94,81 +95,30 @@ export async function DELETE(
 
     await connectDB();
 
-    // Find message first to get attachments
-    const message = await NewMessage.findOne({ 
-      _id: params.messageId,
-      senderId: session.user.id 
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(params.messageId)) {
+      return new NextResponse("Invalid message ID", { status: 400 });
+    }
+
+    const message = await NewMessage.findOne({
+      _id: new mongoose.Types.ObjectId(params.messageId),
+      conversationId: params.conversationId,
+      senderId: session.user.id,
     });
 
     if (!message) {
       return new NextResponse("Message not found", { status: 404 });
     }
 
-    // Delete attachments from Cloudinary if any
-    if (message.attachments?.length) {
-      for (const attachment of message.attachments) {
-        if (attachment.url) {
-          try {
-            const publicId = attachment.url.split('/').slice(-1)[0].split('.')[0];
-            await cloudinary.uploader.destroy(`workmate/messages/${publicId}`);
-          } catch (error) {
-            console.error('Failed to delete file from Cloudinary:', error);
-          }
-        }
-      }
-    }
+    await NewMessage.findByIdAndUpdate(message._id, {
+      isDeleted: true,
+      deletedAt: new Date(),
+    });
 
-    // Delete the message
-    await NewMessage.findByIdAndDelete(params.messageId);
-
-    // Find new last message
-    const lastMessage = await NewMessage.findOne({
-      conversationId: params.conversationId
-    })
-    .sort({ createdAt: -1 })
-    .lean();
-
-    // Update conversation
-    const conversation = await Conversation.findByIdAndUpdate(
-      params.conversationId,
-      {
-        lastMessage: lastMessage ? {
-          content: lastMessage.content,
-          senderId: lastMessage.senderId,
-          createdAt: lastMessage.createdAt
-        } : null
-      },
-      { new: true }
-    ).populate('participants.userId');
-
-    if (conversation) {
-      // Notify participants with proper channel names
-      for (const participant of conversation.participants) {
-        if (participant.userId && participant.userId._id.toString() !== session.user.id) {
-          const channelName = `private-user-${participant.userId._id.toString()}`;
-          try {
-            await pusherServer.trigger(
-              channelName,
-              'message-deleted',
-              {
-                messageId: params.messageId,
-                conversationId: params.conversationId
-              }
-            );
-          } catch (error) {
-            console.error(`Failed to notify participant ${participant.userId._id}:`, error);
-          }
-        }
-      }
-    }
-
-    return NextResponse.json({ success: true });
+    return new NextResponse(null, { status: 200 });
   } catch (error) {
     console.error("Error deleting message:", error);
-    return new NextResponse(
-      error instanceof Error ? error.message : "Internal error",
-      { status: 500 }
-    );
+    return new NextResponse("Internal error", { status: 500 });
   }
 }
 

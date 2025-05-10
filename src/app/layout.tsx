@@ -9,6 +9,7 @@ import { AuthProvider } from "@/providers/auth-provider";
 // import { Providers } from "@/providers/providers";
 import 'react-phone-input-2/lib/style.css';
 import { Providers } from "./providers";
+import { NotificationProvider } from "@/contexts/notification-context"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,11 +29,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
-          <div className="relative min-h-screen flex flex-col">
-            <Nav />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <NotificationProvider>
+            <div className="relative min-h-screen flex flex-col">
+              <Nav />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          </NotificationProvider>
           <Toaster />
         </Providers>
       </body>

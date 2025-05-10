@@ -115,8 +115,34 @@ const conversationSchema = new mongoose.Schema({
     senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: Date
   },
-  unreadCount: { type: Number, default: 0 }
+  unreadCount: { type: Number, default: 0 },
+  type: {
+    type: String,
+    enum: ['direct_student', 'parent'],
+    required: true
+  },
+  studentType: {
+    type: String,
+    enum: ['independent', 'child'],
+    required: true
+  },
+  childId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    // Only required for parent conversations
+    required: function(this: any) {
+      return this.type === 'parent';
+    }
+  }
 }, { timestamps: true })
+
+// Add index for efficient queries
+conversationSchema.index({ 
+  'participants.userId': 1, 
+  type: 1, 
+  studentType: 1, 
+  childId: 1 
+});
 
 export const Message = mongoose.models.Message || mongoose.model('Message', messageSchema)
 export const NewMessage = mongoose.models.NewMessage || mongoose.model('NewMessage', newMessageSchema)

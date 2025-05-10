@@ -1,50 +1,41 @@
-import mongoose, { Schema, model, models } from 'mongoose'
+import mongoose, { Schema } from 'mongoose';
+
+const recurrenceSchema = new Schema({
+  isRecurring: { type: Boolean, default: false },
+  pattern: {
+    type: String,
+    enum: ['none', 'daily', 'weekly', 'multiple-days', 'bi-weekly'],
+    default: 'none'
+  },
+  daysOfWeek: [Number], // Store days as numbers (0-6)
+  startDate: Date,
+  endDate: Date,
+  totalSessions: Number
+}, { _id: false });  // Prevent MongoDB from creating _id for subdocuments
 
 const teachingSessionSchema = new Schema({
-  teacherId: {
-    type: String,
-    required: true,
-    ref: 'User'
-  },
-  studentId: {
-    type: String,
-    required: true,
-    ref: 'User'
-  },
+  teacherId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  studentId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   subject: {
-    name: String,
-    area: String
+    name: { type: String, required: true },
+    area: { type: String, required: true }
   },
-  startTime: {
-    type: Date,
-    required: true
-  },
-  endTime: {
-    type: Date,
-    required: true
-  },
-  duration: {
-    type: Number,
-    required: true
-  },
-  meetingLink: String,
+  startTime: { type: Date, required: true },
+  endTime: { type: Date, required: true },
+  duration: { type: Number, required: true },
+  meetingLink: { type: String, required: true },
   status: {
     type: String,
-    enum: ['scheduled', 'completed', 'cancelled'],
+    enum: ['scheduled', 'active', 'completed', 'cancelled'],
     default: 'scheduled'
   },
-  recurrence: {
-    frequency: String,
-    endDate: Date
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  recurrence: { 
+    type: recurrenceSchema,
+    required: false
   }
-})
+}, {
+  timestamps: true
+});
 
-export const TeachingSession = models.TeachingSession || model('TeachingSession', teachingSessionSchema)
+export const TeachingSession = mongoose.models.TeachingSession || 
+  mongoose.model('TeachingSession', teachingSessionSchema);

@@ -1,6 +1,13 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
-// Question schema
+const fileAttachmentSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  type: { type: String, required: true },
+  size: { type: Number, required: true },
+  url: { type: String, required: true },
+  publicId: { type: String, required: true }
+}, { _id: false }) // 👈 prevents nested _id clutter
+
 const questionSchema = new mongoose.Schema({
   id: String,
   type: {
@@ -12,12 +19,26 @@ const questionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  options: [String],
+  options: {
+    type: [String],
+    default: []
+  },
   points: {
     type: Number,
-    required: true
+    required: true,
+    default: 0
+  },
+  correctAnswer: {
+    type: mongoose.Schema.Types.Mixed
+  },
+  attachment: {
+    type: fileAttachmentSchema,
+    required: function() {
+      return this.type === 'file'
+    }
   }
-});
+})
+
 
 // Submission schema
 const submissionSchema = new mongoose.Schema({
@@ -27,17 +48,20 @@ const submissionSchema = new mongoose.Schema({
     required: true
   },
   answers: [{
-    questionId: String,
-    answer: mongoose.Schema.Types.Mixed,
-    grade: Number
+    questionId: { type: String, required: true },
+    answer: String,
+    attachments: [{
+      name: { type: String, required: true },
+      type: { type: String, required: true },
+      size: { type: Number, required: true },
+      url: { type: String, required: true },
+      publicId: { type: String, required: true }
+    }]
   }],
   submittedAt: {
     type: Date,
     default: Date.now
-  },
-  gradedAt: Date,
-  totalPoints: Number,
-  feedback: String
+  }
 });
 
 // TeacherAssessment schema

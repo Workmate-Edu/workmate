@@ -14,7 +14,10 @@ const notificationSchema = new Schema({
       'new_message',
       'assessment_graded',
       'course_update',
-      'system_alert'
+      'system_alert',
+      'teacher_assigned',
+      'teacher_unassigned',
+      'subject_assigned',
     ],
     required: true
   },

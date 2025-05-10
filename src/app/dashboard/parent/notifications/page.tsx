@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/notifications/empty-state"
 import { NotificationItem } from "@/components/notifications/notification-item"
 import { useSocketContext } from "@/contexts/socket-context"
 import { filterAndSortNotifications } from '@/lib/notification-utils'
+import { useNotifications } from '@/contexts/notification-context'
 
 interface Notification {
   _id: string;
@@ -27,77 +28,28 @@ interface Notification {
 }
 
 export default function ParentNotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(true)
+  const { 
+    notifications = [],
+    loading = false,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+    unreadCount = 0,
+    fetchNotifications
+  } = useNotifications()
   const [activeTab, setActiveTab] = useState('all')
-  const { socket } = useSocketContext()
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [])
-
-  const fetchNotifications = async () => {
+  const handleMarkAsRead = async (notificationId: string) => {
     try {
-      setLoading(true)
-      const res = await fetch('/api/notifications')
-      if (!res.ok) throw new Error('Failed to fetch notifications')
-      const data = await res.json()
-      setNotifications(data.notifications || [])
+      await markAsRead(notificationId)
+      await fetchNotifications() // Refetch to sync state
     } catch (error) {
-      console.error('Error fetching notifications:', error)
-      toast.error("Failed to load notifications")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleMarkAllRead = async () => {
-    try {
-      await fetch('/api/notifications/mark-all-read', { method: 'POST' })
-      setNotifications(prev => prev.map(n => ({
-        ...n,
-        status: { ...n.status, read: true, readAt: new Date().toISOString() }
-      })))
-      toast.success("All notifications marked as read")
-    } catch (error) {
-      toast.error("Failed to mark notifications as read")
-    }
-  }
-
-  const handleClearAll = async () => {
-    try {
-      await fetch('/api/notifications/clear-all', { method: 'DELETE' })
-      setNotifications([])
-      toast.success("All notifications cleared")
-    } catch (error) {
-      toast.error("Failed to clear notifications")
+      toast.error("Failed to mark as read")
     }
   }
 
   const getFilteredNotifications = () => {
     return filterAndSortNotifications(notifications, activeTab)
-  }
-
-  const handleMarkAsRead = async (notificationId: string) => {
-    try {
-      const res = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'POST'
-      })
-
-      if (!res.ok) {
-        throw new Error('Failed to mark notification as read')
-      }
-
-      setNotifications(prev => prev.map(n => 
-        n._id === notificationId 
-          ? { ...n, status: { ...n.status, read: true }} 
-          : n
-      ))
-
-      toast.success("Notification marked as read")
-    } catch (error) {
-      toast.error("Failed to mark notification as read")
-    }
   }
 
   return (
@@ -112,8 +64,8 @@ export default function ParentNotificationsPage() {
             <Button 
               variant="outline" 
               className="flex items-center justify-center gap-2 w-full sm:w-auto"
-              onClick={handleMarkAllRead}
-              disabled={notifications.filter(n => !n.status.read).length === 0}
+              onClick={markAllAsRead}
+              disabled={unreadCount === 0}
             >
               <MailOpen className="h-4 w-4" />
               <span>Mark all read</span>
@@ -121,7 +73,7 @@ export default function ParentNotificationsPage() {
             <Button 
               variant="outline" 
               className="flex items-center justify-center gap-2 w-full sm:w-auto"
-              onClick={handleClearAll}
+              onClick={clearAll}
               disabled={notifications.length === 0}
             >
               <Trash2 className="h-4 w-4" />
@@ -141,9 +93,9 @@ export default function ParentNotificationsPage() {
             <TabsTrigger value="unread" className="flex-1 sm:flex-none">
               <span className="hidden sm:inline">Unread</span>
               <span className="sm:hidden">New</span>
-              {notifications.filter(n => !n.status.read).length > 0 && (
+              {unreadCount > 0 && (
                 <Badge variant="default" className="ml-2">
-                  {notifications.filter(n => !n.status.read).length}
+                  {unreadCount}
                 </Badge>
               )}
             </TabsTrigger>

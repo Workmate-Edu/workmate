@@ -188,6 +188,9 @@ const Page: React.FC<Props> = () => {
     try {
       const formData = form.getValues()
       
+      // Calculate total points from all questions
+      const totalPoints = questions.reduce((sum, question) => sum + (question.points || 0), 0)
+      
       // Explicitly construct assessment data to ensure studentId is included
       const assessmentData = {
         title: formData.title,
@@ -197,6 +200,7 @@ const Page: React.FC<Props> = () => {
         studentId: selectedStudent, // Make sure this is explicitly set
         teacherId: session.user.id,
         questions,
+        totalPoints,
         status: 'active',
         type: questions.some(q => q.type === 'file') 
           ? 'file_upload' 
@@ -208,7 +212,9 @@ const Page: React.FC<Props> = () => {
       console.log('Submitting assessment data:', {
         studentId: selectedStudent, // Log specifically
         formData,
-        finalData: assessmentData
+        finalData: assessmentData,
+        totalPoints,
+        questionCount: questions.length,
       })
 
       const response = await fetch('/api/assessments', {
@@ -296,7 +302,7 @@ const Page: React.FC<Props> = () => {
   }
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div> <Loader2 /> </div>
   }
 
   return (

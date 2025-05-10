@@ -133,7 +133,29 @@ const routes = [
     icon: MessageSquare,
     href: (role: string) => `/dashboard/${role}/messages`,
     color: "text-orange-500",
-    roles: ['teacher', 'student', 'parent'] // Remove admin from messaging
+    roles: ['teacher', 'student', 'parent'],
+    shouldShow: async (session) => {
+      // Always show for teachers and parents
+      if (session?.user?.role === 'teacher' || session?.user?.role === 'parent') {
+        return true;
+      }
+      
+      // For students, check if they are independent
+      if (session?.user?.role === 'student') {
+        try {
+          const res = await fetch('/api/student/profile', {
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          const data = await res.json();
+          return data?.studentProfile?.registeredAs === 'independent';
+        } catch (error) {
+          console.error('Failed to check student type:', error);
+          return false;
+        }
+      }
+      
+      return false;
+    }
   },
   // {
   //   label: 'Settings',
@@ -157,7 +179,7 @@ const routes = [
     roles: ['admin']
   },
   {
-    label: 'Assessments',
+    label: 'Inital Assessments',
     icon: ClipboardList,
     href: (role: string) => `/dashboard/admin/assessments`,
     color: "text-violet-500",

@@ -160,28 +160,27 @@ export async function GET() {
 }
 
 function calculateTotalSessions(startDate: Date, recurrence: any) {
-  if (!recurrence?.isRecurring || !recurrence.endDate) return 1
+  if (!recurrence?.isRecurring || !recurrence.endDate) return 1;
 
-  const start = new Date(startDate)
-  const end = new Date(recurrence.endDate)
-  const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  const totalWeeks = Math.ceil(totalDays / 7)
+  const start = new Date(startDate);
+  const end = new Date(recurrence.endDate);
+  const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const totalWeeks = Math.ceil(totalDays / 7);
 
   switch (recurrence.pattern) {
     case 'daily':
-      return totalDays
+      return totalDays;
     case 'weekly':
-      return totalWeeks
-    case 'twice-weekly':
-      // Count actual occurrences based on selected days
+      return totalWeeks;
+    case 'multiple-days':
       if (recurrence.daysOfWeek?.length) {
-        return totalWeeks * recurrence.daysOfWeek.length
+        return totalWeeks * recurrence.daysOfWeek.length;
       }
-      return totalWeeks * 2
+      return totalWeeks;
     case 'bi-weekly':
-      return Math.ceil(totalWeeks / 2)
+      return Math.ceil(totalWeeks / 2);
     default:
-      return 1
+      return 1;
   }
 }
 
@@ -246,164 +245,201 @@ export async function POST(req: Request) {
       totalSessions
     })
 
-    // Create sessions with calculated total
-    const teachingSessions = await Promise.all(
-      studentIds.map(async (studentId: string) => {
-        const student = await User.findById(studentId)
-          .select('name email studentProfile.registeredAs studentProfile.parent')
-          .populate({
-            path: 'studentProfile.parent',
-            select: 'name email'
-          })
-          .lean();
+    // Process recurring sessions
+    const sessions = await Promise.all(studentIds.map(async (studentId: string) => {
+      const sessionData = {
+        teacherId: authSession.user.id,
+        studentId,
+        subject: {
+          name: subjectName.toLowerCase(),
+          area: subjectArea.area
+        },
+        startTime: sessionStartTime,
+        endTime: sessionEndTime,
+        duration,
+        meetingLink,
+        status: 'scheduled'
+      };
 
-        if (!student) {
-          throw new Error(`Student ${studentId} not found`);
-        }
-
-        const isChild = student.studentProfile?.registeredAs === 'child';
-        const parentData = isChild ? student.studentProfile?.parent : null;
-
-        // Create session with proper typing
-        const session = await TeachingSession.create({
-          teacherId: authSession.user.id,
-          studentId,
-          subject: {
-            name: subjectName.toLowerCase(),
-            area: subjectArea.area
-          },
-          startTime: sessionStartTime,
-          endTime: sessionEndTime,
-          duration,
-          meetingLink,
-          status: 'scheduled',
-          recurrence: recurrence?.isRecurring ? {
-            isRecurring: true,
-            pattern: recurrence.pattern,
-            daysOfWeek: recurrence.daysOfWeek,
-            startDate: sessionStartTime,
-            endDate: new Date(recurrence.endsOn),
-            totalSessions
-          } : undefined
-        } as TeachingSessionInput);
-
-        // Send notifications with proper typing
-        await Promise.all([
-          // Teacher notification
-          sendSessionNotification({
-            userId: authSession.user.id,
-            type: 'session_created',
-            title: 'New Session Created',
-            message: `Session created with ${student.name} for ${session.subject.name}`,
-            data: { sessionId: session._id }
-          }),
-
-          // Student notification
-          sendSessionNotification({
-            userId: studentId,
-            type: 'session_created',
-            title: 'New Session Scheduled',
-            message: `${teacher.name} scheduled a ${session.subject.name} session`,
-            data: { sessionId: session._id }
-          }),
-
-          // Parent notification
-          parentData && sendSessionNotification({
-            userId: parentData._id.toString(),
-            type: 'session_created',
-            title: `New Session for ${student.name}`,
-            message: `${teacher.name} scheduled a ${session.subject.name} session for ${student.name}`,
-            data: { sessionId: session._id }
-          })
-        ]);
-
-        // Prepare recurrence info for emails
-        const recurrenceInfo = session.recurrence?.isRecurring 
-          ? {
-              recurrencePattern: session.recurrence.pattern,
-              recurrenceDays: session.recurrence.daysOfWeek
-                .map(d => ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d])
-                .join(', '),
-              recurrenceEndDate: format(new Date(session.recurrence.endDate), 'PPP'),
-              recurrenceStyle: 'display: block;'
+      if (recurrence?.isRecurring) {
+        const recurrenceData = {
+          isRecurring: true,
+          pattern: recurrence.pattern,
+          daysOfWeek: recurrence.pattern === 'multiple-days' || recurrence.pattern === 'weekly'
+            ? recurrence.daysOfWeek.sort((a, b) => a - b)
+            : [],
+          startDate: sessionStartTime,
+          endDate: new Date(recurrence.endsOn),
+          totalSessions: calculateTotalSessions(
+            sessionStartTime,
+            {
+              isRecurring: true,
+              pattern: recurrence.pattern,
+              daysOfWeek: recurrence.daysOfWeek,
+              endDate: new Date(recurrence.endsOn)
             }
-          : {
-              recurrencePattern: '',
-              recurrenceDays: '',
-              recurrenceEndDate: '',
-              recurrenceStyle: 'display: none;'
-            }
+          )
+        };
 
-        // Send emails
-        await Promise.all([
-          // Send teacher email
-          sendEmail({
-            to: teacher.email,
-            subject: `New Session Created: ${session.subject.name}`,
-            template: "session-notification",
-            replacements: {
-              notificationType: 'New Session Created',
-              recipientName: teacher.name,
-              mainMessage: `You have created a new teaching session.`,
-              subject: session.subject.name,
-              sessionDate: format(session.startTime, 'PPP'),
-              sessionTime: format(session.startTime, 'p'),
-              duration: session.duration.toString(),
-              teacherName: teacher.name,
-              studentName: student.name,
-              meetingLink: session.meetingLink,
-              ...recurrenceInfo
-            }
-          }),
+        sessionData.recurrence = recurrenceData;
 
-          // Send student email
-          sendEmail({
-            to: student.email,
-            subject: `New Session Scheduled: ${session.subject.name}`,
-            template: "session-notification",
-            replacements: {
-              notificationType: 'New Session Scheduled',
-              recipientName: student.name,
-              mainMessage: `${teacher.name} has scheduled a new session for you.`,
-              subject: session.subject.name,
-              sessionDate: format(session.startTime, 'PPP'),
-              sessionTime: format(session.startTime, 'p'),
-              duration: session.duration.toString(),
-              teacherName: teacher.name,
-              studentName: student.name,
-              meetingLink: session.meetingLink,
-              ...recurrenceInfo
-            }
-          }),
+        console.log('Creating recurring session with data:', {
+          pattern: recurrenceData.pattern,
+          daysOfWeek: recurrenceData.daysOfWeek,
+          startDate: recurrenceData.startDate,
+          endDate: recurrenceData.endDate,
+          totalSessions: recurrenceData.totalSessions
+        });
+      }
 
-          // Send parent email if student is registered as child
-          parentData && sendEmail({
-            to: parentData.email,
-            subject: `New Session Scheduled for ${student.name}: ${session.subject.name}`,
-            template: "session-notification",
-            replacements: {
-              notificationType: `New Session Scheduled for ${student.name}`,
-              recipientName: parentData.name,
-              mainMessage: `${teacher.name} has scheduled a new session for ${student.name}.`,
-              subject: session.subject.name,
-              sessionDate: format(session.startTime, 'PPP'),
-              sessionTime: format(session.startTime, 'p'),
-              duration: session.duration.toString(),
-              teacherName: teacher.name,
-              studentName: student.name,
-              meetingLink: session.meetingLink,
-              ...recurrenceInfo
-            }
-          })
-        ]);
+      const createdSession = await TeachingSession.create(sessionData);
 
-        return session;
-      })
-    );
+      // Log created session for verification
+      console.log('Session created with recurrence:', {
+        sessionId: createdSession._id,
+        recurrence: createdSession.recurrence
+      });
+
+      const student = await User.findById(studentId)
+        .select('name email studentProfile.registeredAs studentProfile.parent')
+        .populate({
+          path: 'studentProfile.parent',
+          select: 'name email'
+        })
+        .lean();
+
+      if (!student) {
+        throw new Error(`Student ${studentId} not found`);
+      }
+
+      const isChild = student.studentProfile?.registeredAs === 'child';
+      const parentData = isChild ? student.studentProfile?.parent : null;
+
+      // Send notifications with proper typing
+      await Promise.all([
+        // Teacher notification
+        sendSessionNotification({
+          userId: authSession.user.id,
+          type: 'session_created',
+          title: 'New Session Created',
+          message: `Session created with ${student.name} for ${createdSession.subject.name}`,
+          data: { sessionId: createdSession._id }
+        }),
+
+        // Student notification
+        sendSessionNotification({
+          userId: studentId,
+          type: 'session_created',
+          title: 'New Session Scheduled',
+          message: `${teacher.name} scheduled a ${createdSession.subject.name} session`,
+          data: { sessionId: createdSession._id }
+        }),
+
+        // Parent notification
+        parentData && sendSessionNotification({
+          userId: parentData._id.toString(),
+          type: 'session_created',
+          title: `New Session for ${student.name}`,
+          message: `${teacher.name} scheduled a ${createdSession.subject.name} session for ${student.name}`,
+          data: { sessionId: createdSession._id }
+        })
+      ]);
+
+      // Format days for email
+      const getDayName = (day: number) => [
+        'Sunday', 'Monday', 'Tuesday', 'Wednesday', 
+        'Thursday', 'Friday', 'Saturday'
+      ][day];
+
+      const formatSelectedDays = (days: number[] = []) => 
+        days.map(getDayName).join(', ');
+
+      // Update email template data
+      const recurrenceInfo = createdSession.recurrence?.isRecurring 
+        ? {
+            recurrencePattern: createdSession.recurrence.pattern === 'multiple-days' 
+              ? 'Multiple Days Per Week'
+              : createdSession.recurrence.pattern,
+            selectedDays: formatSelectedDays(createdSession.recurrence.daysOfWeek),
+            recurrenceEndDate: format(new Date(createdSession.recurrence.endDate), 'PPP'),
+            recurringStyle: 'display: block;'
+          }
+        : {
+            recurrencePattern: '',
+            selectedDays: '',
+            recurrenceEndDate: '',
+            recurringStyle: 'display: none;'
+          }
+
+      // Send emails
+      await Promise.all([
+        // Send teacher email
+        sendEmail({
+          to: teacher.email,
+          subject: `Session Created: ${createdSession.subject.name}`,
+          template: "session-notification",
+          replacements: {
+            notificationType: `Session Created: ${createdSession.subject.name}`,
+            recipientName: teacher.name,
+            mainMessage: `You have created a new teaching session.`,
+            subject: createdSession.subject.name,
+            sessionDate: format(createdSession.startTime, 'PPP'),
+            sessionTime: format(createdSession.startTime, 'p'),
+            duration: createdSession.duration.toString(),
+            teacherName: teacher.name,
+            studentName: student.name,
+            meetingLink: createdSession.meetingLink,
+            ...recurrenceInfo
+          }
+        }),
+
+        // Send student email
+        sendEmail({
+          to: student.email,
+          subject: `New Session Scheduled: ${createdSession.subject.name}`,
+          template: "session-notification",
+          replacements: {
+            notificationType: 'New Session Scheduled',
+            recipientName: student.name,
+            mainMessage: `${teacher.name} has scheduled a new session for you.`,
+            subject: createdSession.subject.name,
+            sessionDate: format(createdSession.startTime, 'PPP'),
+            sessionTime: format(createdSession.startTime, 'p'),
+            duration: createdSession.duration.toString(),
+            teacherName: teacher.name,
+            studentName: student.name,
+            meetingLink: createdSession.meetingLink,
+            ...recurrenceInfo
+          }
+        }),
+
+        // Send parent email if student is registered as child
+        parentData && sendEmail({
+          to: parentData.email,
+          subject: `New Session Scheduled for ${student.name}: ${createdSession.subject.name}`,
+          template: "session-notification",
+          replacements: {
+            notificationType: `New Session Scheduled for ${student.name}`,
+            recipientName: parentData.name,
+            mainMessage: `${teacher.name} has scheduled a new session for ${student.name}.`,
+            subject: createdSession.subject.name,
+            sessionDate: format(createdSession.startTime, 'PPP'),
+            sessionTime: format(createdSession.startTime, 'p'),
+            duration: createdSession.duration.toString(),
+            teacherName: teacher.name,
+            studentName: student.name,
+            meetingLink: createdSession.meetingLink,
+            ...recurrenceInfo
+          }
+        })
+      ]);
+
+      return createdSession;
+    }));
 
     return NextResponse.json({
       success: true,
-      sessions: teachingSessions.map(s => s.toObject())
+      sessions: sessions.map(s => s.toObject())
     })
 
   } catch (error) {

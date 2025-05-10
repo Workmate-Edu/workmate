@@ -5,7 +5,6 @@ import { TeacherAssessment } from "@/models/assessment"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
 import { TeacherAssessmentStatus } from '@/types/assessment';
-import mongoose from 'mongoose';
 
 const isValidStatus = (status: any): status is TeacherAssessmentStatus => {
   return ['draft', 'active', 'submitted', 'graded'].includes(status);
@@ -23,7 +22,7 @@ const handleError = (error: any) => {
   }, { status: 500 })
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions) // Add authOptions
     if (!session?.user) {
@@ -44,7 +43,8 @@ export async function GET(req: NextRequest) {
     const formattedAssessments = assessments.map(assessment => ({
       ...assessment,
       id: assessment._id.toString(),
-      _id: undefined
+      _id: undefined,
+      points: assessment.questions.reduce((sum, q) => sum + (q.points || 0), 0),
     }))
 
     return NextResponse.json(formattedAssessments)
@@ -67,15 +67,14 @@ export async function POST(req: NextRequest) {
     await connectDB()
     const body = await req.json()
 
-    console.log('Received body:', body)
+    console.log('Creating assessment with data:', JSON.stringify(body, null, 2))
 
-    // Create assessment data with explicit studentId
     const assessmentData = {
       title: body.title,
       description: body.description,
       type: body.type || 'assignment',
       teacherId: session.user.id,
-      studentId: body.studentId,  // Ensure this is included
+      studentId: body.studentId,
       subject: body.subject,
       status: body.status,
       dueDate: new Date(body.dueDate),
@@ -84,13 +83,27 @@ export async function POST(req: NextRequest) {
         type: q.type,
         question: q.question,
         options: q.options || [],
-        points: q.points,
-        correctAnswer: q.correctAnswer
+        points: q.points ?? 0,
+        correctAnswer: q.correctAnswer,
+        attachment: q.type === 'file' ? {
+          name: q.attachment?.name,
+          type: q.attachment?.type,
+          size: q.attachment?.size,
+          url: q.attachment?.url,
+          publicId: q.attachment?.publicId
+        } : null
       }))
     }
 
-    console.log('Creating with:', assessmentData)
-    
+    console.log('Processing question attachments:', 
+      assessmentData.questions
+        .filter(q => q.type === 'file')
+        .map(q => ({
+          questionId: q.id,
+          attachmentDetails: q.attachment
+        }))
+    )
+
     const assessment = await TeacherAssessment.create(assessmentData)
 
     // Format response to include all fields

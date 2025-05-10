@@ -129,72 +129,35 @@
     <div class="email-container">
         <div class="email-header">
             <img src="{{baseUrl}}/workmate_logo.png" alt="Workmate" class="logo" />
-        </div>
-        
-        <div class="content-card">
-            <div class="card-header">
-                <h1 style="color: #1E293B; margin: 0; font-size: 24px; font-weight: 600;">
-                    Welcome to Workmate!
-                </h1>
-            </div>
-
-            <div class="card-content">
-                <p>Dear <strong>{{name}}</strong>,</p>
-                
-                <p>Thank you for signing up with Workmate! We're excited to have you join our learning community. To complete your registration, please verify your email address.</p>
-
-                <div style="text-align: center; margin: 32px 0;">
-                    <a href="{{verificationLink}}" class="button-primary">
-                        Verify Email Address
-                    </a>
-                </div>
-
-                <div class="link-card">
-                    {{verificationLink}}
-                </div>
-
-                <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; margin: 24px 0; border-radius: 4px;">
-                    <p style="margin: 0; color: #92400E;">
-                        This verification link will expire in 24 hours for security reasons.
-                    </p>
-                </div>
-
-                <div style="background-color: #F8FAFC; border-radius: 8px; padding: 16px; margin: 24px 0;">
-                    <h3 style="margin: 0 0 8px 0; color: #1E293B;">Account Details</h3>
-                    <p style="margin: 0; color: #64748B;">
-                        Email: {{email}}<br>
-                        Username: {{username}}
-                    </p>
-                </div>
-
-                <p style="margin: 24px 0; color: #64748B; font-size: 14px;">
-                    If you have any questions or need assistance, our support team is here to help.
-                </p>
-
-                <p style="margin: 24px 0 0 0;">
-                    Best regards,<br>
-                    The Workmate Team
-                </p>
-            </div>
+            <h1 style="margin: 16px 0 0 0; font-size: 24px;">Welcome to Workmate!</h1>
         </div>
 
-        <div style="text-align: center; padding: 24px 0;">
-            <div class="social-links">
-                <a href="https://facebook.com/workmate" target="_blank">
-                    <img class="social-icon" src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" alt="Facebook">
-                </a>
-                <a href="https://twitter.com/workmate" target="_blank">
-                    <img class="social-icon" src="https://cdn-icons-png.flaticon.com/128/5969/5969020.png" alt="Twitter">
-                </a>
-                <a href="https://linkedin.com/company/workmate" target="_blank">
-                    <img class="social-icon" src="https://cdn-icons-png.flaticon.com/128/145/145807.png" alt="LinkedIn">
-                </a>
-            </div>
-            
-            <p style="color: #64748B; font-size: 12px; margin-top: 16px;">
-                This email was sent to {{email}}.<br>
-                If you did not sign up for a Workmate account, please ignore this email.
+        <div class="email-content">
+            <p style="font-size: 16px; margin-bottom: 24px;">
+                Hi {{name}}, welcome to Workmate! We're excited to help you start your learning journey.
             </p>
+
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{{verificationLink}}" class="button-primary">
+                    Verify Email Address
+                </a>
+            </div>
+
+            <div class="info-card">
+                <h3 style="margin-top: 0; color: var(--primary); font-size: 18px;">Account Details</h3>
+                <p style="margin: 8px 0;"><strong>Email:</strong> {{email}}</p>
+                <p style="margin: 8px 0;"><strong>Role:</strong> {{role}}</p>
+            </div>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+                <p style="color: var(--text-muted); font-size: 14px;">
+                    This verification link will expire in 24 hours. If you did not create this account, please ignore this email.
+                </p>
+            </div>
+        </div>
+
+        <div class="email-footer">
+            <p>&copy; 2024 Workmate. All rights reserved.</p>
         </div>
     </div>
 </body>

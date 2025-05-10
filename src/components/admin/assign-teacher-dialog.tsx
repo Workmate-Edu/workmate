@@ -198,13 +198,16 @@ export function AssignTeacherDialog({
   };
 
   const getAssignmentStatus = () => {
+    // Count subjects that either have new selections or existing assignments
     const assigned = subjects.filter((subject) => {
       const key = `${subject.name}:${subject.area}`;
-      return selectedTeachers[key]?.length > 0 || 
-        currentAssignments.some(a => 
-          a.subject.name.toLowerCase() === subject.name.toLowerCase() &&
-          a.subject.area.toLowerCase() === subject.area.toLowerCase()
-        );
+      const hasNewSelection = selectedTeachers[key]?.length > 0;
+      const hasExistingAssignment = currentAssignments.some(a => 
+        a.subject.name.toLowerCase() === subject.name.toLowerCase() &&
+        a.subject.area.toLowerCase() === subject.area.toLowerCase()
+      );
+
+      return hasNewSelection || hasExistingAssignment;
     });
 
     return {
@@ -212,7 +215,8 @@ export function AssignTeacherDialog({
       totalSubjects: subjects.length,
       hasPartialAssignment: assigned.length > 0,
       isFullyAssigned: assigned.length === subjects.length,
-      hasUnassignedSubjects: assigned.length < subjects.length
+      // Fix: Only disable when there are no new selections to process
+      hasUnassignedSubjects: Object.keys(selectedTeachers).length > 0
     };
   };
 
@@ -366,7 +370,7 @@ export function AssignTeacherDialog({
                   Save for Later
                 </Button>
                 <Button 
-                  disabled={!status.hasUnassignedSubjects || assigning} 
+                  disabled={assigning || !status.hasUnassignedSubjects} 
                   onClick={handleAssign}
                 >
                   {assigning ? (

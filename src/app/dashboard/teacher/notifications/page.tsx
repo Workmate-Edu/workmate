@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useSocketContext } from "@/contexts/socket-context"
 import { Card } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { EmptyState } from "@/components/notifications/empty-state"
 import { NotificationItem } from "@/components/notifications/notification-item"
 import { filterAndSortNotifications } from '@/lib/notification-utils'
+import { useNotifications } from '@/contexts/notification-context'
 
 interface TeacherNotification {
   _id: string;
@@ -28,55 +29,44 @@ interface TeacherNotification {
 }
 
 export default function TeacherNotificationsPage() {
-  const { data: session } = useSession()
-  const [notifications, setNotifications] = useState<TeacherNotification[]>([])
-  const [loading, setLoading] = useState(true)
+  const { 
+    notifications = [],
+    loading = false,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+    unreadCount = 0,
+    fetchNotifications
+  } = useNotifications()
   const [activeTab, setActiveTab] = useState('all')
   const { socket } = useSocketContext()
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [])
-
-  const fetchNotifications = async () => {
+  const handleMarkAsRead = async (notificationId: string) => {
     try {
-      setLoading(true)
-      const res = await fetch('/api/notifications') // This API is role-aware
-      if (!res.ok) throw new Error('Failed to fetch notifications')
-      const data = await res.json()
-      setNotifications(data.notifications || [])
+      await markAsRead(notificationId)
+      await fetchNotifications() // Refetch to sync state
     } catch (error) {
-      console.error('Error fetching notifications:', error)
-      toast.error("Failed to load notifications")
-    } finally {
-      setLoading(false)
+      toast.error("Failed to mark as read")
     }
   }
 
   const handleMarkAllRead = async () => {
     try {
-      await fetch("/api/notifications/mark-all-read", { method: "POST" });
-      setNotifications((prev) =>
-        prev.map((n) => ({
-          ...n,
-          status: { ...n.status, read: true, readAt: new Date().toISOString() },
-        }))
-      );
-      toast.success("All notifications marked as read");
+      await markAllAsRead()
+      await fetchNotifications() // Refetch to sync state
     } catch (error) {
-      toast.error("Failed to mark notifications as read");
+      toast.error("Failed to mark all as read")
     }
-  };
+  }
 
   const handleClearAll = async () => {
     try {
-      await fetch("/api/notifications/clear-all", { method: "DELETE" });
-      setNotifications([]);
-      toast.success("All notifications cleared");
+      await clearAll()
+      await fetchNotifications() // Refetch to sync state
     } catch (error) {
-      toast.error("Failed to clear notifications");
+      toast.error("Failed to clear notifications")
     }
-  };
+  }
 
   const getFilteredNotifications = () => {
     return filterAndSortNotifications(notifications, activeTab);
@@ -94,32 +84,6 @@ export default function TeacherNotificationsPage() {
         return <Calendar className="h-5 w-5 text-orange-500" />;
       default:
         return <Bell className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const handleMarkAsRead = async (notificationId: string) => {
-    try {
-      await fetch(`/api/notifications/${notificationId}/read`, {
-        method: "POST",
-      });
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n._id === notificationId
-            ? {
-                ...n,
-                status: {
-                  ...n.status,
-                  read: true,
-                  readAt: new Date().toISOString(),
-                },
-              }
-            : n
-        )
-      );
-      toast.success("Notification marked as read");
-    } catch (error) {
-      console.error("Failed to mark notification as read:", error);
-      toast.error("Failed to mark notification as read");
     }
   };
 
@@ -147,7 +111,7 @@ export default function TeacherNotificationsPage() {
               variant="outline" 
               className="flex items-center justify-center gap-2 w-full sm:w-auto"
               onClick={handleMarkAllRead}
-              disabled={notifications.filter(n => !n.status.read).length === 0}
+              disabled={unreadCount === 0}
             >
               <MailOpen className="h-4 w-4" />
               <span>Mark all read</span>
@@ -175,9 +139,9 @@ export default function TeacherNotificationsPage() {
             <TabsTrigger value="unread" className="flex-1 sm:flex-none">
               <span className="hidden sm:inline">Unread</span>
               <span className="sm:hidden">New</span>
-              {notifications.filter(n => !n.status.read).length > 0 && (
+              {unreadCount > 0 && (
                 <Badge variant="default" className="ml-2">
-                  {notifications.filter(n => !n.status.read).length}
+                  {unreadCount}
                 </Badge>
               )}
             </TabsTrigger>

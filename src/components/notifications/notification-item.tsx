@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Bell, MessageSquare, Calendar, GraduationCap, FileCheck, Users } from "lucide-react"
+import { Bell, MessageSquare, Calendar, GraduationCap, FileCheck, Users, BookOpen } from "lucide-react"
 import { formatDistanceToNow } from 'date-fns'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,9 @@ const NotificationIcon = {
   class_scheduled: Calendar,
   class_updated: Calendar,
   session_created: Calendar,
+  teacher_assigned: GraduationCap,
+  subject_assigned: BookOpen,
+  teacher_unassigned: Users,
   new_message: MessageSquare,
   default: Bell
 }

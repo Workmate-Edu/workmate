@@ -14,6 +14,21 @@ import {
   Loader2
 } from "lucide-react"
 
+interface Assessment {
+  id: string;
+  title: string;
+  subject: string;
+  type: string;
+  status: 'active' | 'submitted' | 'graded';
+  dueDate: string;
+  points: number;
+  grade?: number;
+  totalPoints?: number; // Add total points
+  questions?: Array<{
+    points: number;
+  }>;
+}
+
 export default function StudentAssessmentsPage() {
   const router = useRouter()
   const [assessments, setAssessments] = useState<Assessment[]>([])
@@ -36,6 +51,15 @@ export default function StudentAssessmentsPage() {
     fetchAssessments()
   }, [])
 
+  const calculateTotalPoints = (assessment: Assessment) => {
+    // Calculate from questions if available
+    if (assessment.questions?.length) {
+      return assessment.questions.reduce((sum, q) => sum + (q.points || 0), 0);
+    }
+    // Fallback to totalPoints if set
+    return assessment.totalPoints || 0;
+  };
+
   const renderAssessmentCard = (assessment: Assessment) => (
     <Card key={assessment.id} className="mb-4">
       <CardContent className="p-4">
@@ -48,7 +72,9 @@ export default function StudentAssessmentsPage() {
             {assessment.status === 'graded' && (
               <div className="text-right mr-4">
                 <p className="text-sm text-muted-foreground">Grade</p>
-                <p className="font-bold text-green-600">{assessment.grade}%</p>
+                <p className="font-bold text-green-600">
+                  {assessment.grade || 0}/{calculateTotalPoints(assessment)}
+                </p>
               </div>
             )}
             <Button 
@@ -66,7 +92,7 @@ export default function StudentAssessmentsPage() {
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            <span>{assessment.points} points</span>
+            <span>{calculateTotalPoints(assessment)} points</span>
           </div>
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4" />

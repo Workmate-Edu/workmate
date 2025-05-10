@@ -10,6 +10,7 @@ interface NotificationData {
   priority?: 'low' | 'medium' | 'high';
 }
 
+
 export async function createNotification(data: NotificationData) {
   try {
     const notification = await Notification.create({

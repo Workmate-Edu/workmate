@@ -111,6 +111,16 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // First check if assessment is editable
+    const assessment = await ChildAssessment.findOne({ childId: params.childId })
+    
+    if (assessment?.status === 'assigned') {
+      return NextResponse.json(
+        { error: "Assessment cannot be edited - Teacher has been assigned" },
+        { status: 403 }
+      )
+    }
+
     const { responses } = await req.json();
     if (!responses || !Array.isArray(responses)) {
       return NextResponse.json(
@@ -121,12 +131,12 @@ export async function PUT(
 
     await connectDB();
 
-    const assessment = await ChildAssessment.findOne({
+    const latestAssessment = await ChildAssessment.findOne({
       childId: params.childId,
       parentId: session.user.id,
     }).sort({ createdAt: -1 });
 
-    if (!assessment) {
+    if (!latestAssessment) {
       return NextResponse.json(
         { error: "Assessment not found" },
         { status: 404 }
@@ -134,7 +144,7 @@ export async function PUT(
     }
 
     const updatedAssessment = await ChildAssessment.findByIdAndUpdate(
-      assessment._id,
+      latestAssessment._id,
       {
         $set: {
           responses,
@@ -151,7 +161,7 @@ export async function PUT(
         'studentProfile.assessments.$[elem].status': 'pending'
       }
     }, {
-      arrayFilters: [{ 'elem.assessmentId': assessment._id }]
+      arrayFilters: [{ 'elem.assessmentId': latestAssessment._id }]
     });
 
     return NextResponse.json({

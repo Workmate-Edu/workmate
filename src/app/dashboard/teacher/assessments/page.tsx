@@ -62,54 +62,59 @@ export default function AssessmentsPage() {
     }
   }
 
-  const renderAssessmentItem = (assessment: Assessment) => (
-    <Card key={assessment.id} className="mb-4">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold">{assessment.title}</h3>
-              <span className={`px-2 py-1 text-xs rounded-full ${getAssessmentStatusDisplay(assessment.status).className}`}>
-                {getAssessmentStatusDisplay(assessment.status).label}
-              </span>
-              <span className={`px-2 py-1 text-xs rounded-full ${
-                assessment.type === 'quiz' 
-                  ? 'bg-blue-100 text-blue-700'
-                  : assessment.type === 'assignment'
-                  ? 'bg-purple-100 text-purple-700'
-                  : 'bg-gray-100 text-gray-700'
-              }`}>
-                {assessment.type}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground">{assessment.subject}</p>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => router.push(`/dashboard/teacher/assessments/${assessment.id}`)}
-          >
-            View Details
-          </Button>
-        </div>
+  const renderAssessmentItem = (assessment: Assessment) => {
+    // Calculate total points from questions
+    const totalPoints = assessment.questions?.reduce((sum, q) => sum + (q.points || 0), 0) || 0
 
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <FiCalendar className="w-4 h-4" />
-            <span>Due: {new Date(assessment.dueDate).toLocaleDateString()}</span>
+    return (
+      <Card key={assessment.id} className="mb-4">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold">{assessment.title}</h3>
+                <span className={`px-2 py-1 text-xs rounded-full ${getAssessmentStatusDisplay(assessment.status).className}`}>
+                  {getAssessmentStatusDisplay(assessment.status).label}
+                </span>
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  assessment.type === 'quiz' 
+                    ? 'bg-blue-100 text-blue-700'
+                    : assessment.type === 'assignment'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {assessment.type}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">{assessment.subject}</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => router.push(`/dashboard/teacher/assessments/${assessment.id}`)}
+            >
+              View Details
+            </Button>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <FiUser className="w-4 h-4" />
-            <span>{assessment.submissions?.length || 0} submissions</span>
+
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FiCalendar className="w-4 h-4" />
+              <span>Due: {new Date(assessment.dueDate).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FiUser className="w-4 h-4" />
+              <span>{assessment.submissions?.length || 0} submissions</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FiFile className="w-4 h-4" />
+              <span>{totalPoints} points</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <FiFile className="w-4 h-4" />
-            <span>{assessment.points} points</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="space-y-6 p-6">
