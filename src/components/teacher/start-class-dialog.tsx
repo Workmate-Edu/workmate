@@ -426,14 +426,14 @@ export function StartClassDialog({
                   <Label htmlFor="weekly">Weekly</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="twice-weekly" id="twice-weekly" />
-                  <Label htmlFor="twice-weekly">Twice Weekly</Label>
+                  <RadioGroupItem value="multiple-days" id="multiple-days" />
+                  <Label htmlFor="multiple-days">Multiple Days Per Week</Label>
                 </div>
               </RadioGroup>
 
               {formData.recurrence.type !== 'none' && (
                 <div className="space-y-4">
-                  {(formData.recurrence.type === 'weekly' || formData.recurrence.type === 'twice-weekly') && (
+                  {(formData.recurrence.type === 'weekly' || formData.recurrence.type === 'multiple-days') && (
                     <div className="space-y-2">
                       <Label>Select Days</Label>
                       <div className="flex gap-2">
@@ -444,12 +444,17 @@ export function StartClassDialog({
                             variant={formData.recurrence.daysOfWeek.includes(day.value) ? "default" : "outline"}
                             className="w-12"
                             onClick={() => handleDaySelection(day.value)}
-                            title={day.long} // Add tooltip with full day name
+                            title={day.long}
                           >
                             {day.short}
                           </Button>
                         ))}
                       </div>
+                      {formData.recurrence.type === 'multiple-days' && (
+                        <p className="text-sm text-muted-foreground">
+                          Select the days you want to hold sessions each week
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -518,4 +523,26 @@ export function StartClassDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+function calculateTotalSessions(startDate: Date, recurrence: any) {
+  const totalDays = differenceInDays(new Date(recurrence.endsOn), startDate) + 1
+  const totalWeeks = Math.ceil(totalDays / 7)
+
+  switch (recurrence.pattern) {
+    case 'daily':
+      return totalDays
+    case 'weekly':
+      return totalWeeks
+    case 'multiple-days':
+      // Count actual occurrences based on selected days
+      if (recurrence.daysOfWeek?.length) {
+        return totalWeeks * recurrence.daysOfWeek.length
+      }
+      return totalWeeks
+    case 'bi-weekly':
+      return Math.ceil(totalWeeks / 2)
+    default:
+      return 1
+  }
 }

@@ -9,7 +9,7 @@ interface Subject {
   name: string
   area: string
   teacher?: {
-    id: string
+    _id: string
     name: string
     email: string
     rating?: number

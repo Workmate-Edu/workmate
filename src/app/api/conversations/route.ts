@@ -87,39 +87,54 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const body = await req.json();
-    const { participantId, participant } = body;
+    const { participantId, type, childId, studentType } = await req.json();
 
     await connectDB();
 
-    // Check if conversation already exists
-    const existingConversation = await Conversation.findOne({
+    // Find existing conversation
+    const query: any = {
       participants: {
         $all: [
-          { $elemMatch: { userId: new mongoose.Types.ObjectId(session.user.id) } },
-          { $elemMatch: { userId: new mongoose.Types.ObjectId(participantId) } }
+          { $elemMatch: { userId: session.user.id } },
+          { $elemMatch: { userId: participantId } }
         ]
-      }
-    });
+      },
+      type
+    };
+
+    // For parent conversations, include childId in query
+    if (type === 'parent' && childId) {
+      query.childId = childId;
+    }
+
+    const existingConversation = await Conversation.findOne(query)
+      .populate('participants.userId', 'name email role');
 
     if (existingConversation) {
       return NextResponse.json(existingConversation);
     }
 
     // Create new conversation
-    const conversation = await Conversation.create({
+    const conversationData = {
+      type,
+      studentType,
       participants: [
         {
           userId: session.user.id,
-          role: session.user.role,
-          name: session.user.name,
-          email: session.user.email
+          role: session.user.role
         },
-        participant
-      ]
-    });
+        {
+          userId: participantId,
+          role: type === 'parent' ? 'parent' : 'student'
+        }
+      ],
+      ...(childId && { childId }) // Include childId if provided
+    };
 
-    return NextResponse.json(conversation);
+    const conversation = await Conversation.create(conversationData);
+    const populatedConversation = await conversation.populate('participants.userId', 'name email role');
+
+    return NextResponse.json(populatedConversation);
   } catch (error) {
     console.error("Error creating conversation:", error);
     return new NextResponse("Internal error", { status: 500 });

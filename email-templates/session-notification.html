@@ -1,87 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Session Notification</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .container {
-            background-color: #f9f9f9;
-            border-radius: 5px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white !important;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #666;
-        }
-        .session-details {
-            background-color: #fff;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 15px 0;
-        }
-        .recurrence-info {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 15px 0;
-            display: {{recurrenceStyle}};
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Session Scheduled</title>
 </head>
 <body>
-    <div class="container">
-        <h2>{{notificationType}}</h2>
-        <p>Dear {{recipientName}},</p>
-        <p>{{mainMessage}}</p>
-        
-        <div class="session-details">
-            <h3>Session Details:</h3>
-            <p><strong>Subject:</strong> {{subject}}</p>
-            <p><strong>Date:</strong> {{sessionDate}}</p>
-            <p><strong>Time:</strong> {{sessionTime}}</p>
-            <p><strong>Duration:</strong> {{duration}} minutes</p>
-            <p><strong>Teacher:</strong> {{teacherName}}</p>
-            <p><strong>Student:</strong> {{studentName}}</p>
-        </div>
+  <table cellspacing="0" cellpadding="0" style="background-color: #f3f3fc; width: 100%; font-family: Arial, sans-serif;">
+    <tbody>
+      <tr>
+        <td align="center">
+          <div style="max-width: 670px; background-color: rgba(14, 252, 213, 0.329); padding: 5%; margin: 0 auto;">
+            <div style="background-color: white; border-radius: 12px; overflow: hidden; margin: 30px 0;">
+              <div style="background-color: #10b981; padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">Session Created: {{subject}}</h1>
+              </div>
 
-        <div class="recurrence-info">
-            <h3>Recurring Session</h3>
-            <p><strong>Pattern:</strong> {{recurrencePattern}}</p>
-            <p><strong>Days:</strong> {{recurrenceDays}}</p>
-            <p><strong>Until:</strong> {{recurrenceEndDate}}</p>
-        </div>
+              <div style="padding: 5%; text-align: left;">
+                <p style="color: #121212; line-height: 1.6;">Dear {{recipientName}},</p>
 
-        <div style="text-align: center;">
-            <a href="{{meetingLink}}" class="button">Join Session</a>
-        </div>
-        
-        <p>You can find this session in your dashboard under the "Schedule" section.</p>
-        
-        <div class="footer">
-            <p>This is an automated message from Workmate.</p>
-            <p>© 2024 Workmate. All rights reserved.</p>
-        </div>
-    </div>
+                <p style="color: #121212; line-height: 1.6;">
+                  {{mainMessage}}
+                </p>
+
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: #121212;">Session Details:</h3>
+                  <ul style="color: #121212; line-height: 1.6; list-style-type: none; padding: 0;">
+                    <li style="margin-bottom: 8px;">📚 <strong>Subject:</strong> {{subject}}</li>
+                    <li style="margin-bottom: 8px;">📅 <strong>Date:</strong> {{sessionDate}}</li>
+                    <li style="margin-bottom: 8px;">⏰ <strong>Time:</strong> {{sessionTime}}</li>
+                    <li style="margin-bottom: 8px;">⌛ <strong>Duration:</strong> {{duration}} minutes</li>
+                    <li style="margin-bottom: 8px;">👨‍🏫 <strong>Teacher:</strong> {{teacherName}}</li>
+                    <li style="margin-bottom: 8px;">👨‍🎓 <strong>Student:</strong> {{studentName}}</li>
+                  </ul>
+                </div>
+
+                <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 20px; border-radius: 8px; margin: 20px 0; {{recurringStyle}}">
+                  <h3 style="margin-top: 0; color: #121212;">Recurring Session Details</h3>
+                  <ul style="color: #121212; line-height: 1.6; list-style-type: none; padding: 0;">
+                    <li style="margin-bottom: 8px;">🔄 <strong>Pattern:</strong> {{recurrencePattern}}</li>
+                    <li style="margin-bottom: 8px;">📅 <strong>Selected Days:</strong> {{selectedDays}}</li>
+                    <li style="margin-bottom: 8px;">🎯 <strong>Until:</strong> {{recurrenceEndDate}}</li>
+                  </ul>
+                </div>
+
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="{{meetingLink}}" 
+                     style="background-color: #10b981; color: white; padding: 12px 24px; 
+                            text-decoration: none; border-radius: 6px; display: inline-block;
+                            cursor: pointer; transition: background-color 0.2s ease;
+                            font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    Join Session
+                  </a>
+                </div>
+
+                <p style="color: #121212; line-height: 1.6;">
+                  You can find this session in your dashboard under the "Schedule" section.
+                </p>
+
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #64748b; font-size: 14px;">
+                    This is an automated message from Workmate.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style="text-align: center; padding: 20px 0; color: #64748b; font-size: 14px;">
+              <p style="margin: 5px 0;">© 2024 Workmate. All rights reserved.</p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </body>
 </html>

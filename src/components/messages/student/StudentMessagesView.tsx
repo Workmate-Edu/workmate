@@ -18,6 +18,7 @@ import { MessageActions } from "@/components/messages/message-actions";
 import { decrypt } from "@/lib/encryption";
 import { useSocketContext } from "@/contexts/socket-context";
 import { MessageBubble } from "../shared/message-bubble";
+import mongoose from "mongoose";
 
 interface Message {
   _id: string;
@@ -198,38 +199,51 @@ export function StudentMessagesView({ conversation }: StudentMessagesViewProps) 
     try {
       setSending(true);
       
-      // Create temp message for immediate feedback
+      // Generate a proper MongoDB ObjectId for temp message
+      const tempId = new mongoose.Types.ObjectId().toString();
+      
+      // Create temp message with proper ID format
       const tempMessage = {
-        _id: Date.now().toString(),
+        _id: tempId,
         content: message,
         senderId: session?.user?.id,
+        conversationId: conversation._id,
         createdAt: new Date().toISOString()
       };
 
-      // Add message to state immediately
       setMessages(prev => [...prev, tempMessage]);
-      setMessage(""); // Clear input right away
+      setMessage("");
 
-      // Emit through socket first
+      // Send via socket
       socket.emit('send_message', {
         conversationId: conversation._id,
         message: tempMessage
       });
 
-      // Then save to database
+      // Save to database
       const res = await fetch(`/api/conversations/${conversation._id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: message })
+        body: JSON.stringify({ 
+          content: message,
+          tempId // Send tempId to match messages
+        })
       });
 
       if (!res.ok) throw new Error('Failed to send message');
 
+      const savedMessage = await res.json();
+      
+      // Replace temp message with saved one
+      setMessages(prev => 
+        prev.map(msg => msg._id === tempId ? savedMessage : msg)
+      );
+
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error('Failed to send message');
-      // Remove temp message if save failed
-      setMessages(prev => prev.filter(msg => msg._id !== Date.now().toString()));
+      // Remove temp message if failed
+      setMessages(prev => prev.filter(msg => msg._id !== tempId));
     } finally {
       setSending(false);
     }

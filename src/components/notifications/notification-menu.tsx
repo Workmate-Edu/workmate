@@ -14,6 +14,7 @@ import { NotificationItem } from './notification-item'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useSocketContext } from '@/contexts/socket-context'
+import { useNotifications } from '@/contexts/notification-context'
 
 interface Notification {
   _id: string
@@ -27,60 +28,45 @@ interface Notification {
 }
 
 export function NotificationMenu() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const { socket } = useSocketContext()
-  const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const { 
+    notifications = [], 
+    unreadCount = 0, 
+    markAsRead, 
+    loading,
+    fetchNotifications 
+  } = useNotifications()
+  
+  // Only show notifications if authenticated
+  if (status !== 'authenticated') {
+    return null
+  }
+
   const [isOpen, setIsOpen] = useState(false)
+  const router = useRouter()
+  const { socket } = useSocketContext()
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [])
-
+  // Add real-time updates with socket
   useEffect(() => {
     if (!socket || !session?.user?.id) return
 
-    // Listen for new notifications
-    socket.on('new_notification', (notification: Notification) => {
-      setNotifications(prev => [notification, ...prev])
-      setUnreadCount(prev => prev + 1)
+    socket.on('notification', async (data) => {
+      if (data.type === 'new_notification') {
+        await fetchNotifications() // Refresh notifications
+      }
     })
 
     return () => {
-      socket.off('new_notification')
+      socket.off('notification')
     }
   }, [socket, session?.user?.id])
 
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true)
-      const res = await fetch('/api/notifications?limit=10')
-      const data = await res.json()
-      
-      if (data.notifications) {
-        setNotifications(data.notifications)
-        setUnreadCount(data.unreadCount || 0)
-      }
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'POST'
-      })
-      setUnreadCount(prev => Math.max(0, prev - 1))
-      setNotifications(prev => prev.map(n => 
-        n._id === notificationId ? { ...n, status: { ...n.status, read: true }} : n
-      ))
+      await markAsRead(notificationId)
+      await fetchNotifications() // Refetch after marking as read
     } catch (error) {
-      console.error('Failed to mark notification as read:', error)
+      console.error('Failed to mark as read:', error)
     }
   }
 
@@ -103,10 +89,15 @@ export function NotificationMenu() {
     router.push(notificationPath) // Use the dynamic path based on user role
   }
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     const notificationPath = getNotificationPath()
     setIsOpen(false)
-    handleMarkAsRead(notification._id)
+    
+    // Only mark as read if not already read
+    if (!notification.status.read) {
+      await handleMarkAsRead(notification._id)
+    }
+    
     router.push(notificationPath)
   }
 
@@ -141,7 +132,7 @@ export function NotificationMenu() {
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
-          ) : notifications.length > 0 ? (
+          ) : Array.isArray(notifications) && notifications.length > 0 ? (
             <div className="p-4 space-y-4">
               {notifications.map((notification) => (
                 <div 

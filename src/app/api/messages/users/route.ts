@@ -18,21 +18,39 @@ export async function GET(req: Request) {
     let query = {}
 
     if (session.user.role === 'teacher') {
-      // Get assigned students for teacher
-      const teacher = await User.findById(session.user.id)
-        .select('teacherProfile.subjects')
+      // Get students with their parent info
+      const students = await User.find({
+        role: 'student'
+      })
+      .populate('parent', 'name email role') // Note: Use 'parent' instead of 'parentId'
+      .select('name email role studentProfile.registeredAs parent')
+      .lean();
+      
+      // Transform students to include correct messaging target
+      const transformedUsers = students.map(student => {
+        const isChildStudent = student.studentProfile?.registeredAs === 'child' && student.parent;
+        
+        return {
+          _id: student._id,
+          name: student.name,
+          email: student.email,
+          role: student.role,
+          type: isChildStudent ? 'child' : 'independent',
+          messageTarget: isChildStudent ? {
+            _id: student.parent._id,
+            name: student.parent.name,
+            email: student.parent.email,
+            role: 'parent'
+          } : null,
+          studentInfo: isChildStudent ? {
+            name: student.name,
+            id: student._id
+          } : null
+        };
+      });
 
-      query = {
-        role: 'student',
-        'studentProfile.subjects': {
-          $elemMatch: {
-            $or: teacher.teacherProfile.subjects.map((area: any) => ({
-              area: area.area,
-              name: { $in: area.subjects }
-            }))
-          }
-        }
-      }
+      console.log('Transformed users:', transformedUsers); // Debug log
+      return NextResponse.json(transformedUsers);
     } else if (session.user.role === 'student') {
       // Get teachers for student's subjects
       const student = await User.findById(session.user.id)

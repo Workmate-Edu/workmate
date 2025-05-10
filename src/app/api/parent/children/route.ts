@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/models/user";
+import { ChildAssessment } from "@/models/child-assessment";
 import bcrypt from "bcryptjs";
 
 // 👉 GET handler to fetch parent's children
@@ -33,7 +34,27 @@ export async function GET(req: Request) {
       subjects: child.studentProfile?.subjects || [],
     })) || [];
 
-    return NextResponse.json({ children });
+    // Fetch assessment status for each child
+    const childrenWithAssessments = await Promise.all(
+      children.map(async (child) => {
+        const assessment = await ChildAssessment.findOne({ 
+          childId: child.id,
+          type: 'parent_questionnaire'
+        }).select('status').lean();
+
+        return {
+          ...child,
+          assessmentStatus: {
+            exists: !!assessment,
+            status: assessment?.status || 'none',
+            canCreate: !assessment || assessment.status === 'none',
+            canEdit: assessment?.status === 'pending'
+          }
+        };
+      })
+    );
+
+    return NextResponse.json({ children: childrenWithAssessments });
   } catch (error) {
     console.error("[CHILDREN_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

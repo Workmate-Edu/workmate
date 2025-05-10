@@ -51,6 +51,24 @@ export interface TeacherAssessmentSubmission {
   grade?: number
 }
 
+export interface FileAttachment {
+  name: string;
+  type: string;
+  size: number;
+  url: string;
+  publicId?: string;
+}
+
+export interface Question {
+  id: string;
+  type: 'text' | 'multiple_choice' | 'file';
+  question: string;
+  options?: string[];
+  correctAnswer?: string;
+  points: number;
+  attachment?: FileAttachment;
+}
+
 export interface TeacherAssessment {
   id: string
   title: string
@@ -61,15 +79,20 @@ export interface TeacherAssessment {
   status: TeacherAssessmentStatus
   dueDate: string
   submissions: TeacherAssessmentSubmission[]
-  questions?: Array<{
-    id: string
-    type: QuestionType
-    question: string
-    options?: string[]
-    points: number
-  }>
+  questions: Question[]
   points: number
   attachment?: string
   createdAt: string
   updatedAt: string
 }
+
+export const FILE_UPLOAD_LIMITS = {
+  maxSize: 5 * 1024 * 1024, // 5MB in bytes
+  allowedTypes: [
+    'image/jpeg',
+    'image/png',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ]
+} as const;

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table"
 import { AssignTeacherButton } from "@/components/admin/assign-teacher-button"
 import { useStudentAssessments } from "@/hooks/use-student-assessments"
+import { useChildAssessment } from '@/hooks/use-child-assessment'
 
 interface StudentProgress {
   weekNumber: number;
@@ -195,10 +196,20 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
   const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
   const [showAssessmentDialog, setShowAssessmentDialog] = useState(false);
   const { assessments, loading: loadingAssessments } = useStudentAssessments(params.studentId);
+  const { assessment: childAssessment, loading: loadingChildAssessment } = useChildAssessment(params.studentId)
 
   useEffect(() => {
     fetchStudentDetails();
   }, [params.studentId]);
+
+  useEffect(() => {
+    console.log('Student ID:', params.studentId)
+    console.log('Student Type:', student?.type)
+    if (student?.type === 'child') {
+      console.log('Child Assessment:', childAssessment)
+      console.log('Loading Child Assessment:', loadingChildAssessment)
+    }
+  }, [params.studentId, student?.type, childAssessment, loadingChildAssessment])
 
   const fetchStudentDetails = async () => {
     try {
@@ -265,9 +276,13 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
   };
 
   const renderAssessmentsContent = () => {
-    if (loadingAssessments) {
-      return <div className="text-center py-8">Loading assessments...</div>;
+    if (loadingAssessments || loadingChildAssessment) {
+      console.log('Loading assessments...')
+      return <div className="text-center py-8">Loading assessments...</div>
     }
+
+    console.log('Child Assessment in render:', childAssessment)
+    console.log('Student type:', student?.type)
 
     const hasAssessments = (assessments.initial.length + assessments.child.length) > 0;
     if (!hasAssessments) {
@@ -327,12 +342,77 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
       );
     }
 
-    // For children, show both initial and parent questionnaire assessments
-    return (
-      <ScrollArea className="h-[600px] rounded-md border p-4">
-        {[...assessments.initial, ...assessments.child]
-          .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-          .map(assessment => (
+    // For children, show parent questionnaire first
+    if (student?.type === 'child') {
+      if (!childAssessment) {
+        console.log('No child assessment found')
+        return (
+          <div className="text-center py-8 text-muted-foreground">
+            No parent questionnaire found
+          </div>
+        )
+      }
+
+      return (
+        <ScrollArea className="h-[600px] rounded-md border p-4">
+          {childAssessment && (
+            <div className="mb-8">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h4 className="font-medium">Parent Questionnaire</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Submitted: {formatDate(childAssessment.createdAt)}
+                  </p>
+                </div>
+                <Badge>{childAssessment.status}</Badge>
+              </div>
+              {renderAssessmentResponses(childAssessment.responses)}
+              
+              {/* Family Background Section */}
+              {childAssessment.familyBackground && (
+                <div className="mt-6 p-4 bg-muted/20 rounded-lg">
+                  <h4 className="font-semibold mb-4">Family Background</h4>
+                  <div className="space-y-2">
+                    <p><span className="font-medium">Primary Language:</span> {childAssessment.familyBackground.primaryLanguage}</p>
+                    {childAssessment.familyBackground.otherLanguages?.length > 0 && (
+                      <p><span className="font-medium">Other Languages:</span> {childAssessment.familyBackground.otherLanguages.join(', ')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Goals and Challenges */}
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="p-4 bg-muted/20 rounded-lg">
+                  <h4 className="font-semibold mb-4">Goals</h4>
+                  {childAssessment.goals?.length > 0 ? (
+                    <ul className="list-disc pl-4">
+                      {childAssessment.goals.map((goal, idx) => (
+                        <li key={idx}>{goal}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-muted-foreground">No goals specified</p>
+                  )}
+                </div>
+                <div className="p-4 bg-muted/20 rounded-lg">
+                  <h4 className="font-semibold mb-4">Challenge Areas</h4>
+                  {childAssessment.challengeAreas?.length > 0 ? (
+                    <ul className="list-disc pl-4">
+                      {childAssessment.challengeAreas.map((area, idx) => (
+                        <li key={idx}>{area}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-muted-foreground">No challenge areas specified</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Show other assessments if any */}
+          {assessments.initial.map(assessment => (
             <div key={assessment._id} className="mb-8 last:mb-0">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -348,9 +428,10 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
               {renderAssessmentResponses(assessment.responses)}
             </div>
           ))}
-      </ScrollArea>
-    );
-  };
+        </ScrollArea>
+      )
+    }
+  }
 
   if (loading) {
     return (
@@ -396,7 +477,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
             </Badge>
           </div>
         </div>
-        {!student.assignedTeacher && (
+        {/* {!student.assignedTeacher && (
           <AssignTeacherButton
             studentId={student.id}
             studentName={student.name}
@@ -405,15 +486,15 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
             subjects={student.subjects}
             onAssigned={fetchStudentDetails}
           />
-        )}
+        )} */}
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="subjects">Subjects</TabsTrigger>
-          <TabsTrigger value="assessments">Assessments</TabsTrigger>
-          <TabsTrigger value="teacher">Assigned Teacher</TabsTrigger>
+          <TabsTrigger value="assessments">Initial Assessments</TabsTrigger>
+          {/* <TabsTrigger value="teacher">Assigned Teacher</TabsTrigger> */}
           <TabsTrigger value="progress">Progress</TabsTrigger>
         </TabsList>
 
@@ -462,7 +543,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
                   </p>
                 </div>
                 <div>
-                  <Label>Assessment Status</Label>
+                  <Label>Initial Assessment Status</Label>
                   <Badge variant={student?.assessmentStatus === 'pending' ? 'warning' : 'default'}>
                     {student?.assessmentStatus || 'Not started'}
                   </Badge>
@@ -501,7 +582,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-lg">Assessment Status</h3>
+                  <h3 className="font-semibold text-lg">Initial Assessment Status</h3>
                   <Badge className="mt-2" variant={student?.assessmentStatus === 'pending' ? 'warning' : 'default'}>
                     {student?.assessmentStatus || 'Not started'}
                   </Badge>

@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/notifications/empty-state"
 import { NotificationItem } from "@/components/notifications/notification-item"
 import { useSocketContext } from "@/contexts/socket-context"
 import { filterAndSortNotifications } from '@/lib/notification-utils';
+import { useNotifications } from '@/contexts/notification-context'
 
 interface Notification {
   _id: string;
@@ -27,79 +28,44 @@ interface Notification {
 }
 
 export default function StudentNotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(true)
+  const { 
+    notifications = [],
+    loading = false,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+    unreadCount = 0,
+    fetchNotifications
+  } = useNotifications()
   const [activeTab, setActiveTab] = useState('all')
   const { socket } = useSocketContext()
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [])
-
-  const fetchNotifications = async () => {
+  const handleMarkAsRead = async (notificationId: string) => {
     try {
-      setLoading(true)
-      const res = await fetch('/api/notifications')
-      if (!res.ok) throw new Error('Failed to fetch notifications')
-      const data = await res.json()
-      setNotifications(data.notifications || [])
+      await markAsRead(notificationId)
+      await fetchNotifications() // Refetch after marking as read
     } catch (error) {
-      console.error('Error fetching notifications:', error)
-      toast.error("Failed to load notifications")
-    } finally {
-      setLoading(false)
+      toast.error("Failed to mark as read")
     }
   }
 
   const handleMarkAllRead = async () => {
-    try {
-      await fetch('/api/notifications/mark-all-read', { method: 'POST' })
-      setNotifications(prev => prev.map(n => ({
-        ...n,
-        status: { ...n.status, read: true, readAt: new Date().toISOString() }
-      })))
-      toast.success("All notifications marked as read")
-    } catch (error) {
-      toast.error("Failed to mark notifications as read")
-    }
+    await markAllAsRead()
   }
 
   const handleClearAll = async () => {
-    try {
-      await fetch('/api/notifications/clear-all', { method: 'DELETE' })
-      setNotifications([])
-      toast.success("All notifications cleared")
-    } catch (error) {
-      toast.error("Failed to clear notifications")
-    }
+    await clearAll()
   }
 
   const getFilteredNotifications = () => {
     return filterAndSortNotifications(notifications, activeTab);
   };
 
-  const handleMarkAsRead = async (notificationId: string) => {
-    try {
-      const res = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'POST'
-      })
-
-      if (!res.ok) {
-        throw new Error('Failed to mark notification as read')
-      }
-
-      // Update local state
-      setNotifications(prev => prev.map(n => 
-        n._id === notificationId 
-          ? { ...n, status: { ...n.status, read: true }} 
-          : n
-      ))
-
-      toast.success("Notification marked as read")
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error)
-      toast.error("Failed to mark notification as read")
-    }
+  // Helper function for safe notification filtering
+  const getUnreadCount = () => {
+    return Array.isArray(notifications) 
+      ? notifications.filter(n => !n.status?.read).length 
+      : 0
   }
 
   return (
@@ -118,7 +84,7 @@ export default function StudentNotificationsPage() {
               variant="outline" 
               className="flex items-center justify-center gap-2 w-full sm:w-auto"
               onClick={handleMarkAllRead}
-              disabled={notifications.filter(n => !n.status.read).length === 0}
+              disabled={getUnreadCount() === 0}
             >
               <MailOpen className="h-4 w-4" />
               <span>Mark all read</span>

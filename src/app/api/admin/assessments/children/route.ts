@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/auth-options"
-import { ChildAssessment, type ChildAssessmentDocument } from "@/models/child-assessment.model"
+import { ChildAssessment } from "@/models/child-assessment.model"
 import { connectDB } from "@/lib/mongodb"
 
 export async function GET(request: Request) {

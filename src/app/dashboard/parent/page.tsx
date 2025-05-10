@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
-import { BookOpen, GraduationCap, Users, MessageSquare, Plus } from "lucide-react"
+import { BookOpen, GraduationCap, Users, MessageSquare, Plus, ClipboardCheck, Edit } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -21,6 +21,12 @@ interface Child {
     };
     progress?: number;
   }>;
+  assessmentStatus: {
+    exists: boolean;
+    status: 'none' | 'pending' | 'assigned';
+    canCreate: boolean;
+    canEdit: boolean;
+  };
 }
 
 export default function ParentDashboardPage() {
@@ -44,6 +50,56 @@ export default function ParentDashboardPage() {
 
     fetchChildren()
   }, [])
+
+  const renderAssessmentButton = (child: Child) => {
+    const { assessmentStatus } = child;
+
+    if (!assessmentStatus.exists && assessmentStatus.canCreate) {
+      return (
+        <Button 
+          variant="default" 
+          className="w-full mt-3"
+          asChild
+        >
+          <Link href={`/dashboard/parent/children/${child.id}/assessment/create`}>
+            <ClipboardCheck className="mr-2 h-4 w-4" />
+            Create Assessment
+          </Link>
+        </Button>
+      );
+    }
+
+    if (assessmentStatus.status === 'pending' && assessmentStatus.canEdit) {
+      return (
+        <Button 
+          variant="secondary" 
+          className="w-full mt-3"
+          asChild
+        >
+          <Link href={`/dashboard/parent/children/${child.id}/assessment/edit`}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Assessment
+          </Link>
+        </Button>
+      );
+    }
+
+    if (assessmentStatus.status === 'assigned') {
+      return (
+        <div className="mt-3">
+          <Badge 
+            variant="secondary"
+            className="w-full py-1 flex items-center justify-center"
+          >
+            <GraduationCap className="mr-2 h-4 w-4" />
+            Assessment Completed
+          </Badge>
+        </div>
+      ); 
+    }
+
+    return null;
+  };
 
   if (loading) {
     return (
@@ -72,71 +128,68 @@ export default function ParentDashboardPage() {
           <Card key={child.id} className="relative overflow-hidden group hover:shadow-lg transition-shadow">
             {/* Top Accent Bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/50" />
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold tracking-tight">{child.name}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">{child.email}</p>
+            <div className="p-6 flex flex-col justify-between h-full">
+              <div className="space-y-6">
+                {/* Header Section */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight">{child.name}</h2>
+                    <p className="text-sm text-muted-foreground mt-1">{child.email}</p>
+                  </div>
+                  <Badge variant={child.grade ? "default" : "secondary"}>
+                    {child.grade || 'No Grade'}
+                  </Badge>
                 </div>
-                <Badge variant={child.grade ? "default" : "secondary"}>
-                  {child.grade || 'No Grade'}
-                </Badge>
-              </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium flex items-center gap-1">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    Subjects
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {child.subjects?.length || 0}
-                  </p>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium flex items-center gap-1">
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
+                      Subjects
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {child.subjects?.length || 0}
+                    </p>
+                  </div>
                 </div>
-                {/* <div className="space-y-1">
-                  <p className="text-sm font-medium flex items-center gap-1">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    Teachers
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {child.subjects?.filter(s => s.teacher).length || 0}
-                  </p>
-                </div> */}
-              </div>
 
-              {/* Subjects List */}
-              {child.subjects && child.subjects.length > 0 && (
-                <div className="space-y-3 mb-6">
-                  {child.subjects.map((subject, index) => (
-                    <div key={index} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <p className="font-medium">{subject.name}</p>
-                        {subject.teacher && (
-                          <p className="text-muted-foreground">{subject.teacher.name}</p>
-                        )}
+                {/* Subjects List */}
+                {child.subjects && child.subjects.length > 0 && (
+                  <div className="space-y-3">
+                    {child.subjects.map((subject, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <p className="font-medium">{subject.name}</p>
+                          {subject.teacher && (
+                            <p className="text-muted-foreground">{subject.teacher.name}</p>
+                          )}
+                        </div>
+                        <Progress value={subject.progress || 0} className="h-1.5" />
                       </div>
-                      <Progress value={subject.progress || 0} className="h-1.5" />
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
 
-              {/* Action Links */}
-              <div className="grid grid-cols-2 gap-3">
-                <Link href={`/dashboard/parent/children/${child.id}`}>
-                  <Button variant="outline" className="w-full group-hover:border-primary/50 transition-colors">
-                    <GraduationCap className="mr-2 h-4 w-4" />
-                    View Progress
-                  </Button>
-                </Link>
-                <Link href={`/dashboard/parent/messages`}>
-                  <Button variant="outline" className="w-full group-hover:border-primary/50 transition-colors">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Message Teachers
-                  </Button>
-                </Link>
+                {/* Action Links */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Link href={`/dashboard/parent/children/${child.id}`}>
+                    <Button variant="outline" className="w-full group-hover:border-primary/50 transition-colors">
+                      <GraduationCap className="mr-2 h-4 w-4" />
+                      View Progress
+                    </Button>
+                  </Link>
+                  <Link href={`/dashboard/parent/messages`}>
+                    <Button variant="outline" className="w-full group-hover:border-primary/50 transition-colors">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Message Teachers
+                    </Button>
+                  </Link>
+                </div>
               </div>
+
+              {/* Assessment Button - Now at bottom */}
+              {renderAssessmentButton(child)}
             </div>
           </Card>
         ))}

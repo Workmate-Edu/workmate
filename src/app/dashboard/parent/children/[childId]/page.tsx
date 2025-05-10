@@ -164,6 +164,7 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
       const response = await fetch(`/api/parent/children/${params.childId}/assessment`)
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Failed to fetch assessment")
+      console.log('Assessment data:', data) // Debug logging
       if (data.assessment) {
         setAssessment({
           status: data.assessment.status,
@@ -293,6 +294,49 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
       </div>
     )
   }
+
+  const renderAssessmentStatus = (status: string) => {
+    switch (status) {
+      case 'assigned':
+        return <Badge variant="success">Teacher Assigned</Badge>
+      case 'pending':
+        return <Badge variant="warning">Pending</Badge>
+      default:
+        return <Badge variant="secondary">Not Started</Badge>
+    }
+  }
+
+  const canEditAssessment = (assessment: any) => {
+    return assessment?.status === 'pending'
+  }
+
+  const renderAssessmentActions = () => {
+    if (assessmentLoading) return null;
+
+    if (!assessment) {
+      return (
+        <Button asChild>
+          <Link href={`/dashboard/parent/children/${child?.id}/assessment`}>
+            Start Assessment
+          </Link>
+        </Button>
+      );
+    }
+
+    // Only show edit if assessment exists and is pending
+    if (canEditAssessment(assessment)) {
+      return (
+        <Button 
+          variant="outline" 
+          onClick={() => setShowEditAssessment(true)}
+        >
+          Edit Assessment
+        </Button>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="container py-8">
@@ -533,24 +577,15 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold text-lg">Assessment Status</h3>
-                  <Badge className="mt-2" variant={assessment?.status === 'pending' ? 'warning' : 'default'}>
-                    {assessmentLoading ? 'Loading...' : (assessment?.status || 'Not started')}
-                  </Badge>
+                  {renderAssessmentStatus(assessment?.status)}
+                  {assessment?.status === 'assigned' && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Assessment is locked - Teacher has been assigned
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2">
-                  {!assessmentLoading && (
-                    assessment ? (
-                      <Button variant="outline" onClick={() => setShowEditAssessment(true)}>
-                        Edit Assessment
-                      </Button>
-                    ) : (
-                      <Button asChild>
-                        <Link href={`/dashboard/parent/children/${child?.id}/assessment`}>
-                          Start Assessment
-                        </Link>
-                      </Button>
-                    )
-                  )}
+                  {renderAssessmentActions()}
                 </div>
               </div>
 

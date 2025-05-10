@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useSocketContext } from "@/contexts/socket-context"; 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ConversationItem } from "../shared/ConversationItem";
+import { useSocketContext } from "@/contexts/socket-context";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Participant {
   userId?: {
@@ -42,24 +43,24 @@ interface StudentConversationListProps {
   activeConversation: ConversationWithOther | null;
 }
 
-export function StudentConversationList({ 
-  onSelectConversation, 
-  activeConversation 
+export function StudentConversationList({
+  onSelectConversation,
+  activeConversation
 }: StudentConversationListProps) {
-  const { data: session } = useSession();
   const [conversations, setConversations] = useState<ConversationWithOther[]>([]);
   const [loading, setLoading] = useState(true);
-  const { socket, isConnected } = useSocketContext(); // ✅ Updated usage
+  const { socket, isConnected } = useSocketContext();
 
   useEffect(() => {
     const fetchConversations = async () => {
       try {
+        setLoading(true);
         const res = await fetch('/api/conversations?role=teacher');
         if (!res.ok) throw new Error('Failed to fetch conversations');
         const data = await res.json();
         setConversations(data);
       } catch (error) {
-        console.error('Error fetching conversations:', error);
+        console.error('Error:', error);
       } finally {
         setLoading(false);
       }
@@ -69,79 +70,60 @@ export function StudentConversationList({
   }, []);
 
   useEffect(() => {
-    if (!session?.user?.id || !socket) return;
+    if (!socket) return;
 
-    const handleConversationUpdate = (data: {
-        conversation?: any;
-        action: string;
-        messageId?: string;
-      }) => {
-        if (!data.conversation || !data.conversation._id) {
-          console.warn("⚠️ Received malformed conversation update:", data);
-          return;
-        }
-      
-        setConversations(prev =>
-          prev.map(conv =>
-            conv._id === data.conversation._id
-              ? {
-                  ...conv,
-                  ...data.conversation,
-                  lastMessage: data.conversation.lastMessage || {
-                    content: 'No messages',
-                    createdAt: new Date().toISOString(),
-                  },
-                }
-              : conv
-          )
-        );
-      };
-      
+    const handleConversationUpdate = (data: any) => {
+      setConversations(prev => prev.map(conv => 
+        conv._id === data.conversationId ? { ...conv, ...data } : conv
+      ));
+    };
 
     socket.on('conversation_update', handleConversationUpdate);
 
     return () => {
       socket.off('conversation_update', handleConversationUpdate);
     };
-  }, [session?.user?.id, socket]);
-
-  const getOtherParticipant = (conversation: ConversationWithOther) => {
-    return conversation.participants.find(p => 
-      p.role === 'teacher' || (p.userId?.id !== session?.user?.id)
-    );
-  };
+  }, [socket]);
 
   if (loading) {
-    return <div className="flex justify-center py-4">
-      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-    </div>;
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3 p-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-[120px]" />
+              <Skeleton className="h-3 w-[180px]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!conversations.length) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        <p>No conversations yet</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-2">
-      {!isConnected && (
-        <div className="text-center text-xs text-muted-foreground">
-          Connecting to server...
-        </div>
-      )}
-
-      {conversations.map((conv) => (
-        <ConversationItem
-          key={conv._id}
-          name={conv.otherParticipant?.name || 'Unknown'}
-          lastMessage={conv.lastMessage?.content}
-          unreadCount={conv.unreadCount || 0}
-          active={activeConversation?._id === conv._id}
-          role={conv.otherParticipant?.role === 'teacher' ? 'Teacher' : undefined}
-          onClick={() => onSelectConversation(conv)}
-        />
-      ))}
-
-      {conversations.length === 0 && (
-        <div className="text-center py-4 text-sm text-muted-foreground">
-          No conversations yet
-        </div>
-      )}
-    </div>
+    <ScrollArea className="h-[calc(100vh-12rem)]">
+      <div className="space-y-2">
+        {conversations.map((conversation) => (
+          <ConversationItem
+            key={conversation._id}
+            name={conversation.otherParticipant?.name || "Unknown"}
+            role={conversation.otherParticipant?.role}
+            lastMessage={conversation.lastMessage?.content}
+            unreadCount={conversation.unreadCount || 0}
+            active={activeConversation?._id === conversation._id}
+            onClick={() => onSelectConversation(conversation)}
+          />
+        ))}
+      </div>
+    </ScrollArea>
   );
 }

@@ -22,12 +22,21 @@ export async function POST(
       return NextResponse.json({ error: "Assessment not found" }, { status: 404 })
     }
 
+    const processedAnswers = Object.entries(answers).map(([questionId, answer]: [string, any]) => ({
+      questionId,
+      answer: answer.text || answer,
+      attachments: answer.attachments?.map((attachment: any) => ({
+        name: attachment.name,
+        type: attachment.type,
+        size: attachment.size,
+        url: attachment.url,
+        publicId: extractPublicId(attachment.url)
+      })) || []
+    }))
+
     const submission = {
       studentId: session.user.id,
-      answers: Object.entries(answers).map(([questionId, answer]) => ({
-        questionId,
-        answer
-      })),
+      answers: processedAnswers,
       submittedAt: new Date()
     }
 
@@ -45,10 +54,7 @@ export async function POST(
   }
 }
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
@@ -57,57 +63,102 @@ export async function PUT(
 
     await connectDB()
     const { answers } = await req.json()
+    console.log('Processing submission:', answers)
 
     const assessment = await TeacherAssessment.findById(params.id)
     if (!assessment) {
       return NextResponse.json({ error: "Assessment not found" }, { status: 404 })
     }
 
-    // Check if assessment can be updated
-    const dueDate = new Date(assessment.dueDate)
-    const now = new Date()
-    if (now > dueDate) {
-      return NextResponse.json({ error: "Assessment is overdue" }, { status: 400 })
+    // Format answers with attachments
+    const processedAnswers = answers.map((answer: any) => {
+      // Log each answer being processed
+      console.log('Processing answer:', answer)
+      
+      return {
+        questionId: answer.questionId,
+        answer: answer.answer,
+        attachments: answer.attachments ? answer.attachments.map((att: any) => ({
+          name: att.name,
+          type: att.type,
+          size: att.size,
+          url: att.url,
+          publicId: att.publicId
+        })) : []
+      }
+    })
+
+    // Create new submission document
+    const submissionData = {
+      studentId: session.user.id,
+      answers: processedAnswers,
+      submittedAt: new Date()
     }
 
-    if (assessment.status === 'graded') {
-      return NextResponse.json({ error: "Cannot update graded assessment" }, { status: 400 })
-    }
-
-    // Update or create submission
+    // Find existing submission
     const submissionIndex = assessment.submissions.findIndex(
       (s: any) => s.studentId.toString() === session.user.id
     )
 
-    const submission = {
-      studentId: session.user.id,
-      answers: answers.map((answer: any) => ({
-        questionId: answer.questionId,
-        answer: answer.answer
-      })),
-      submittedAt: new Date()
-    }
-
+    // Update or create submission
     if (submissionIndex >= 0) {
       // Update existing submission
-      assessment.submissions[submissionIndex] = submission
+      assessment.submissions[submissionIndex] = {
+        ...assessment.submissions[submissionIndex].toObject(),
+        answers: processedAnswers,
+        submittedAt: new Date()
+      }
     } else {
       // Add new submission
-      assessment.submissions.push(submission)
+      assessment.submissions.push(submissionData)
     }
 
+    // Mark the submissions array as modified
+    assessment.markModified('submissions')
     assessment.status = 'submitted'
-    await assessment.save()
+
+    // Save and get updated assessment
+    const updatedAssessment = await assessment.save()
+
+    // Log final submission
+    console.log('Final submission saved:', JSON.stringify(submissionData, null, 2))
 
     return NextResponse.json({ 
       success: true,
-      submission: submission
+      assessment: {
+        ...updatedAssessment.toObject(),
+        id: updatedAssessment._id.toString(),
+        submissions: updatedAssessment.submissions.map((sub: any) => ({
+          ...sub.toObject(),
+          studentId: sub.studentId.toString()
+        }))
+      },
+      submission: submissionData
     })
+
   } catch (error) {
-    console.error('Update submission error:', error)
+    console.error('Submission error:', error)
     return NextResponse.json(
       { error: "Failed to update submission" },
       { status: 500 }
     )
+  }
+}
+
+// Helper function to extract publicId from Cloudinary URL
+function extractPublicId(url: string): string {
+  if (!url) return '';
+  
+  try {
+    // Extract the path after /upload/
+    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/);
+    if (matches && matches[1]) {
+      // Remove any query parameters
+      return matches[1].split('?')[0];
+    }
+    return '';
+  } catch (error) {
+    console.error('Error extracting public ID:', error);
+    return '';
   }
 }

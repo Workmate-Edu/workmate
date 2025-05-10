@@ -47,7 +47,7 @@ const childAssessmentSchema = new Schema({
   additionalNotes: String,
   status: {
     type: String,
-    enum: ['pending', 'assigned', 'completed'],
+    enum: ['pending', 'assigned'],
     default: 'pending'
   },
   adminReview: {

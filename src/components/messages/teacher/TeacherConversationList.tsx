@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageSquare, Users } from "lucide-react";
 import { useSocketContext } from "@/contexts/socket-context"; // ✅ Updated import
+import { Button } from "@/components/ui/button"; // Import Button component
+import { toast } from "sonner"; // Change to use sonner instead of react-toastify
 
 interface Conversation {
   _id: string;
@@ -28,16 +30,28 @@ interface ConversationWithOther extends Conversation {
   };
 }
 
+interface StudentWithParent {
+  _id: string;
+  name: string;
+  email: string;
+  parent: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+}
+
+interface TeacherConversationListProps {
+  onSelectConversation: (conv: ConversationWithOther) => void;
+  activeConversation: ConversationWithOther | null;
+  searchQuery?: string;
+}
+
 export function TeacherConversationList({ 
   onSelectConversation, 
   activeConversation,
   searchQuery = ""
-}: {
-  onSelectConversation: (conv: ConversationWithOther) => void;
-  activeConversation: ConversationWithOther | null;
-  searchQuery?: string;
-  role?: 'student' | 'parent';
-}) {
+}: TeacherConversationListProps) {
   const { data: session } = useSession();
   const [conversations, setConversations] = useState<ConversationWithOther[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,6 +117,62 @@ export function TeacherConversationList({
   const filteredConversations = conversations.filter(conv =>
     conv.otherParticipant?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const renderStudentItem = (student: StudentWithParent) => (
+    <div className="space-y-2 p-3 hover:bg-muted rounded-lg">
+      {/* Student option */}
+      <Button
+        variant="ghost"
+        className="w-full justify-start"
+        onClick={() => startConversation(student._id, 'student')}
+      >
+        <MessageSquare className="h-4 w-4 mr-2" />
+        Message {student.name} (Student)
+      </Button>
+
+      {/* Parent option */}
+      <Button
+        variant="ghost"
+        className="w-full justify-start"
+        onClick={() => startConversation(student.parent._id, 'parent', student._id)}
+      >
+        <Users className="h-4 w-4 mr-2" />
+        Message Parent ({student.parent.name})
+      </Button>
+    </div>
+  );
+
+  const startConversation = async (student: any) => {
+    try {
+      // Determine if we're messaging parent or student directly
+      const isChildStudent = student.type === 'child';
+      const targetUser = isChildStudent ? student.messageTarget : student;
+      
+      console.log('Starting conversation with:', {
+        isChildStudent,
+        target: targetUser,
+        studentInfo: student.studentInfo
+      });
+  
+      const res = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participantId: targetUser._id,
+          type: isChildStudent ? 'parent' : 'direct_student',
+          childId: isChildStudent ? student.studentInfo.id : undefined,
+          studentType: student.type
+        })
+      });
+  
+      if (!res.ok) throw new Error('Failed to create conversation');
+      const conversation = await res.json();
+      onSelectConversation(conversation);
+    } catch (error) {
+      console.error('Conversation error:', error);
+      toast.error('Failed to start conversation');
+    }
+  };
 
   if (loading) {
     return (

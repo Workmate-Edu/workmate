@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select"
 import { Trash2, Plus, Upload, FileIcon, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { FILE_UPLOAD_LIMITS } from "@/types/assessment"
 
 interface Option {
   id: string;
@@ -30,6 +31,12 @@ interface QuestionFormProps {
   onCancel: () => void;
 }
 
+// Add this interface for loading states
+interface LoadingStates {
+  text: string;
+  progress: number;
+}
+
 export const QuestionForm: React.FC<QuestionFormProps> = ({ onAddQuestion, onCancel }) => {
   const [type, setType] = React.useState<'multiple_choice' | 'text' | 'file'>('text')
   const [question, setQuestion] = React.useState("")
@@ -39,6 +46,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({ onAddQuestion, onCan
   const [currentOption, setCurrentOption] = React.useState("")
   const [attachment, setAttachment] = useState<FileAttachment | null>(null);
   const [isUploading, setIsUploading] = useState(false)
+  const [loadingState, setLoadingState] = useState<LoadingStates>({
+    text: '',
+    progress: 0
+  });
 
   // Cleanup preview URLs when component unmounts
   useEffect(() => {
@@ -90,45 +101,78 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({ onAddQuestion, onCan
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setAttachment({
-        file,
-        previewUrl,
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
+    if (!file) return;
+
+    // Check file size
+    if (file.size > FILE_UPLOAD_LIMITS.maxSize) {
+      toast.error(`File size must be less than ${formatBytes(FILE_UPLOAD_LIMITS.maxSize)}`);
+      return;
     }
+
+    // Check file type
+    if (!FILE_UPLOAD_LIMITS.allowedTypes.includes(file.type)) {
+      toast.error("File type not supported");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAttachment({
+      file,
+      previewUrl,
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true)
     try {
+      setLoadingState({ text: 'Preparing upload...', progress: 10 });
       const formData = new FormData()
       formData.append('file', file)
 
+      setLoadingState({ text: 'Uploading file...', progress: 30 });
       const response = await fetch('/api/assessments/upload', {
         method: 'POST',
         body: formData
       })
 
+      setLoadingState({ text: 'Processing...', progress: 70 });
+
       if (!response.ok) {
         throw new Error('Upload failed')
       }
 
+      setLoadingState({ text: 'Finalizing...', progress: 90 });
       const data = await response.json()
+      
+      setLoadingState({ text: 'Complete!', progress: 100 });
       return {
         name: file.name,
         type: file.type,
         size: file.size,
-        url: data.secure_url
+        url: data.secure_url,
+        publicId: data.public_id
       }
     } catch (error) {
+      console.error('File upload error:', error)
       toast.error("Failed to upload file")
       throw error
     } finally {
       setIsUploading(false)
+      // Reset loading state after a brief delay
+      setTimeout(() => {
+        setLoadingState({ text: '', progress: 0 });
+      }, 1000);
     }
   }
 
@@ -138,10 +182,20 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({ onAddQuestion, onCan
     try {
       let fileData
       if (type === 'file' && attachment) {
-        fileData = await handleFileUpload(attachment.file)
+        console.log('Processing file attachment:', attachment)
+        const uploadResult = await handleFileUpload(attachment.file)
+        console.log('Upload result:', uploadResult)
+        
+        fileData = {
+          name: attachment.name,
+          type: attachment.type,
+          size: attachment.size,
+          url: uploadResult.url,
+          publicId: uploadResult.publicId
+        }
       }
 
-      onAddQuestion({
+      const questionData = {
         id: Date.now().toString(),
         type,
         question,
@@ -149,15 +203,19 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({ onAddQuestion, onCan
         correctAnswer: type !== 'file' ? correctAnswer : undefined,
         points,
         attachment: fileData
-      })
+      }
 
-      // Reset form
+      console.log('Submitting question with attachment:', questionData)
+      onAddQuestion(questionData)
+      // Reset form state
       setQuestion("")
       setOptions([])
       setCorrectAnswer("")
+      setPoints(10)
       setAttachment(null)
     } catch (error) {
       console.error('Question creation error:', error)
+      toast.error("Failed to create question")
     }
   }
 
@@ -253,48 +311,69 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({ onAddQuestion, onCan
       {type === 'file' && (
         <div className="space-y-2">
           <Label>File Attachment</Label>
-          {isUploading ? (
-            <div className="flex items-center gap-2 p-2 border rounded-md">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Uploading file...</span>
-            </div>
-          ) : (
-            attachment ? (
-              <div className="flex items-center gap-2 p-2 border rounded-md">
-                <FileIcon className="h-4 w-4" />
-                <span className="flex-1 text-sm truncate">{attachment.name}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setAttachment(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+          <div className="border rounded-lg p-4">
+            {isUploading ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-8">
+                <div className="w-full max-w-xs bg-secondary rounded-full h-2.5 relative">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                    style={{ width: `${loadingState.progress}%` }}
+                  />
+                  <span className="absolute top-4 left-1/2 -translate-x-1/2 text-sm text-muted-foreground">
+                    {loadingState.progress}%
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-6">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm font-medium">{loadingState.text}</span>
+                </div>
+              </div>
+            ) : attachment ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileIcon className="h-4 w-4" />
+                  <span className="flex-1 text-sm truncate">{attachment.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatBytes(attachment.size)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAttachment(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload File
-                </Button>
+              <div className="space-y-2">
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Input
+                    type="file"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="file-upload"
+                    accept={FILE_UPLOAD_LIMITS.allowedTypes.join(',')}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose File
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Max size: {formatBytes(FILE_UPLOAD_LIMITS.maxSize)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Supported formats: PDF, Word, Images
+                  </p>
+                </div>
               </div>
-            )
-          )}
-          <p className="text-sm text-muted-foreground">
-            Students will need to upload their answer file
-          </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -339,10 +418,27 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({ onAddQuestion, onCan
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel}
+          disabled={isUploading}
+        >
           Cancel
         </Button>
-        <Button type="submit">Add Question</Button>
+        <Button 
+          type="submit"
+          disabled={isUploading || (type === 'file' && !attachment)}
+        >
+          {isUploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Uploading File...
+            </>
+          ) : (
+            'Add Question'
+          )}
+        </Button>
       </div>
     </form>
   )

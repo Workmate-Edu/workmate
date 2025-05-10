@@ -13,7 +13,7 @@ import {
   FiTrash2, FiDownload, FiCheck
 } from "react-icons/fi"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ChevronLeft, Loader2 } from "lucide-react"
+import { ChevronLeft, Loader2, FileIcon } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { FileViewerModal } from "@/components/file-viewer-modal"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { FileViewer } from "@/components/file-viewer"
 
 type Submission = {
   studentId: string
@@ -65,13 +68,14 @@ type Assessment = {
   teacherId: string
 }
 
-export default function AssessmentDetailPage() {
+export default function TeacherAssessmentPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<any>(null)
 
   useEffect(() => {
     async function fetchAssessment() {
@@ -323,165 +327,110 @@ export default function AssessmentDetailPage() {
             <CardTitle>Questions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {assessment.questions.map((question, index) => (
-                <Card key={question.id} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Question {index + 1}</Badge>
-                        <Badge>{question.type}</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {question.points} points
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <p className="font-medium">{question.question}</p>
-                    
-                    {question.type === 'multiple_choice' && question.options && (
-                      <ul className="ml-4 space-y-1">
-                        {question.options.map((option, i) => (
-                          <li key={i} className="text-sm">• {option}</li>
-                        ))}
-                      </ul>
-                    )}
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-6">
+                {assessment.questions.map((question, index) => {
+                  const submission = assessment.submissions?.[0]
+                  const answer = submission?.answers?.find(
+                    (a: any) => a.questionId === question.id
+                  )
 
-                    {question.type === 'file' && question.attachment && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileIcon className="h-4 w-4" />
-                        <span>File attachment required</span>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Submissions Section */}
-        <Card className="md:col-span-12">
-          <CardHeader>
-            <CardTitle>Submissions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="all" className="w-full">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="graded">Graded</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="all" className="mt-4">
-                <div className="space-y-4">
-                  {assessment.submissions.map((submission, index) => (
-                    <Card key={index}>
-                      <CardContent className="p-4">
+                  return (
+                    <Card key={question.id} className="p-6">
+                      {/* Question Section */}
+                      <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{submission.studentName}</h3>
-                              <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(submission.status)}`}>
-                                {submission.status}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">Question {index + 1}</Badge>
+                            <Badge>{question.type}</Badge>
                           </div>
-                          <div className="flex items-center gap-4">
-                            {submission.status === 'submitted' ? (
-                              <Button onClick={() => router.push(`/dashboard/teacher/assessments/${assessment._id}/grade/${submission.studentId}`)}>
-                                Grade
-                              </Button>
-                            ) : (
-                              <div className="text-right">
-                                <p className="text-sm text-muted-foreground">Grade</p>
-                                <p className="font-medium">{submission.grade}%</p>
-                              </div>
-                            )}
-                            {submission.attachments && submission.attachments.length > 0 && (
-                              <Button variant="outline" size="icon">
-                                <FiDownload className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
+                          <Badge variant="secondary">{question.points} points</Badge>
                         </div>
-                      </CardContent>
+
+                        <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+                          <p className="font-medium">{question.question}</p>
+
+                          {/* Question Attachment */}
+                          {question.attachment && (
+                            <div className="mt-2">
+                              <p className="text-sm font-medium text-muted-foreground mb-2">
+                                Question Material:
+                              </p>
+                              <div
+                                onClick={() => setSelectedFile(question.attachment)}
+                                className="cursor-pointer hover:bg-accent/50 transition-colors"
+                              >
+                                <FileViewer file={question.attachment} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Student's Answer Section */}
+                      {answer && (
+                        <div className="mt-6 space-y-4 border-t pt-4">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline">Student's Response</Badge>
+                            {answer.grade !== undefined && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">Grade:</span>
+                                <Badge>{answer.grade || 0} / {question.points}</Badge>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Text Answer */}
+                          {answer.answer && (
+                            <div className="bg-background border rounded-lg p-4">
+                              <p className="whitespace-pre-wrap">{answer.answer}</p>
+                            </div>
+                          )}
+
+                          {/* Attachments */}
+                          {answer.attachments?.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-muted-foreground">
+                                Attachments ({answer.attachments.length}):
+                              </p>
+                              <div className="grid gap-2">
+                                {answer.attachments.map((attachment: any, idx: number) => (
+                                  <div
+                                    key={`${attachment.publicId || idx}`}
+                                    onClick={() => setSelectedFile(attachment)}
+                                    className="cursor-pointer hover:bg-accent/50 transition-colors"
+                                  >
+                                    <FileViewer
+                                      file={{
+                                        name: attachment.name,
+                                        type: attachment.type,
+                                        url: attachment.url,
+                                        size: attachment.size
+                                      }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </Card>
-                  ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="pending" className="mt-4">
-                <div className="space-y-4">
-                  {assessment.submissions
-                    .filter(s => s.status === 'submitted')
-                    .map((submission, index) => (
-                      <Card key={index}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium">{submission.studentName}</h3>
-                                <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(submission.status)}`}>
-                                  {submission.status}
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <Button onClick={() => router.push(`/dashboard/teacher/assessments/${assessment._id}/grade/${submission.studentId}`)}>
-                              Grade
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="graded" className="mt-4">
-                <div className="space-y-4">
-                  {assessment.submissions
-                    .filter(s => s.status === 'graded')
-                    .map((submission, index) => (
-                      <Card key={index}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium">{submission.studentName}</h3>
-                                <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(submission.status)}`}>
-                                  {submission.status}
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <p className="text-sm text-muted-foreground">Grade</p>
-                                <p className="font-medium">{submission.grade}%</p>
-                              </div>
-                              {submission.attachments && submission.attachments.length > 0 && (
-                                <Button variant="outline" size="icon">
-                                  <FiDownload className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
-            </Tabs>
+                  )
+                })}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
+
+        {/* File Viewer Modal */}
+        {selectedFile && (
+          <FileViewerModal
+            isOpen={!!selectedFile}
+            onClose={() => setSelectedFile(null)}
+            file={selectedFile}
+          />
+        )}
       </div>
     </div>
   )

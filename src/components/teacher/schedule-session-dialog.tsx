@@ -230,7 +230,7 @@ export function ScheduleSessionDialog({
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="twice-weekly" id="twice-weekly" />
-                <Label htmlFor="twice-weekly">Twice Weekly</Label>
+                <Label htmlFor="twice-weekly">Multiple times a week</Label>
               </div>
             </RadioGroup>
 

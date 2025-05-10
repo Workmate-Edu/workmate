@@ -79,7 +79,7 @@ export async function POST(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { content, attachments } = await req.json();
+    const { content, attachments, tempId } = await req.json();
 
     // Validate attachments if present
     if (attachments && Array.isArray(attachments)) {
@@ -99,6 +99,7 @@ export async function POST(
     const encryptedContent = encrypt(content);
 
     const messageData = {
+      _id: tempId ? new mongoose.Types.ObjectId(tempId) : new mongoose.Types.ObjectId(),
       conversationId: params.conversationId,
       senderId: session.user.id,
       senderRole: session.user.role,
