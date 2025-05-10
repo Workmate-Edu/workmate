@@ -63,53 +63,39 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     await connectDB()
     const { answers } = await req.json()
-    console.log('Processing submission:', answers)
+    console.log('Incoming submission data:', answers)
 
     const assessment = await TeacherAssessment.findById(params.id)
     if (!assessment) {
       return NextResponse.json({ error: "Assessment not found" }, { status: 404 })
     }
 
-    // Format answers with attachments
-    const processedAnswers = answers.map((answer: any) => {
-      // Log each answer being processed
-      console.log('Processing answer:', answer)
-      
-      return {
+    // Create new submission with explicit attachment handling
+    const submissionData = {
+      studentId: session.user.id,
+      answers: answers.map((answer: any) => ({
         questionId: answer.questionId,
         answer: answer.answer,
-        attachments: answer.attachments ? answer.attachments.map((att: any) => ({
+        attachments: answer.attachments?.map((att: any) => ({
           name: att.name,
           type: att.type,
           size: att.size,
           url: att.url,
           publicId: att.publicId
-        })) : []
-      }
-    })
-
-    // Create new submission document
-    const submissionData = {
-      studentId: session.user.id,
-      answers: processedAnswers,
+        }))
+      })),
       submittedAt: new Date()
     }
 
-    // Find existing submission
+    // Find and update submission
     const submissionIndex = assessment.submissions.findIndex(
       (s: any) => s.studentId.toString() === session.user.id
     )
 
-    // Update or create submission
     if (submissionIndex >= 0) {
-      // Update existing submission
-      assessment.submissions[submissionIndex] = {
-        ...assessment.submissions[submissionIndex].toObject(),
-        answers: processedAnswers,
-        submittedAt: new Date()
-      }
+      // Use direct assignment for the entire submission
+      assessment.submissions[submissionIndex] = submissionData
     } else {
-      // Add new submission
       assessment.submissions.push(submissionData)
     }
 
@@ -117,23 +103,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     assessment.markModified('submissions')
     assessment.status = 'submitted'
 
-    // Save and get updated assessment
+    // Save the updated assessment
     const updatedAssessment = await assessment.save()
-
-    // Log final submission
-    console.log('Final submission saved:', JSON.stringify(submissionData, null, 2))
+    console.log('Saved submission data:', JSON.stringify(submissionData, null, 2))
 
     return NextResponse.json({ 
       success: true,
-      assessment: {
-        ...updatedAssessment.toObject(),
-        id: updatedAssessment._id.toString(),
-        submissions: updatedAssessment.submissions.map((sub: any) => ({
-          ...sub.toObject(),
-          studentId: sub.studentId.toString()
-        }))
-      },
-      submission: submissionData
+      submission: submissionData,
+      assessment: updatedAssessment
     })
 
   } catch (error) {

@@ -69,22 +69,22 @@ export default function EditSubmissionPage() {
     setIsSubmitting(true)
 
     try {
-      // Format answers with attachments
+      // Format answers with proper attachment structure
       const formattedAnswers = Object.entries(answers)
         .filter(([_, answer]) => answer.text || answer.attachments?.length)
         .map(([questionId, answer]) => ({
           questionId,
           answer: answer.text || '',
-          attachments: (answer.attachments || []).map(attachment => ({
+          attachments: answer.attachments?.map(attachment => ({
             name: attachment.name,
             type: attachment.type,
             size: attachment.size,
             url: attachment.url,
             publicId: attachment.publicId
-          }))
+          })) || []
         }))
 
-      console.log('Submitting formatted answers:', formattedAnswers)
+      console.log('Submitting answers:', formattedAnswers)
 
       const response = await fetch(`/api/assessments/${params.id}/submit`, {
         method: 'PUT',
@@ -92,18 +92,22 @@ export default function EditSubmissionPage() {
         body: JSON.stringify({ answers: formattedAnswers })
       })
 
-      if (!response.ok) throw new Error('Failed to update submission')
+      if (!response.ok) {
+        throw new Error('Failed to update submission')
+      }
 
       const result = await response.json()
       console.log('Submission result:', result)
 
+      // Show success message
       toast({
         title: "Success",
         description: "Assessment updated successfully"
       })
-      
-      // Redirect to assessment detail page to see the updates
+
+      // Redirect to view the submission
       router.push(`/dashboard/student/assessments/${params.id}`)
+
     } catch (error) {
       toast({
         title: "Error",
