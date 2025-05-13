@@ -34,12 +34,15 @@ interface Teacher {
 
 interface StudentProfile {
   registeredAs: 'independent' | 'child';
+  grade?: string;
+  parent?: string;
 }
 
 export default function TeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -54,8 +57,10 @@ export default function TeachersPage() {
       if (!res.ok) throw new Error('Failed to fetch profile');
       const data = await res.json();
       setStudentProfile(data.studentProfile);
+      setProfileLoaded(true);
     } catch (error) {
       console.error('Error fetching student profile:', error);
+      setProfileLoaded(true);
     }
   };
 
@@ -73,6 +78,31 @@ export default function TeachersPage() {
   }
 
   const canMessageTeachers = studentProfile?.registeredAs === 'independent';
+
+  const renderMessageButton = (teacher: Teacher) => {
+    if (!canMessageTeachers) {
+      return (
+        <Button 
+          className="w-full" 
+          variant="secondary" 
+          disabled
+          title="Parents need to message teachers on behalf of child students"
+        >
+          <MessageCircle className="w-4 h-4 mr-2" />
+          Parent Contact Required
+        </Button>
+      )
+    }
+
+    return (
+      <Link href={`/dashboard/student/messages?teacherId=${teacher.id}`} className="w-full">
+        <Button className="w-full">
+          <MessageCircle className="w-4 h-4 mr-2" />
+          Message Teacher
+        </Button>
+      </Link>
+    )
+  }
 
   if (loading) {
     return <div><LoadingSpinner /></div>
@@ -122,23 +152,11 @@ export default function TeachersPage() {
               </div>
 
               <div>
-                {canMessageTeachers ? (
-                  <Link href={`/dashboard/student/messages?teacherId=${teacher.id}`} className="w-full">
-                    <Button className="w-full">
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Message
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button 
-                    className="w-full" 
-                    variant="secondary" 
-                    disabled
-                    title="Only independent students can message teachers directly"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Contact through parent
-                  </Button>
+                {renderMessageButton(teacher)}
+                {!canMessageTeachers && profileLoaded && (
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Parents will need to communicate with teachers on your behalf
+                  </p>
                 )}
               </div>
             </div>

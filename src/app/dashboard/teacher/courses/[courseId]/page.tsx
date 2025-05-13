@@ -15,7 +15,7 @@ import {
   RefreshCw
 } from "lucide-react"
 import Link from "next/link"
-import { StartClassDialog } from "@/components/teacher/start-class-dialog"
+import { StartClassDialog } from "@/components/teacher/create-session-dialog"
 import { format, isPast } from "date-fns"
 
 interface CourseDetail {

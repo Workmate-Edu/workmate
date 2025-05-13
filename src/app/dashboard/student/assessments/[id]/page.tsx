@@ -10,8 +10,6 @@ import { useToast } from "@/components/ui/use-toast"
 import { useSession } from "next-auth/react"
 import { format } from "date-fns"
 import { FileViewer } from "@/components/file-viewer"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { FileViewerModal } from "@/components/file-viewer-modal"
 
 export default function AssessmentDetailPage() {
   const params = useParams()
@@ -20,7 +18,6 @@ export default function AssessmentDetailPage() {
   const { toast } = useToast()
   const [assessment, setAssessment] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedFile, setSelectedFile] = useState<any>(null)
 
   useEffect(() => {
     const fetchAssessment = async () => {
@@ -28,7 +25,6 @@ export default function AssessmentDetailPage() {
         const response = await fetch(`/api/assessments/${params.id}`)
         if (!response.ok) throw new Error('Failed to fetch assessment')
         const data = await response.json()
-        console.log('Fetched assessment data:', data) // Debug log
         setAssessment(data)
       } catch (error) {
         toast({
@@ -70,36 +66,6 @@ export default function AssessmentDetailPage() {
   }
 
   const isOverdue = new Date(assessment.dueDate) < new Date()
-
-  const renderAnswerAttachments = (answer: any) => {
-    if (!answer?.attachments?.length) return null;
-    
-    return (
-      <div className="mt-4 space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">
-          Your Submitted Files ({answer.attachments.length}):
-        </p>
-        <div className="grid gap-2">
-          {answer.attachments.map((attachment: any, idx: number) => (
-            <div
-              key={`${attachment.publicId || idx}`}
-              onClick={() => setSelectedFile(attachment)}
-              className="cursor-pointer hover:bg-accent/50 transition-colors rounded-lg"
-            >
-              <FileViewer
-                file={{
-                  name: attachment.name,
-                  type: attachment.type,
-                  size: attachment.size,
-                  url: attachment.url
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="container max-w-3xl mx-auto p-6">
@@ -148,87 +114,53 @@ export default function AssessmentDetailPage() {
             )}
           </div>
 
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-6">
-              {assessment.questions.map((question: any, index: number) => {
-                const answer = assessment.submissions?.[0]?.answers?.find(
+          <div className="space-y-6">
+            {assessment.questions.map((question: any) => (
+              <Card key={question.id} className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">{question.question}</p>
+                  <Badge>{question.type}</Badge>
+                </div>
+
+                {/* Add file viewer for questions with attachments */}
+                {question.type === 'file' && question.attachment && (
+                  <FileViewer file={question.attachment} />
+                )}
+
+                {/* Existing submission display */}
+                {assessment.submissions?.[0]?.answers?.find(
                   (a: any) => a.questionId === question.id
-                );
+                )?.answer && (
+                  <div className="mt-2">
+                    <p className="text-sm font-medium">Your Answer:</p>
+                    <p className="text-muted-foreground">
+                      {assessment.submissions[0].answers.find(
+                        (a: any) => a.questionId === question.id
+                      ).answer}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
 
-                return (
-                  <Card key={question.id} className="p-6">
-                    {/* Question Section */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">Question {index + 1}</Badge>
-                          <Badge>{question.type}</Badge>
-                        </div>
-                        <Badge variant="secondary">{question.points} points</Badge>
-                      </div>
-
-                      <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-                        <p className="font-medium">{question.question}</p>
-                        
-                        {/* Question Attachment */}
-                        {question.attachment && (
-                          <div className="mt-2">
-                            <p className="text-sm font-medium text-muted-foreground mb-2">
-                              Question Material:
-                            </p>
-                            <div 
-                              onClick={() => setSelectedFile(question.attachment)}
-                              className="cursor-pointer hover:bg-accent/50 transition-colors"
-                            >
-                              <FileViewer file={question.attachment} />
-                            </div>
-                          </div>
-                        )}
-                      </div>
+          {assessment.submissions?.length > 0 && (
+            <div className="border-t pt-4">
+              <h3 className="font-medium mb-2">Your Submission</h3>
+              <div className="space-y-4">
+                {assessment.submissions[0].answers.map((answer: any) => {
+                  const question = assessment.questions.find(
+                    (q: any) => q.id === answer.questionId
+                  )
+                  return (
+                    <div key={answer.questionId} className="space-y-2">
+                      <p className="font-medium">{question?.question}</p>
+                      <p className="text-muted-foreground">{answer.answer}</p>
                     </div>
-
-                    {/* Answer Section */}
-                    {answer ? (
-                      <div className="mt-6 space-y-4 border-t pt-4">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">Your Response</Badge>
-                          {assessment.status === 'graded' && (
-                            <Badge variant={answer.grade ? 'default' : 'destructive'}>
-                              {answer.grade || 0} points
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Text Answer */}
-                        {answer.answer && (
-                          <div className="bg-background border rounded-lg p-4">
-                            <p className="whitespace-pre-wrap">{answer.answer}</p>
-                          </div>
-                        )}
-
-                        {/* Render attachments using the new helper */}
-                        {renderAnswerAttachments(answer)}
-                      </div>
-                    ) : (
-                      <div className="mt-6">
-                        <p className="text-sm text-muted-foreground">
-                          No response submitted yet
-                        </p>
-                      </div>
-                    )}
-                  </Card>
-                );
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </ScrollArea>
-
-          {/* File viewer modal */}
-          {selectedFile && (
-            <FileViewerModal
-              isOpen={!!selectedFile}
-              onClose={() => setSelectedFile(null)}
-              file={selectedFile}
-            />
           )}
 
           <div className="flex items-center justify-between">

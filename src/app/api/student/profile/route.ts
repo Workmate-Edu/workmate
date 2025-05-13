@@ -8,30 +8,42 @@ import sendEmail from "@/lib/sendSmtpMail"
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'student') {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
 
+    // Include all necessary student profile fields
     const student = await User.findById(session.user.id)
-      .select('name email phone studentProfile')  // Include phone in selection
+      .select('name email phone studentProfile')
+      .populate('studentProfile.parent', 'name email')
       .lean()
 
     if (!student) {
       return NextResponse.json({ error: "Student not found" }, { status: 404 })
     }
 
+    // Return complete student data
     return NextResponse.json({
       name: student.name,
       email: student.email,
       phone: student.phone,
       studentProfile: {
-        grade: student.studentProfile?.grade || ''
+        registeredAs: student.studentProfile?.registeredAs || 'independent',
+        grade: student.studentProfile?.grade,
+        parent: student.studentProfile?.parent,
+        subjects: student.studentProfile?.subjects || [],
+        // Include any other relevant fields
       }
     })
+
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error('[STUDENT_PROFILE_ERROR]', error)
+    return NextResponse.json(
+      { error: "Failed to fetch student profile" },
+      { status: 500 }
+    )
   }
 }
 

@@ -82,61 +82,39 @@ export async function GET(request: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { participantId, type, childId, studentType } = await req.json();
-
-    await connectDB();
-
-    // Find existing conversation
-    const query: any = {
-      participants: {
-        $all: [
-          { $elemMatch: { userId: session.user.id } },
-          { $elemMatch: { userId: participantId } }
-        ]
-      },
-      type
-    };
-
-    // For parent conversations, include childId in query
-    if (type === 'parent' && childId) {
-      query.childId = childId;
-    }
-
-    const existingConversation = await Conversation.findOne(query)
-      .populate('participants.userId', 'name email role');
-
-    if (existingConversation) {
-      return NextResponse.json(existingConversation);
-    }
-
-    // Create new conversation
+    await connectDB()
+    const body = await req.json()
+    const studentType = body.studentType || 'independent'
+    
     const conversationData = {
-      type,
-      studentType,
       participants: [
         {
           userId: session.user.id,
-          role: session.user.role
+          role: session.user.role,
+          name: session.user.name,
+          email: session.user.email
         },
-        {
-          userId: participantId,
-          role: type === 'parent' ? 'parent' : 'student'
-        }
+        body.participant
       ],
-      ...(childId && { childId }) // Include childId if provided
-    };
+      type: studentType === 'child' ? 'parent_teacher' : 'direct_student', // Fixed type
+      studentType: studentType,
+    }
 
-    const conversation = await Conversation.create(conversationData);
-    const populatedConversation = await conversation.populate('participants.userId', 'name email role');
+    console.log('Creating conversation with mapped type:', conversationData)
 
-    return NextResponse.json(populatedConversation);
+    const conversation = await Conversation.create(conversationData)
+    return NextResponse.json(conversation)
+
   } catch (error) {
-    console.error("Error creating conversation:", error);
-    return new NextResponse("Internal error", { status: 500 });
+    console.error('Conversation creation error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to create conversation" },
+      { status: 500 }
+    )
   }
 }
