@@ -63,7 +63,7 @@ export default function ParentDashboardPage() {
         >
           <Link href={`/dashboard/parent/children/${child.id}/assessment/create`}>
             <ClipboardCheck className="mr-2 h-4 w-4" />
-            Create Assessment
+            Create Initial Assessment
           </Link>
         </Button>
       );
@@ -78,7 +78,7 @@ export default function ParentDashboardPage() {
         >
           <Link href={`/dashboard/parent/children/${child.id}/assessment/edit`}>
             <Edit className="mr-2 h-4 w-4" />
-            Edit Assessment
+            Edit Inital Assessment
           </Link>
         </Button>
       );
@@ -92,7 +92,7 @@ export default function ParentDashboardPage() {
             className="w-full py-1 flex items-center justify-center"
           >
             <GraduationCap className="mr-2 h-4 w-4" />
-            Assessment Completed
+            Inital Assessment Completed
           </Badge>
         </div>
       ); 

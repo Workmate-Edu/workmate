@@ -43,6 +43,40 @@ export function TeacherStudentList({
     fetchStudents();
   }, []);
 
+  const handleSelectStudent = async (student: any) => {
+    try {
+      const studentType = student.studentProfile?.registeredAs || 'independent'
+      
+      const conversationData = {
+        participantId: student._id,
+        type: studentType === 'child' ? 'parent_teacher' : 'direct_student', // Updated type
+        studentType: studentType,
+        participant: {
+          userId: student._id,
+          role: studentType === 'child' ? 'parent' : 'student',
+          name: student.name,
+          email: student.email
+        }
+      }
+
+      const res = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(conversationData)
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to create conversation')
+      }
+
+      const conversation = await res.json()
+      onSelectStudent(conversation)
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error("Failed to start conversation")
+    }
+  }
+
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -58,7 +92,7 @@ export function TeacherStudentList({
       {filteredStudents.map((student) => (
         <button
           key={student._id}
-          onClick={() => onSelectStudent(student)}
+          onClick={() => handleSelectStudent(student)}
           className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted text-left"
         >
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">

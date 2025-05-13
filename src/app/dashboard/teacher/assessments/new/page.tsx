@@ -24,6 +24,51 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Edit, Trash2, Loader2 } from "lucide-react"
 import { useSession } from "next-auth/react"
+import { parseISO, formatISO } from 'date-fns'
+import { format } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
+
+// Update timezone options with comprehensive list
+const TIMEZONE_OPTIONS = [
+  // Africa
+  { value: 'Africa/Lagos', label: 'West Africa Time (WAT)' },
+  { value: 'Africa/Cairo', label: 'Eastern European Time (EET)' },
+  { value: 'Africa/Johannesburg', label: 'South African Time (SAST)' },
+  { value: 'Africa/Nairobi', label: 'East Africa Time (EAT)' },
+
+  // Americas
+  { value: 'America/New_York', label: 'Eastern Time (ET)' },
+  { value: 'America/Chicago', label: 'Central Time (CT)' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+  { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
+  { value: 'America/Halifax', label: 'Atlantic Time (AT)' },
+  { value: 'America/Sao_Paulo', label: 'Brasília Time (BRT)' },
+  { value: 'America/Buenos_Aires', label: 'Argentina Time (ART)' },
+
+  // Asia
+  { value: 'Asia/Tokyo', label: 'Japan Time (JST)' },
+  { value: 'Asia/Shanghai', label: 'China Time (CST)' },
+  { value: 'Asia/Singapore', label: 'Singapore Time (SGT)' },
+  { value: 'Asia/Dubai', label: 'Gulf Time (GST)' },
+  { value: 'Asia/Kolkata', label: 'India Time (IST)' },
+  { value: 'Asia/Bangkok', label: 'Indochina Time (ICT)' },
+  { value: 'Asia/Seoul', label: 'Korea Time (KST)' },
+
+  // Europe
+  { value: 'Europe/London', label: 'British Time (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Central European Time (CET)' },
+  { value: 'Europe/Moscow', label: 'Moscow Time (MSK)' },
+  { value: 'Europe/Istanbul', label: 'Turkey Time (TRT)' },
+
+  // Oceania
+  { value: 'Pacific/Auckland', label: 'New Zealand Time (NZT)' },
+  { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)' },
+  { value: 'Australia/Perth', label: 'Australian Western Time (AWT)' },
+
+  // UTC
+  { value: 'UTC', label: 'Coordinated Universal Time (UTC)' }
+].sort((a, b) => a.label.localeCompare(b.label)) // Sort alphabetically by label
 
 interface Student {
   id: string
@@ -64,6 +109,9 @@ const Page: React.FC<Props> = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [selectedTimezone, setSelectedTimezone] = useState(
+    Intl.DateTimeFormat().resolvedOptions().timeZone
+  )
   
   const form = useForm<AssessmentFormValues>({
     resolver: zodResolver(assessmentFormSchema),
@@ -188,19 +236,18 @@ const Page: React.FC<Props> = () => {
     try {
       const formData = form.getValues()
       
-      // Calculate total points from all questions
-      const totalPoints = questions.reduce((sum, question) => sum + (question.points || 0), 0)
-      
-      // Explicitly construct assessment data to ensure studentId is included
+      // Create assessment data with original datetime
       const assessmentData = {
+        ...formData,
+        dueDate: formData.dueDate,     // Send as-is from the form
+        timezone: selectedTimezone,     // Teacher's selected timezone
         title: formData.title,
         description: formData.description,
         subject: selectedSubject,
-        dueDate: formData.dueDate,
-        studentId: selectedStudent, // Make sure this is explicitly set
+        studentId: selectedStudent,
         teacherId: session.user.id,
         questions,
-        totalPoints,
+        totalPoints: questions.reduce((sum, question) => sum + (question.points || 0), 0),
         status: 'active',
         type: questions.some(q => q.type === 'file') 
           ? 'file_upload' 
@@ -209,12 +256,9 @@ const Page: React.FC<Props> = () => {
             : 'assignment'
       }
 
-      console.log('Submitting assessment data:', {
-        studentId: selectedStudent, // Log specifically
-        formData,
-        finalData: assessmentData,
-        totalPoints,
-        questionCount: questions.length,
+      console.log('Creating assessment with:', {
+        dueDate: formData.dueDate,
+        timezone: selectedTimezone
       })
 
       const response = await fetch('/api/assessments', {
@@ -400,6 +444,30 @@ const Page: React.FC<Props> = () => {
               {selectedSubject && (
                 <>
                   <div>
+                    <Label>Timezone</Label>
+                    <Select
+                      value={selectedTimezone}
+                      onValueChange={setSelectedTimezone}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <ScrollArea className="h-[200px]">
+                          {TIMEZONE_OPTIONS.map(tz => (
+                            <SelectItem key={tz.value} value={tz.value}>
+                              {tz.label}
+                            </SelectItem>
+                          ))}
+                        </ScrollArea>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Due date will be converted to this timezone
+                    </p>
+                  </div>
+
+                  <div>
                     <Label>Title</Label>
                     <Input 
                       {...form.register('title')}
@@ -420,7 +488,11 @@ const Page: React.FC<Props> = () => {
                     <Input 
                       {...form.register('dueDate')}
                       type="datetime-local" 
+                      min={formatISO(new Date(), { representation: 'date' })}
                     />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Time will be set in {selectedTimezone}
+                    </p>
                   </div>
 
                   <div className="flex justify-end space-x-2">

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { TeacherAssessment } from "@/models/assessment"
 import { connectDB } from "@/lib/mongodb"
 import authOptions from "@/lib/auth"
+import { formatInTimeZone } from 'date-fns-tz'
 
 export async function POST(
   req: NextRequest,
@@ -70,6 +71,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Assessment not found" }, { status: 404 })
     }
 
+    const studentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+    // Convert submission time to teacher's timezone
+    const submissionDate = new Date()
+    const teacherTimezoneSubmission = formatInTimeZone(
+      submissionDate,
+      assessment.timezone || 'UTC',
+      "yyyy-MM-dd'T'HH:mm:ssXXX"
+    )
+
     // Create new submission with explicit attachment handling
     const submissionData = {
       studentId: session.user.id,
@@ -84,7 +95,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           publicId: att.publicId
         }))
       })),
-      submittedAt: new Date()
+      submittedAt: teacherTimezoneSubmission,
+      studentTimezone // Store student's timezone with submission
     }
 
     // Find and update submission

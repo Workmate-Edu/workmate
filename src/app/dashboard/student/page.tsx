@@ -177,6 +177,7 @@ export default function StudentDashboard() {
     averageScore: 0
   })
   const [isChildStudent, setIsChildStudent] = useState(false)
+  const [studentProfile, setStudentProfile] = useState<any>(null)
 
   useEffect(() => {
     const checkStudentType = async () => {
@@ -192,6 +193,20 @@ export default function StudentDashboard() {
     }
 
     checkStudentType()
+  }, [])
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/student/profile')
+        const data = await res.json()
+        setStudentProfile(data)
+      } catch (error) {
+        console.error('Failed to fetch student profile:', error)
+      }
+    }
+
+    fetchProfile()
   }, [])
 
   useEffect(() => {
@@ -374,18 +389,75 @@ export default function StudentDashboard() {
     return acc
   }, {} as Record<string, SubjectWithProgress[]>)
 
+  // Update Assessment Section
+  const renderAssessmentSection = () => (
+    <Card className="p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h2 className="text-lg font-semibold">Assigned Assessments</h2>
+      </div>
+
+      {assessments.length === 0 ? (
+        <div className="text-center space-y-4">
+          <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto" />
+          <h3 className="text-lg font-medium">No Assessments Yet</h3>
+          <p className="text-muted-foreground">
+            Your teacher will assign assessments as you progress
+          </p>
+        </div>
+      ) : (
+        <div className="divide-y">
+          {assessments.map((assessment) => (
+            <div key={assessment._id} className="py-4 first:pt-0 last:pb-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">{assessment.subject.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {assessment.subject.area} • Due {formatDate(assessment.dueDate)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Badge 
+                    variant={
+                      assessment.status === 'active' ? 'default' :
+                      assessment.status === 'submitted' ? 'secondary' :
+                      'outline'
+                    }
+                  >
+                    {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
+                  </Badge>
+                  
+                  {assessment.status && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => router.push(`/dashboard/student/assessments/${assessment.id}`)}
+                    >
+                      View Details
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+
+  const isIndependentStudent = studentProfile?.registeredAs === 'independent'
+
   return (
-    <div className="space-y-6">
-      {/* Header - More responsive */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-6 p-4 md:p-6 mt-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-2xl font-bold">Welcome, {session?.user?.name}</h1>
-        <Button 
-          onClick={() => router.push('/dashboard/student/messages')}
-          variant="outline"
-          className="w-full sm:w-auto"
-        >
-          View Messages
-        </Button>
+        {isIndependentStudent && (
+          <Button 
+            onClick={() => router.push('/dashboard/student/messages')}
+            variant="outline"
+            className="mt-4 w-full md:w-auto"
+          >
+            View Messages
+          </Button>
+        )}
       </div>
 
       {/* Stats Grid - Better mobile layout */}
@@ -499,92 +571,8 @@ export default function StudentDashboard() {
         </div>
       </Card>
 
-      {/* Assessment Section - Better mobile spacing */}
-      {!isChildStudent && (
-        <Card className="p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h2 className="text-lg font-semibold">Your Assessments</h2>
-            <Button 
-              onClick={() => router.push('/dashboard/student/assessments/initial')}
-              className="w-full sm:w-auto"
-            >
-              Take New Assessment
-            </Button>
-          </div>
-
-          { !isChildStudent && assessments.length === 0 ? (
-            <div className="text-center space-y-4">
-              <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto" />
-              <h3 className="text-lg font-medium">Start Your Learning Journey</h3>
-              <p className="text-muted-foreground">
-                Take your first assessment to get matched with the perfect teacher
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {assessments.map((assessment, index) => (
-                <div key={index} className="py-4 first:pt-0 last:pb-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">{assessment.subject.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {assessment.subject.area} • Completed {formatDate(assessment.completedAt)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      {assessment.status === 'pending' ? (
-                        <Badge variant="outline">Under Review</Badge>
-                      ) : assessment.status === 'assigned' ? (
-                        <div className="text-right">
-                          <Badge variant="default">Teacher Assigned</Badge>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {assessment.assignedTeacher?.name}
-                          </p>
-                        </div>
-                      ) : (
-                        <Badge>Being Reviewed</Badge>
-                      )}
-                      {assessment.status === 'assigned' && (
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => router.push(`/dashboard/student/learn/${assessment.subject.name.toLowerCase()}`)}
-                        >
-                          Start Learning
-                        </Button>
-                      )}
-                      {assessment.status !== 'assigned' && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => 
-                              router.push(`/dashboard/student/assessments/edit/${assessment._id}`)
-                            }>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit Assessment
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => setAssessmentToDelete(assessment._id)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Assessment
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
+      {/* Replace the old assessment section with the new one */}
+      {renderAssessmentSection()}
 
       {/* Recent Activity & Upcoming - Stack on mobile, side by side on larger screens */}
       {/* <div className="grid gap-6 md:grid-cols-2">

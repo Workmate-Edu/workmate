@@ -5,6 +5,9 @@ import { TeacherAssessment } from "@/models/assessment"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
 import { TeacherAssessmentStatus } from '@/types/assessment';
+import sendEmail from "@/lib/sendSmtpMail"
+import { formatDateTime } from "@/lib/timezone-utils"
+import { formatAssessmentDateTime } from "@/lib/timezone-utils"
 
 const isValidStatus = (status: any): status is TeacherAssessmentStatus => {
   return ['draft', 'active', 'submitted', 'graded'].includes(status);
@@ -53,73 +56,79 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions) // Add authOptions
+    const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
-    }
-
-    if (session.user.role !== 'teacher') {
-      return NextResponse.json({ error: "Unauthorized access" }, { status: 403 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
-    const body = await req.json()
 
-    console.log('Creating assessment with data:', JSON.stringify(body, null, 2))
+    // Get teacher info first
+    const teacher = await User.findById(session.user.id)
+      .select('name email')
+      .lean()
 
-    const assessmentData = {
-      title: body.title,
-      description: body.description,
-      type: body.type || 'assignment',
-      teacherId: session.user.id,
-      studentId: body.studentId,
-      subject: body.subject,
-      status: body.status,
-      dueDate: new Date(body.dueDate),
-      questions: body.questions?.map(q => ({
-        id: q.id,
-        type: q.type,
-        question: q.question,
-        options: q.options || [],
-        points: q.points ?? 0,
-        correctAnswer: q.correctAnswer,
-        attachment: q.type === 'file' ? {
-          name: q.attachment?.name,
-          type: q.attachment?.type,
-          size: q.attachment?.size,
-          url: q.attachment?.url,
-          publicId: q.attachment?.publicId
-        } : null
-      }))
+    if (!teacher) {
+      throw new Error('Teacher not found')
     }
 
-    console.log('Processing question attachments:', 
-      assessmentData.questions
-        .filter(q => q.type === 'file')
-        .map(q => ({
-          questionId: q.id,
-          attachmentDetails: q.attachment
-        }))
-    )
+    const assessmentData = await req.json()
 
-    const assessment = await TeacherAssessment.create(assessmentData)
+    // Get student info
+    const student = await User.findById(assessmentData.studentId)
+      .select('name email studentProfile.registeredAs studentProfile.parent')
+      .populate({
+        path: 'studentProfile.parent',
+        select: 'name email'
+      })
+      .lean()
 
-    // Format response to include all fields
-    const formatted = {
-      ...assessment.toObject(), // Use toObject() instead of toJSON()
-      id: assessment._id.toString(),
-      studentId: assessment.studentId.toString(), // Explicitly include studentId
-      _id: undefined
+    if (!student) {
+      throw new Error('Student not found')
     }
 
-    console.log('Response:', formatted)
+    // Create assessment
+    const assessment = await TeacherAssessment.create({
+      ...assessmentData,
+      teacherId: session.user.id
+    })
 
-    return NextResponse.json(formatted)
+    // Determine recipient (student or parent)
+    const isChild = student.studentProfile?.registeredAs === 'child'
+    const recipient = isChild ? student.studentProfile.parent : student
+
+    // Send email notification
+    await sendEmail({
+      to: recipient.email,
+      subject: `New Assessment: ${assessment.title}`,
+      template: "assessment-notification",
+      replacements: {
+        notificationType: "New Assessment",
+        recipientName: recipient.name,
+        mainMessage: isChild 
+          ? `A new assessment has been assigned to ${student.name} by ${teacher.name}`
+          : `A new assessment has been assigned to you by ${teacher.name}`,
+        title: assessment.title,
+        subject: assessment.subject,
+        description: assessment.description || "No description provided",
+        dueDate: assessment.dueDate,
+        teacherTime: `Teacher's timezone: ${assessment.timezone}`,
+        totalPoints: assessment.questions.reduce((sum, q) => sum + (q.points || 0), 0),
+        type: assessment.type,
+        assessmentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/student/assessments/${assessment._id}`
+      }
+    })
+
+    return NextResponse.json(assessment)
+
   } catch (error) {
-    console.error('Assessment creation error:', error) // Debug log
-    return handleError(error)
+    console.error("Assessment creation error:", error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to create assessment" },
+      { status: 500 }
+    )
   }
 }
 

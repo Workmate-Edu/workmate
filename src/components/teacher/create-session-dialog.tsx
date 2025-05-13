@@ -7,9 +7,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { addWeeks, addDays, format, differenceInDays, getDay } from "date-fns"
+import { addWeeks, addDays, format, differenceInDays } from "date-fns"
+import { TIMEZONE_OPTIONS, formatSessionDateTime, formatAssessmentDateTime } from '@/lib/timezone-utils'
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface StartClassDialogProps {
   open: boolean
@@ -67,9 +76,17 @@ export function StartClassDialog({
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [selectedTimezone, setSelectedTimezone] = useState(
+    Intl.DateTimeFormat().resolvedOptions().timeZone
+  )
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
+    
+    // Add timezone validation
+    if (!selectedTimezone) {
+      newErrors.timezone = "Please select a timezone"
+    }
 
     // Validate duration
     const duration = parseInt(formData.duration)
@@ -268,6 +285,7 @@ export function StartClassDialog({
       startTime: formData.dateTime,
       duration: parseInt(formData.duration),
       students: formData.selectedStudents,
+      timezone: selectedTimezone, // Add timezone
       externalLink: formData.useCustomLink ? formData.externalLink : undefined,
       recurrence: {
         pattern: formData.recurrence.type,
@@ -321,6 +339,30 @@ export function StartClassDialog({
 
         <div className="flex-1 overflow-y-auto pr-6">
           <div className="grid gap-6 py-4">
+            <div className="space-y-2">
+              <Label>Timezone</Label>
+              <Select
+                value={selectedTimezone}
+                onValueChange={setSelectedTimezone}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <ScrollArea className="h-[200px]">
+                    {TIMEZONE_OPTIONS.map(tz => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </ScrollArea>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Sessions will be scheduled in this timezone
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label>Date and Time*</Label>
               <Input
@@ -504,6 +546,24 @@ export function StartClassDialog({
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Show formatted time preview */}
+            {formData.dateTime && (
+              <div className="text-sm text-muted-foreground">
+                {(() => {
+                  const { teacherTime, studentTime } = formatAssessmentDateTime({
+                    dateStr: formData.dateTime,
+                    teacherTimezone: selectedTimezone
+                  })
+                  return (
+                    <div className="space-y-1">
+                      <div>{studentTime}</div>
+                      <div>{teacherTime}</div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
           </div>

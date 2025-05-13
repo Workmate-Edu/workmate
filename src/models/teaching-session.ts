@@ -20,8 +20,19 @@ const teachingSessionSchema = new Schema({
     name: { type: String, required: true },
     area: { type: String, required: true }
   },
-  startTime: { type: Date, required: true },
-  endTime: { type: Date, required: true },
+  timezone: {
+    type: String,
+    required: true,
+    default: 'Africa/Lagos'  // Default to WAT
+  },
+  startTime: { 
+    type: String,  // Store as ISO string
+    required: true 
+  },
+  endTime: { 
+    type: String,  // Store as ISO string
+    required: true 
+  },
   duration: { type: Number, required: true },
   meetingLink: { type: String, required: true },
   status: {
@@ -36,6 +47,10 @@ const teachingSessionSchema = new Schema({
 }, {
   timestamps: true
 });
+
+teachingSessionSchema.index({ startTime: 1, status: 1 });
+teachingSessionSchema.index({ 'reminder5Sent': 1 });
+teachingSessionSchema.index({ 'reminder30Sent': 1 });
 
 export const TeachingSession = mongoose.models.TeachingSession || 
   mongoose.model('TeachingSession', teachingSessionSchema);
