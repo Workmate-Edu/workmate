@@ -152,7 +152,7 @@ export default function STEMPage() {
 
 								<div className="space-y-4">
 									<div>
-										<h4 className="text-sm font-medium mb-2">Core Topics:</h4>
+										<h4 className="text-sm font-medium mb-2">Topics:</h4>
 										<div className="flex flex-wrap gap-2">
 											{topic.subjects.map((subject) => (
 												<span
