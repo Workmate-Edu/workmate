@@ -79,3 +79,39 @@ export async function DELETE(
     )
   }
 }
+
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    await connectDB()
+
+    const material = await TeachingMaterial.findById(params.id)
+      .lean()
+      .select('name description url format size publicId') // Include all needed fields
+    
+    if (!material) {
+      return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    }
+
+    // Ensure complete URL is returned
+    const formattedMaterial = {
+      ...material,
+      url: material.url.replace(/\.\.\./, '') // Remove any ellipsis
+    }
+
+    return NextResponse.json(formattedMaterial)
+  } catch (error) {
+    console.error('[DOCUMENT_GET_ERROR]:', error)
+    return NextResponse.json(
+      { error: "Failed to fetch document" },
+      { status: 500 }
+    )
+  }
+}

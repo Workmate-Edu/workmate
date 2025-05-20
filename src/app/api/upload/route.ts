@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { v2 as cloudinary } from 'cloudinary';
-import authOptions from "@/lib/auth";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -13,37 +13,47 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { file, folder = 'general', fileName } = await req.json();
-    
-    if (!file || typeof file !== 'string') {
-      return new NextResponse("Invalid file data", { status: 400 });
+    // Get form data
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Remove data:image/xyz;base64, prefix if present
-    const base64Data = file.replace(/^data:([A-Za-z-+/]+);base64,/, '');
+    // Convert file to base64
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64Data = buffer.toString('base64');
+    const dataURI = `data:${file.type};base64,${base64Data}`;
 
-    const result = await cloudinary.uploader.upload(file, {
-      folder: `workmate/${folder}`,
-      public_id: `${folder}_${Date.now()}_${fileName}`,
-      resource_type: 'auto',
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(dataURI, {
+        resource_type: 'auto',
+        folder: 'teaching-materials',
+      }, (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      });
     });
 
-    return NextResponse.json({
-      url: result.secure_url,
-      public_id: result.public_id
-    });
+    return NextResponse.json(result);
 
   } catch (error) {
-    console.error("Upload error:", error);
-    return new NextResponse(
-      error instanceof Error ? error.message : "Upload failed", 
+    console.error('Upload error:', error);
+    return NextResponse.json(
+      { error: "Upload failed" },
       { status: 500 }
     );
   }
 }
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+export const config = {
+  api: {
+    bodyParser: false
+  }
+}

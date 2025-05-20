@@ -11,18 +11,18 @@ export function LanguageStemSection() {
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 min-h-[300px]">
-          {/* Languages */}
+          {/* Languages Card */}
           <Link href="/languages" className="group no-underline h-full">
-            <div className="bg-card rounded-lg p-6 shadow-lg hover:shadow-xl transition-all group-hover:-translate-y-1 h-full flex flex-col">
+            <div className="bg-gradient-to-br from-[#FF6B6B]/90 to-[#4ECDC4]/90 rounded-lg p-6 shadow-lg hover:shadow-xl transition-all group-hover:-translate-y-1 h-full flex flex-col text-white">
               <div className="flex items-center gap-3 mb-6">
-                <Globe className="w-12 h-12 text-primary" />
+                <Globe className="w-12 h-12 text-white" />
                 <div>
-                  <div className="text-sm text-primary font-medium">Languages</div>
+                  <div className="text-sm text-white/90 font-medium">Languages</div>
                   <h3 className="text-xl font-semibold">African Languages</h3>
                 </div>
               </div>
               <div className="flex-grow">
-                <ul className="text-muted-foreground space-y-4">
+                <ul className="text-white/90 space-y-4">
                   <li className="flex items-center gap-2">
                     <Stars className="w-4 h-4" />
                     <span>Fun, Interactive Learning</span>
@@ -43,18 +43,18 @@ export function LanguageStemSection() {
             </div>
           </Link>
 
-          {/* STEM */}
+          {/* STEM Card */}
           <Link href="/stem" className="group no-underline h-full">
-            <div className="bg-card rounded-lg p-6 shadow-lg hover:shadow-xl transition-all group-hover:-translate-y-1 h-full flex flex-col">
+            <div className="bg-gradient-to-br from-[#6C63FF]/90 to-[#3F3D56]/90 rounded-lg p-6 shadow-lg hover:shadow-xl transition-all group-hover:-translate-y-1 h-full flex flex-col text-white">
               <div className="flex items-center gap-3 mb-6">
-                <Rocket className="w-12 h-12 text-primary" />
+                <Rocket className="w-12 h-12 text-white" />
                 <div>
-                  <div className="text-sm text-primary font-medium">Science & Technology</div>
+                  <div className="text-sm text-white/90 font-medium">Science & Technology</div>
                   <h3 className="text-xl font-semibold">STEM Education</h3>
                 </div>
               </div>
               <div className="flex-grow">
-                <ul className="text-muted-foreground space-y-4">
+                <ul className="text-white/90 space-y-4">
                   <li className="flex items-center gap-2">
                     <Stars className="w-4 h-4" />
                     <span>Standard Curriculum + African Innovation</span>

@@ -2,29 +2,57 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
-import { StudentProgress } from "@/models/student-progress"
+import { User } from "@/models/user"
 
-export async function POST(req: Request) {
+export async function PUT(req: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id || session.user.role !== 'teacher') {
+    if (!session?.user?.id || session.user.role !== "teacher") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const data = await req.json()
+    const { studentId, subjectId, progress } = await req.json()
+    console.log("Update progress inputs:", { studentId, subjectId, progress })
+
+    // subjectId is now directly the subject name
+    const subjectName = subjectId.toLowerCase()
+    console.log("Looking for subject:", subjectName)
+
     await connectDB()
 
-    const progress = await StudentProgress.create({
-      ...data,
-      teacherId: session.user.id
+    const student = await User.findById(studentId)
+      .select("studentProfile.subjects")
+
+    if (!student?.studentProfile?.subjects) {
+      return NextResponse.json({ error: "Student not found" }, { status: 404 })
+    }
+
+    // Find subject by name (case-insensitive)
+    const subjectIndex = student.studentProfile.subjects.findIndex(
+      (s) => s.name.toLowerCase() === subjectName
+    )
+
+    if (subjectIndex === -1) {
+      console.log("Available subjects:", student.studentProfile.subjects)
+      return NextResponse.json({ error: "Subject not found" }, { status: 404 })
+    }
+
+    // Update progress
+    student.studentProfile.subjects[subjectIndex].progress = progress
+    await student.save()
+
+    return NextResponse.json({
+      success: true,
+      progress,
+      subject: student.studentProfile.subjects[subjectIndex],
     })
-
-    // Send email notification to parent
-    // TODO: Implement email notification
-
-    return NextResponse.json(progress)
   } catch (error) {
-    console.error('[PROGRESS_CREATE_ERROR]', error)
-    return NextResponse.json({ error: "Failed to save progress" }, { status: 500 })
+    console.error("[PROGRESS_UPDATE_ERROR]", error)
+    return NextResponse.json(
+      { error: "Failed to update progress" },
+      { status: 500 }
+    )
   }
 }
+
+

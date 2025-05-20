@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
-import { CourseDocument } from "@/models/course-document"
+// import { CourseDocument } from "@/models/course-document"
+import { TeachingMaterial } from "@/models/teaching-material"
 
 export async function GET(
   req: Request,
@@ -40,7 +41,7 @@ export async function GET(
     }
 
     // Get documents with proper subject area filtering
-    const documents = await CourseDocument.find({
+    const documents = await TeachingMaterial.find({
       teacherId,
       $or: [
         { isGeneral: true },

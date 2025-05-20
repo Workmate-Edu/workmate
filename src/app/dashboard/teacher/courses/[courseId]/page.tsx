@@ -12,11 +12,15 @@ import {
   GraduationCap, 
   Clock,
   Video,
-  RefreshCw
+  RefreshCw,
+  BarChart2
 } from "lucide-react"
 import Link from "next/link"
 import { StartClassDialog } from "@/components/teacher/create-session-dialog"
+import { UpdateProgressDialog } from "@/components/teacher/update-progress-dialog"
 import { format, isPast } from "date-fns"
+import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils"
 
 interface CourseDetail {
   id: string
@@ -135,44 +139,57 @@ export default function CoursePage({ params }: { params: { courseId: string } })
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [showStartClass, setShowStartClass] = useState(false)
+  const [showUpdateProgress, setShowUpdateProgress] = useState(false)
+  const [subjectId] = useState(() => params.courseId.split('-')[0])
+  const [subjectName] = useState(() => params.courseId.split('-')[1]) // Extract subject name
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch(`/api/teacher/courses/${params.courseId}/sessions`)
-      if (!response.ok) throw new Error('Failed to fetch sessions')
-      const data = await response.json()
-      setSessions(data)
+      console.log('Fetching sessions for courseId:', params.courseId); // Add debug log
+      const response = await fetch(`/api/teacher/courses/${params.courseId}/sessions`);
+      if (!response.ok) {
+        console.error('Sessions fetch error:', await response.text()); // Add error logging
+        throw new Error('Failed to fetch sessions');
+      }
+      const data = await response.json();
+      console.log('Fetched sessions:', data); // Add debug log
+      setSessions(data);
     } catch (error) {
-      console.error('Failed to fetch sessions:', error)
-      toast.error("Failed to load sessions")
+      console.error('Failed to fetch sessions:', error);
+      toast.error("Failed to load sessions");
+    }
+  }
+
+  const fetchCourseData = async () => {
+    try {
+      setLoading(true)
+      // Fetch course details
+      const courseRes = await fetch(`/api/teacher/courses/${params.courseId}`)
+      if (!courseRes.ok) throw new Error('Failed to fetch course')
+      const courseData = await courseRes.json()
+      setCourse(courseData)
+      
+      // Fetch sessions
+      await fetchSessions()
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load course data")
+    } finally {
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    const fetchCourseData = async () => {
-      try {
-        setLoading(true)
-        // Fetch course details
-        const courseRes = await fetch(`/api/teacher/courses/${params.courseId}`)
-        if (!courseRes.ok) throw new Error('Failed to fetch course')
-        const courseData = await courseRes.json()
-        setCourse(courseData)
-        
-        // Fetch sessions
-        await fetchSessions()
-      } catch (error) {
-        console.error(error)
-        toast.error("Failed to load course data")
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchCourseData()
   }, [params.courseId])
 
   const handleSessionCreated = () => {
     fetchSessions() // Refresh sessions
+  }
+
+  // Add progress update handler
+  const handleProgressUpdate = async () => {
+    await fetchCourseData() // Now this will be defined
   }
 
   if (loading) {
@@ -212,10 +229,23 @@ export default function CoursePage({ params }: { params: { courseId: string } })
             {course.area.charAt(0).toUpperCase() + course.area.slice(1)}
           </p>
         </div>
-        <Button onClick={() => setShowStartClass(true)}>
-          <Calendar className="mr-2 h-4 w-4" />
-          Create Session
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowStartClass(true)}
+            className="transition-all duration-300 hover:scale-105 hover:shadow-lg bg-primary text-primary-foreground hover:bg-secondary active:scale-95"
+          >
+            <Calendar className="mr-2 h-4 w-4 transition-transform group-hover:rotate-[-12deg]" />
+            Create Session  
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setShowUpdateProgress(true)}
+            className="transition-all duration-300 hover:scale-105 hover:shadow-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground active:scale-95"
+          >
+            <BarChart2 className="mr-2 h-4 w-4 transition-transform group-hover:translate-y-[-2px]" />
+            Update Progress
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -252,11 +282,21 @@ export default function CoursePage({ params }: { params: { courseId: string } })
                     )}
                   </div>
                 </div>
-                {student.progress !== undefined && (
-                  <Badge variant={student.progress >= 70 ? "success" : "default"}>
-                    {student.progress}% Progress
-                  </Badge>
-                )}
+                <div className="w-48">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span>{student.progress || 0}%</span>
+                  </div>
+                  <Progress 
+                    value={student.progress || 0}
+                    className={cn(
+                      "h-2",
+                      (student.progress || 0) >= 70 ? "bg-green-200" :
+                      (student.progress || 0) >= 50 ? "bg-blue-200" :
+                      "bg-yellow-200"
+                    )}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -369,14 +409,24 @@ export default function CoursePage({ params }: { params: { courseId: string } })
       </Card>
 
       {course && (
-        <StartClassDialog // Consider renaming this component in future
-          open={showStartClass}
-          onOpenChange={setShowStartClass}
-          courseId={params.courseId}
-          courseName={course.name}
-          students={course.students || []}
-          onSuccess={handleSessionCreated}
-        />
+        <>
+          <StartClassDialog
+            open={showStartClass}
+            onOpenChange={setShowStartClass}
+            courseId={params.courseId}
+            courseName={course.name}
+            students={course.students}
+            onSuccess={handleSessionCreated}
+          />
+
+          <UpdateProgressDialog
+            open={showUpdateProgress}
+            onOpenChange={setShowUpdateProgress}
+            students={course.students}
+            subjectId={subjectName} // Just pass the subject name
+            onSuccess={handleProgressUpdate}
+          />
+        </>
       )}
     </div>
   )

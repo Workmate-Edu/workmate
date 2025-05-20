@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { User, Book } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 interface Subject {
   id: string
@@ -106,19 +107,25 @@ export default function StudentCoursesPage() {
                         </div>
 
                         <div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {subject.area} - Level {subject.level}
-                          </p>
-                          {subject.nextCall && (
-                            <Badge variant="secondary" className="mb-2">
-                              Next Call: {subject.nextCall.date} at {subject.nextCall.time}
-                            </Badge>
-                          )}
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-sm text-muted-foreground">Progress</span>
-                            <span className="text-sm font-medium">{subject.progress}%</span>
+                            <span className={cn(
+                              "text-sm font-medium",
+                              subject.progress >= 80 ? "text-green-600" :
+                              subject.progress >= 50 ? "text-blue-600" :
+                              "text-yellow-600"
+                            )}>
+                              {subject.progress}%
+                            </span>
                           </div>
-                          <Progress value={subject.progress} />
+                          <Progress 
+                            value={subject.progress} 
+                            className={cn(
+                              subject.progress >= 80 ? "bg-green-200" :
+                              subject.progress >= 50 ? "bg-blue-200" :
+                              "bg-yellow-200"
+                            )}
+                          />
                         </div>
 
                         <Button asChild className="w-full">

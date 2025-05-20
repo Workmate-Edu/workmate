@@ -28,7 +28,7 @@ export function NewsStoriesSection() {
   ]
 
   return (
-    <section className="py-16 bg-muted/5">
+    <section className="py-16 bg-gradient-to-br from-background via-muted/5 to-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Latest in African Education</h2>
@@ -37,7 +37,7 @@ export function NewsStoriesSection() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {stories.map((story) => (
             <StoryCard key={story.slug} {...story} />
           ))}

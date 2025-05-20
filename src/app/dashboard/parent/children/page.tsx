@@ -4,10 +4,11 @@ import { useSession } from "next-auth/react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
-import { Plus, Users, BookOpen, GraduationCap, MessageSquare } from "lucide-react"
+import { BookOpen, GraduationCap, Users, MessageSquare, Plus, ClipboardCheck, Edit } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { toast } from "sonner"
 
 interface Child {
   id: string;
@@ -21,6 +22,12 @@ interface Child {
     };
     progress?: number;
   }>;
+  assessmentStatus: {
+    exists: boolean;
+    status: 'none' | 'pending' | 'assigned';
+    canCreate: boolean;
+    canEdit: boolean;
+  };
 }
 
 export default function ChildrenPage() {
@@ -54,6 +61,56 @@ export default function ChildrenPage() {
       </div>
     )
   }
+
+   const renderAssessmentButton = (child: Child) => {
+      const { assessmentStatus } = child;
+  
+      if (!assessmentStatus.exists && assessmentStatus.canCreate) {
+        return (
+          <Button 
+            variant="default" 
+            className="w-full mt-3"
+            asChild
+          >
+            <Link href={`/dashboard/parent/children/${child.id}/assessment`}>
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              Create Initial Assessment
+            </Link>
+          </Button>
+        );
+      }
+  
+      if (assessmentStatus.status === 'pending' && assessmentStatus.canEdit) {
+        return (
+          <Button 
+            variant="secondary" 
+            className="w-full mt-3"
+            asChild
+          >
+            <Link href={`/dashboard/parent/children/${child.id}/assessment/edit`}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Inital Assessment
+            </Link>
+          </Button>
+        );
+      }
+  
+      if (assessmentStatus.status === 'assigned') {
+        return (
+          <div className="w-full mt-3">
+            <Badge 
+              variant="secondary"
+              className="w-full py-3 flex items-center justify-center"
+            >
+              <GraduationCap className="mr-2 h-4 w-4" />
+              Inital Assessment Completed
+            </Badge>
+          </div>
+        ); 
+      }
+  
+      return null;
+    };
 
   return (
     <div className="container py-8">
@@ -91,7 +148,7 @@ export default function ChildrenPage() {
           {children.map((child) => (
             <Card key={child.id} className="relative overflow-hidden group hover:shadow-lg transition-shadow">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/50" />
-              <div className="p-6">
+              <div className="p-6 flex flex-col justify-between h-full">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h2 className="text-xl font-semibold tracking-tight">{child.name}</h2>
@@ -144,6 +201,7 @@ export default function ChildrenPage() {
                     </Button>
                   </Link>
                 </div>
+                {renderAssessmentButton(child)}
               </div>
             </Card>
           ))}

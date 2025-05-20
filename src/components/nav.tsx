@@ -16,7 +16,7 @@ import { BookOpen } from "lucide-react"
 const navItems = [
   { href: "/languages", label: "African Languages" },
   { href: "/stem", label: "STEM" },
-  { href: "/about", label: "About" },
+  { href: "/about", label: "Our Story" },
   // {
   //   label: 'My Courses',
   //   icon: BookOpen,

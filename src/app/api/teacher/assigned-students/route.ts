@@ -1,49 +1,41 @@
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { connectDB } from "@/lib/mongodb"
-import { User } from "@/models/user"
-import authOptions from "@/lib/auth"
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { connectDB } from "@/lib/mongodb";
+import { User } from "@/models/user";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const session = await getServerSession(authOptions);
+    if (!session?.user || session.user.role !== 'teacher') {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await connectDB()
+    await connectDB();
 
+    // Get teacher's data with assignedStudents
     const teacher = await User.findById(session.user.id)
-      .select('students')
-      .populate({
-        path: 'students',
-        select: 'name email studentProfile.subjects studentProfile.assignedTeachers',
-      })
-      .lean()
+      .select('teacherProfile.assignedStudents')
+      .lean();
 
-    if (!teacher) {
-      return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
+    if (!teacher?.teacherProfile?.assignedStudents?.length) {
+      return NextResponse.json([]);
     }
 
-    // Format assigned students with their subjects
-    const assignedStudents = teacher.students.map(student => {
-      const teacherAssignments = student.studentProfile.assignedTeachers
-        .filter(at => at.teacherId.toString() === session.user.id)
-      
-      return {
-        id: student._id,
-        name: student.name,
-        email: student.email,
-        assignedSubjects: teacherAssignments.flatMap(ta => ta.subjects)
-      }
+    // Fetch assigned students' details
+    const students = await User.find({
+      _id: { $in: teacher.teacherProfile.assignedStudents }
     })
+    .select('name email studentProfile')
+    .lean();
 
-    return NextResponse.json(assignedStudents)
+    return NextResponse.json(students);
+
   } catch (error) {
-    console.error('[ASSIGNED_STUDENTS_ERROR]', error)
+    console.error('[ASSIGNED_STUDENTS_ERROR]:', error);
     return NextResponse.json(
       { error: "Failed to fetch assigned students" },
       { status: 500 }
-    )
+    );
   }
 }

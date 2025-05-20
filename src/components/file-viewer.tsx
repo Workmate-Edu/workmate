@@ -1,6 +1,5 @@
 import { FileIcon, Download, ExternalLink } from "lucide-react"
 import { Button } from "./ui/button"
-import { downloadFile, openFile, getCloudinaryUrl } from "@/lib/cloudinary-helper"
 import { toast } from "sonner"
 
 interface FileViewerProps {
@@ -9,17 +8,24 @@ interface FileViewerProps {
     type: string
     url: string
     size: number
+    publicId?: string
   }
 }
 
 export function FileViewer({ file }: FileViewerProps) {
   const isImage = file.type.startsWith('image/')
-  const isPDF = file.type === 'application/pdf'
-  const isViewable = isImage || isPDF
+  const isPDF = file.type.includes('pdf')
 
-  const handleView = async () => {
+  const handleView = () => {
     try {
-      window.open(file.url, '_blank', 'noopener,noreferrer')
+      // For PDFs, use PDF viewer
+      if (isPDF) {
+        const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`
+        window.open(viewerUrl, '_blank', 'noopener,noreferrer')
+      } else {
+        // For other files, open directly
+        window.open(file.url, '_blank', 'noopener,noreferrer')
+      }
     } catch (error) {
       console.error('View error:', error)
       toast.error('Failed to open file')
@@ -28,12 +34,13 @@ export function FileViewer({ file }: FileViewerProps) {
 
   const handleDownload = async () => {
     try {
-      if (isImage) {
-        await downloadFile(file.url, file.name)
-      } else {
-        // For other files, direct download
-        window.location.href = file.url
-      }
+      const a = document.createElement('a')
+      a.href = file.url
+      a.download = file.name // Use original filename
+      a.target = '_blank'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
     } catch (error) {
       console.error('Download error:', error)
       toast.error('Failed to download file')
@@ -51,12 +58,10 @@ export function FileViewer({ file }: FileViewerProps) {
           </span>
         </div>
         <div className="flex gap-2">
-          {isViewable && (
-            <Button variant="outline" size="sm" onClick={handleView}>
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={handleView}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            View
+          </Button>
           <Button variant="outline" size="sm" onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />
             Download
@@ -64,6 +69,19 @@ export function FileViewer({ file }: FileViewerProps) {
         </div>
       </div>
 
+      {/* PDF Preview */}
+      {isPDF && (
+        <div className="mt-4 h-[500px] border rounded">
+          <iframe
+            src={`https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`}
+            className="w-full h-full"
+            frameBorder="0"
+            title="PDF Preview"
+          />
+        </div>
+      )}
+
+      {/* Image Preview */}
       {isImage && (
         <div className="mt-4">
           <img

@@ -90,9 +90,18 @@ export function TeacherMessagesView({ conversation }: TeacherMessagesViewProps) 
 
   const getParticipantInfo = () => {
     if (!conversation?.participants) return null;
+    
+    const otherParticipant = conversation.participants.find(
+      p => p?.userId?.role !== 'teacher' || p?.role !== 'teacher'
+    );
+
+    const role = otherParticipant?.role || otherParticipant?.userId?.role;
+    const name = otherParticipant?.name || otherParticipant?.userId?.name;
+
     return {
-      student: conversation.participants.find(p => p?.role === 'student'),
-      name: conversation.participants.find(p => p?.role === 'student')?.name || 'Student'
+      role,
+      name,
+      isParent: role === 'parent'
     };
   };
 
@@ -445,12 +454,22 @@ export function TeacherMessagesView({ conversation }: TeacherMessagesViewProps) 
   return (
     <>
       <Card className="h-[calc(100vh-12rem)] flex flex-col">
-        {/* Student Info Header */}
+        {/* Participant Info Header */}
         <div className="p-4 border-b">
           <h2 className="font-semibold">
-            {studentInfo?.name}
+            {getParticipantInfo()?.name || 'Unknown'}
           </h2>
-          <p className="text-sm text-muted-foreground">Student</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>
+              {getParticipantInfo()?.isParent ? 'Parent' : 'Student'}
+            </span>
+            {getParticipantInfo()?.isParent && conversation.studentName && (
+              <>
+                <span>•</span>
+                <span>Parent of {conversation.studentName}</span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Messages Area */}

@@ -24,61 +24,26 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Edit, Trash2, Loader2 } from "lucide-react"
 import { useSession } from "next-auth/react"
-import { parseISO, formatISO } from 'date-fns'
-import { format } from 'date-fns'
-import { formatInTimeZone } from 'date-fns-tz'
-
-// Update timezone options with comprehensive list
-const TIMEZONE_OPTIONS = [
-  // Africa
-  { value: 'Africa/Lagos', label: 'West Africa Time (WAT)' },
-  { value: 'Africa/Cairo', label: 'Eastern European Time (EET)' },
-  { value: 'Africa/Johannesburg', label: 'South African Time (SAST)' },
-  { value: 'Africa/Nairobi', label: 'East Africa Time (EAT)' },
-
-  // Americas
-  { value: 'America/New_York', label: 'Eastern Time (ET)' },
-  { value: 'America/Chicago', label: 'Central Time (CT)' },
-  { value: 'America/Denver', label: 'Mountain Time (MT)' },
-  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
-  { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
-  { value: 'America/Halifax', label: 'Atlantic Time (AT)' },
-  { value: 'America/Sao_Paulo', label: 'Brasília Time (BRT)' },
-  { value: 'America/Buenos_Aires', label: 'Argentina Time (ART)' },
-
-  // Asia
-  { value: 'Asia/Tokyo', label: 'Japan Time (JST)' },
-  { value: 'Asia/Shanghai', label: 'China Time (CST)' },
-  { value: 'Asia/Singapore', label: 'Singapore Time (SGT)' },
-  { value: 'Asia/Dubai', label: 'Gulf Time (GST)' },
-  { value: 'Asia/Kolkata', label: 'India Time (IST)' },
-  { value: 'Asia/Bangkok', label: 'Indochina Time (ICT)' },
-  { value: 'Asia/Seoul', label: 'Korea Time (KST)' },
-
-  // Europe
-  { value: 'Europe/London', label: 'British Time (GMT/BST)' },
-  { value: 'Europe/Paris', label: 'Central European Time (CET)' },
-  { value: 'Europe/Moscow', label: 'Moscow Time (MSK)' },
-  { value: 'Europe/Istanbul', label: 'Turkey Time (TRT)' },
-
-  // Oceania
-  { value: 'Pacific/Auckland', label: 'New Zealand Time (NZT)' },
-  { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)' },
-  { value: 'Australia/Perth', label: 'Australian Western Time (AWT)' },
-
-  // UTC
-  { value: 'UTC', label: 'Coordinated Universal Time (UTC)' }
-].sort((a, b) => a.label.localeCompare(b.label)) // Sort alphabetically by label
 
 interface Student {
-  id: string
+  _id: string  // Changed from id to _id
   name: string
   email?: string
-  assignedSubjects: Array<{
-    name: string
-    area: string
-    _id: string
-  }>
+  studentProfile: {
+    subjects: Array<{
+      _id: string
+      name: string
+      area: string
+      progress: number
+    }>
+    assignedTeachers: Array<{
+      subjects: Array<{
+        _id: string
+        name: string
+        area: string
+      }>
+    }>
+  }
 }
 
 interface Props {}
@@ -109,9 +74,6 @@ const Page: React.FC<Props> = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
-  const [selectedTimezone, setSelectedTimezone] = useState(
-    Intl.DateTimeFormat().resolvedOptions().timeZone
-  )
   
   const form = useForm<AssessmentFormValues>({
     resolver: zodResolver(assessmentFormSchema),
@@ -177,12 +139,21 @@ const Page: React.FC<Props> = () => {
     }
   }, [selectedStudent, form])
 
-  // Fix the subject filtering with proper null checking
+  // Update the subject filtering logic
   const selectedStudentSubjects = React.useMemo(() => {
-    const student = students.find(s => s.id === selectedStudent)
-    if (!student?.assignedSubjects) return []
-    return student.assignedSubjects
-  }, [students, selectedStudent])
+    // Find the student
+    const student = students.find(s => s._id === selectedStudent)
+    if (!student?.studentProfile?.assignedTeachers) return []
+    
+    // Find subjects assigned to this teacher
+    const teacherAssignment = student.studentProfile.assignedTeachers
+      .find(t => t.teacherId === session?.user?.id)
+
+    if (!teacherAssignment?.subjects) return []
+    
+    // Return only subjects assigned to this teacher
+    return teacherAssignment.subjects
+  }, [students, selectedStudent, session?.user?.id])
 
   // Handle form submission for first step
   const onContinue = form.handleSubmit((data) => {
@@ -211,6 +182,9 @@ const Page: React.FC<Props> = () => {
     setQuestions(questions.filter(q => q.id !== id))
   }
 
+  console.log('selectedStudent:', students)
+  console.log('selectedSubject:', selectedSubject)
+
   // Add final submission handler
   const handleSubmitAssessment = async () => {
     if (!session?.user?.id) {
@@ -236,18 +210,19 @@ const Page: React.FC<Props> = () => {
     try {
       const formData = form.getValues()
       
-      // Create assessment data with original datetime
+      // Calculate total points from all questions
+      const totalPoints = questions.reduce((sum, question) => sum + (question.points || 0), 0)
+      
+      // Explicitly construct assessment data to ensure studentId is included
       const assessmentData = {
-        ...formData,
-        dueDate: formData.dueDate,     // Send as-is from the form
-        timezone: selectedTimezone,     // Teacher's selected timezone
         title: formData.title,
         description: formData.description,
         subject: selectedSubject,
-        studentId: selectedStudent,
+        dueDate: formData.dueDate,
+        studentId: selectedStudent, // Make sure this is explicitly set
         teacherId: session.user.id,
         questions,
-        totalPoints: questions.reduce((sum, question) => sum + (question.points || 0), 0),
+        totalPoints,
         status: 'active',
         type: questions.some(q => q.type === 'file') 
           ? 'file_upload' 
@@ -256,9 +231,12 @@ const Page: React.FC<Props> = () => {
             : 'assignment'
       }
 
-      console.log('Creating assessment with:', {
-        dueDate: formData.dueDate,
-        timezone: selectedTimezone
+      console.log('Submitting assessment data:', {
+        studentId: selectedStudent, // Log specifically
+        formData,
+        finalData: assessmentData,
+        totalPoints,
+        questionCount: questions.length,
       })
 
       const response = await fetch('/api/assessments', {
@@ -381,6 +359,7 @@ const Page: React.FC<Props> = () => {
                   <Select
                     value={selectedStudent}
                     onValueChange={(value) => {
+                      console.log('Selected student value:', value)
                       setSelectedStudent(value)
                       form.setValue('studentId', value)
                     }}
@@ -390,7 +369,7 @@ const Page: React.FC<Props> = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {students.map((student) => (
-                        <SelectItem key={student.id} value={student.id}>
+                        <SelectItem key={student._id} value={student._id}>
                           {student.name}
                         </SelectItem>
                       ))}
@@ -444,30 +423,6 @@ const Page: React.FC<Props> = () => {
               {selectedSubject && (
                 <>
                   <div>
-                    <Label>Timezone</Label>
-                    <Select
-                      value={selectedTimezone}
-                      onValueChange={setSelectedTimezone}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select timezone" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <ScrollArea className="h-[200px]">
-                          {TIMEZONE_OPTIONS.map(tz => (
-                            <SelectItem key={tz.value} value={tz.value}>
-                              {tz.label}
-                            </SelectItem>
-                          ))}
-                        </ScrollArea>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Due date will be converted to this timezone
-                    </p>
-                  </div>
-
-                  <div>
                     <Label>Title</Label>
                     <Input 
                       {...form.register('title')}
@@ -488,11 +443,7 @@ const Page: React.FC<Props> = () => {
                     <Input 
                       {...form.register('dueDate')}
                       type="datetime-local" 
-                      min={formatISO(new Date(), { representation: 'date' })}
                     />
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Time will be set in {selectedTimezone}
-                    </p>
                   </div>
 
                   <div className="flex justify-end space-x-2">

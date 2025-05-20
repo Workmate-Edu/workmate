@@ -1,6 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
 import { IUser } from '@/types/user';
 
+// -----------------------------
+// Teacher-specific profile
+// -----------------------------
 const teacherProfileSchema = new Schema({
   verificationStatus: {
     type: String,
@@ -118,37 +121,21 @@ const teacherProfileSchema = new Schema({
   }]
 });
 
+// -----------------------------
+// Progress tracking schema
+// -----------------------------
 const progressSchema = new Schema({
-  understanding: {
-    type: Number,
-    required: true,
-    min: 1,
-    max: 10
-  },
-  participation: {
-    type: Number,
-    required: true,
-    min: 1,
-    max: 10
-  },
-  homework: {
-    type: Number,
-    required: true,
-    min: 1,
-    max: 10
-  },
-  notes: String,
-  teacherId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
-})
+  understanding:  { type: Number, required: true, min: 1, max: 10 },
+  participation: { type: Number, required: true, min: 1, max: 10 },
+  homework:      { type: Number, required: true, min: 1, max: 10 },
+  notes:         String,
+  teacherId:     { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  updatedAt:     { type: Date, default: Date.now }
+});
 
+// -----------------------------
+// Student-specific profile
+// -----------------------------
 const studentProfileSchema = new Schema({
   registeredAs: {
     type: String,
@@ -159,266 +146,166 @@ const studentProfileSchema = new Schema({
     type: Schema.Types.ObjectId, 
     ref: 'User',
     required: function() {
-      return this.role === 'student' && this.registeredAs === 'child';
+      return this.registeredAs === 'child';
     }
   },
   grade: String,
   subjects: [{
-    name: String, // e.g. 'Algebra', 'Geometry'
-    area: String, // e.g. 'Math', 'Science'
-    progress: {
-      type: Number,
-      default: 0
-    }
+    name: String,
+    area: String,
+    progress: { type: Number, default: 0 }
   }],
+  
   assignedTeachers: [{
-    teacherId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    subjects: [{
-      name: String,
-      area: String
-    }]
+    teacherId: { type: Schema.Types.ObjectId, ref: 'User' },
+    subjects: [{ name: String, area: String }]
   }],
+
   learningPreferences: {
     preferredLanguage: String,
     studySchedule: String,
     learningStyle: [String]
   },
-  achievements: [{
-    type: { type: String },
-    name: String,
-    date: Date,
-    description: String
-  }],
-  teachers: [{
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }],
+  achievements: [{ type: { type: String }, name: String, date: Date, description: String }],
+  teachers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   assessments: [{
     type: {
       type: String,
-      enum: ['initial', 'parent_questionnaire'],
+      enum: ['initial','parent_questionnaire'],
       required: true
     },
-    assessmentId: {
-      type: Schema.Types.ObjectId,
-      refPath: 'studentProfile.assessments.assessmentModel'
-    },
-    assessmentModel: {
-      type: String,
-      required: true,
-      enum: ['InitialAssessment', 'ChildAssessment']
-    },
-    status: {
-      type: String,
-      enum: ['pending',  'assigned', ],
-      default: 'pending'
-    },
-    submittedAt: Date
+    assessmentId:   { type: Schema.Types.ObjectId, refPath: 'studentProfile.assessments.assessmentModel' },
+    assessmentModel:{ type: String, enum: ['InitialAssessment','ChildAssessment'], required: true },
+    status:         { type: String, enum: ['pending','assigned'], default: 'pending' },
+    submittedAt:    Date
   }],
   courses: [{
     teacherId: { type: Schema.Types.ObjectId, ref: 'User' },
-    courseId: String,
+    courseId:  String,
     startDate: Date,
-    status: String
+    status:    String
   }]
 });
 
+// -----------------------------
+// Parent-specific profile
+// -----------------------------
 const parentProfileSchema = new Schema({
-  phone: String,
-  interestedInLearning: Boolean,
-  educationLevel: String,
-  subjects: [String],
-  // Update children to reference User model instead of Child model
+  phone:                 String,
+  interestedInLearning:  Boolean,
+  educationLevel:        String,
+  subjects:             [String],
   children: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   assignedTeachers: [{
-    teacherId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    studentId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    assignedAt: Date
+    teacherId: { type: Schema.Types.ObjectId, ref: 'User' },
+    studentId: { type: Schema.Types.ObjectId, ref: 'User' },
+    assignedAt:{ type: Date, default: Date.now }
   }]
 });
 
-const userSchema = new Schema<IUser>(
-  {
-    // Base User Fields
-    email: {
-      type: String,
-      required: [true, 'Email is required'],
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    name: {
-      type: String,
-      required: [true, 'Name is required'],
-      trim: true,
-    },
-    username: {
-      type: String,
-      unique: true,
-      required: true, // Make username required
-      sparse: false, // Change to false since it's required
-      trim: true,
-      validate: {
-        validator: function(v: string) {
-          return /^[a-zA-Z0-9_-]{3,20}$/.test(v); // Username between 3-20 chars
-        },
-        message: 'Username must be 3-20 characters and can only contain letters, numbers, underscores and hyphens'
-      }
-    },
-    password: {
-      type: String,
-      required: [true, 'Password is required'],
-      select: false, // Don't include password by default
-      minlength: [6, 'Password must be at least 6 characters long']
-    },
-    role: {
-      type: String,
-      enum: ['admin', 'teacher', 'student', 'parent'],
-      required: true, // Make required
-      default: 'student',
-    },
-    gender: {
-      type: String,
-      required: true,
-    },
-    // Add phone to base user fields
-    phone: {
-      type: String,
-      trim: true,
-    },
-    // Authentication & Verification
-    emailVerified: {
-      type: Boolean,
-      default: false,
-    },
-    verificationToken: {
-      type: String,
-      select: false
-    },
-    verificationTokenExpiry: {
-      type: Date,
-      select: true, // Make it selectable
-    },
-    lastVerificationSent: {
-      type: Date,
-      select: true,
-    },
-    resetPasswordToken: {
-      type: String,
-      select: true // Change to true to make it queryable
-    },
-    resetPasswordTokenExpiry: {
-      type: Date,
-      select: true // Change to true to make it queryable
-    },
-    lastLogin: Date,
-
-    // Profile & Preferences
-    image: String,
-    bio: String,
-    language: {
-      type: String,
-      default: 'en',
-    },
-    timezone: String,
-
-    // Role-specific Fields
-    // Teacher Fields
-    teacherProfile: {
-      type: teacherProfileSchema,
-      required: false
-    },
-
-    // Student Fields
-    studentProfile: {
-      type: studentProfileSchema,
-      required: false
-    },
-
-    // Parent Fields
-    parentProfile: {
-      type: parentProfileSchema,
-      required: false
-    },
-
-    // Add these fields to track relationships
-    teachers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    students: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-
-    // System Fields
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    preferences: {
-      notifications: {
-        email: { type: Boolean, default: true },
-        mobile: { type: Boolean, default: true },
-        type: {
-          lessons: { type: Boolean, default: true },
-          progress: { type: Boolean, default: true },
-          system: { type: Boolean, default: true }
-        }
-      },
-      theme: {
-        type: String,
-        enum: ['light', 'dark', 'system'],
-        default: 'system',
-      },
-      accessibility: {
-        fontSize: { type: String, default: 'medium' },
-        contrast: { type: String, default: 'normal' },
-        reduceMotion: { type: Boolean, default: false }
-      }
+// -----------------------------
+// Main User schema
+// -----------------------------
+const userSchema = new Schema<IUser>({
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true
+  },
+  username: {
+    type: String,
+    unique: true,
+    required: true,
+    trim: true,
+    validate: {
+      validator: (v: string) => /^[a-zA-Z0-9_-]{3,20}$/.test(v),
+      message: 'Username must be 3-20 chars and only letters, numbers, underscores, hyphens'
     }
   },
-  {
-    timestamps: true,
-    toJSON: {
-      transform(_, ret) {
-        ret.id = ret._id;
-        delete ret._id;
-        delete ret.__v;
-        delete ret.password;  // Changed from passwordHash to password
-        delete ret.verificationToken;
-        delete ret.verificationTokenExpiry;
-        delete ret.resetPasswordToken;
-        delete ret.resetPasswordTokenExpiry;
-      },
-    },
-  }
-);
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    select: false,
+    minlength: [6, 'Password must be at least 6 characters']
+  },
+  role: {
+    type: String,
+    enum: ['admin','teacher','student','parent'],
+    required: true,
+    default: 'student'
+  },
+  gender: { type: String, required: true },
+  phone: { type: String, trim: true },
+  emailVerified:    { type: Boolean, default: false },
+  verificationToken: { type: String, select: false },
+  verificationTokenExpiry: { type: Date, select: true },
+  lastVerificationSent:    { type: Date, select: true },
+  resetPasswordToken:      { type: String, select: true },
+  resetPasswordTokenExpiry:{ type: Date, select: true },
+  lastLogin: Date,
+  image: String,
+  bio:   String,
+  language: { type: String, default: 'en' },
+  timezone: String,
 
+  teacherProfile: { type: teacherProfileSchema, required: false },
+  studentProfile: { type: studentProfileSchema, required: false },
+  parentProfile:  { type: parentProfileSchema, required: false },
+
+  teachers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  students: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+
+  isActive: { type: Boolean, default: true },
+  preferences: {
+    notifications: {
+      email:  { type: Boolean, default: true },
+      mobile: { type: Boolean, default: true },
+      type: {
+        lessons: { type: Boolean, default: true },
+        progress:{ type: Boolean, default: true },
+        system:  { type: Boolean, default: true }
+      }
+    },
+    theme: { type: String, enum: ['light','dark','system'], default: 'system' },
+    accessibility: {
+      fontSize: { type: String, default: 'medium' },
+      contrast: { type: String, default: 'normal' },
+      reduceMotion: { type: Boolean, default: false }
+    }
+  }
+}, {
+  timestamps: true,
+  toJSON: {
+    transform(_, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.__v;
+      delete ret.password;
+      delete ret.verificationToken;
+      delete ret.verificationTokenExpiry;
+      delete ret.resetPasswordToken;
+      delete ret.resetPasswordTokenExpiry;
+    }
+  }
+});
+
+// -----------------------------
 // Indexes
+// -----------------------------
 userSchema.index({ email: 1 });
 userSchema.index({ username: 1 }, { sparse: true });
-userSchema.index({ 'teacherProfile.subjects.name': 1 });
-userSchema.index({ 'studentProfile.subjects.name': 1 });
 userSchema.index({ role: 1 });
-userSchema.index({ 'teacherProfile.students.studentId': 1 });
-userSchema.index({ 'teacherProfile.parents.parentId': 1 });
-userSchema.index({ 'studentProfile.teachers.teacherId': 1 });
-userSchema.index({ 'parentProfile.childrenProgress.childId': 1 });
-userSchema.index({ 'parentProfile.notifications.childId': 1 });
-userSchema.index({ 'parentProfile.notifications.read': 1 });
-userSchema.index({ 'teacherProfile.reviews.student': 1 });
-userSchema.index({ 'teacherProfile.students.performanceReviews.date': 1 });
-userSchema.index({ 'studentProfile.teachers.reviews.createdAt': 1 });
-userSchema.index({ 'teacherProfile.groupSessions.enrolledStudents.studentId': 1 });
-userSchema.index({ 'teacherProfile.groupSessions.status': 1 });
-userSchema.index({ 'parentProfile.learningProfile.teachers.teacherId': 1 });
-userSchema.index({ 'parentProfile.familyLearning.childId': 1 });
 
-// Create or retrieve the User model
-export const User = mongoose.models.User || mongoose.model<IUser>('User', userSchema);
+// Export model
+export const User =
+  mongoose.models.User ||
+  mongoose.model<IUser>('User', userSchema);
 
 export type UserModel = typeof User;

@@ -1,30 +1,40 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { FileIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { Calendar, Clock, Video } from "lucide-react"
 
 interface Session {
-  _id: string
-  startTime: string
-  endTime: string
-  duration: number
-  meetingLink: string
-  status: string
-  recurrence?: {
-    isRecurring: boolean
-    pattern: string
-    startDate: string
-    endDate: string
-  }
+  _id: string;
+  subject: {
+    name: string;
+    area: string;
+  };
+  teacherId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  startTime: string;
+  endTime: string;
+  duration: number;
+  meetingLink: string;
+  status: string;
 }
 
 interface CourseDetails {
-  courseId: string
+  id: string
+  name: string
+  area: string
+  progress: number // Add progress to interface
   teacherId: string
   startDate: string
   status: string
@@ -85,6 +95,8 @@ export default function CoursePage({ params }: PageProps) {
   const [course, setCourse] = useState<CourseDetails | null>(null)
   const [documents, setDocuments] = useState<CourseDocument[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [activeTab, setActiveTab] = useState('curriculum')
 
   useEffect(() => {
     async function fetchData() {
@@ -124,6 +136,28 @@ export default function CoursePage({ params }: PageProps) {
     fetchData()
   }, [params.courseId])
 
+  const fetchSessions = async () => {
+    try {
+      console.log('Fetching sessions for course:', params.courseId)
+      const response = await fetch(`/api/student/courses/${params.courseId}/sessions`)
+      if (!response.ok) throw new Error('Failed to fetch sessions')
+      const data = await response.json()
+      console.log('Sessions data:', data)
+      setSessions(data)
+    } catch (error) {
+      console.error('Error fetching sessions:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load sessions",
+        variant: "destructive"
+      })
+    }
+  }
+
+  useEffect(() => {
+    fetchSessions()
+  }, [params.courseId])
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -153,8 +187,7 @@ export default function CoursePage({ params }: PageProps) {
     <div className="container mx-auto p-6">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">{course.title}</h1>
-          <p className="text-muted-foreground">{course.description}</p>
+          <h1 className="text-2xl font-bold capitalize">{course.title}</h1>
         </div>
 
         <Card>
@@ -162,24 +195,39 @@ export default function CoursePage({ params }: PageProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <h3 className="font-semibold mb-2">Subject</h3>
-                <p className="text-sm text-muted-foreground">
-                  {course.subject.area} - {course.subject.name}
-                </p>
-                <p className="text-sm text-muted-foreground">Level: {course.subject.level}</p>
+               <p className="text-sm text-muted-foreground capitalize">
+  {course.subject.area} - {course.subject.name}
+</p>
+
               </div>
               <div>
-                <h3 className="font-semibold mb-2">Duration</h3>
+                <h3 className="font-semibold mb-2">Estimated Duration</h3>
                 <p className="text-sm text-muted-foreground">
                   {course.structure.duration.weeks} weeks
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {course.structure.duration.sessionsPerWeek} sessions per week
-                </p>
+               
               </div>
               <div>
                 <h3 className="font-semibold mb-2">Progress</h3>
-                <Progress value={33} className="w-full" />
-                <p className="text-sm text-muted-foreground mt-2">33% Complete</p>
+                <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Overall Progress</span>
+            <span>{course?.progress ?? 0}%</span>
+          </div>
+          <Progress 
+            value={course?.progress} 
+            className={cn(
+              "h-2",
+              (course?.progress || 0) >= 80 ? "bg-green-200" :
+              (course?.progress || 0) >= 50 ? "bg-blue-200" :
+              "bg-yellow-200"
+            )}
+          />
+          {/* Add debug info */}
+          <p className="text-xs text-muted-foreground">
+            Debug - Raw progress value: {JSON.stringify(course?.progress)}
+          </p>
+        </div>
               </div>
               {course.subject.nextCall && (
                 <div>
@@ -247,48 +295,45 @@ export default function CoursePage({ params }: PageProps) {
                 <CardTitle>Upcoming Sessions</CardTitle>
               </CardHeader>
               <CardContent>
-                {course.sessions && course.sessions.length > 0 ? (
-                  <div className="space-y-4">
-                    {course.sessions.map((session) => (
-                      <div
-                        key={session._id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div>
-                          <p className="font-medium">
-                            {new Date(session.startTime).toLocaleDateString()} at{' '}
-                            {new Date(session.startTime).toLocaleTimeString()}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Duration: {session.duration} minutes
-                          </p>
-                          {session.recurrence && session.recurrence.isRecurring && (
-                            <Badge variant="outline" className="mt-1">
-                              Recurring {session.recurrence.pattern}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={session.status === 'scheduled' ? 'default' : 'secondary'}>
-                            {session.status}
-                          </Badge>
-                          {session.meetingLink && (
-                            <a
-                              href={session.meetingLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-primary hover:underline"
-                            >
-                              Join Meeting
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                {sessions.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No upcoming sessions scheduled
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sessions.map((session) => (
+              <Card key={session._id} className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-4">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>{format(new Date(session.startTime), 'PPP')}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{format(new Date(session.startTime), 'p')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {session.duration} minutes
+                      </Badge>
+                      <Badge>
+                        {session.status}
+                      </Badge>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground">No upcoming sessions scheduled.</p>
-                )}
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(session.meetingLink, '_blank')}
+                  >
+                    <Video className="h-4 w-4 mr-2" />
+                    Join Session
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
               </CardContent>
             </Card>
           </TabsContent>

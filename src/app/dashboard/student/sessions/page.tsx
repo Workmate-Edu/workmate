@@ -4,13 +4,17 @@ import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Video, BookOpen, Users, RefreshCw, MessageSquare } from "lucide-react"
+import { Calendar, Clock, Video, BookOpen, Users } from "lucide-react"
 import { format, isPast } from "date-fns"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-import { formatAssessmentDateTime } from '@/lib/timezone-utils'
-import { useSession } from "next-auth/react"
-import { useRouter } from "next/router"
+import { PageHeader } from "@/components/layouts/page-header"
+
+interface TeacherInfo {
+  _id: string
+  name: string
+  email: string
+  profileImage?: string
+}
 
 interface Session {
   _id: string
@@ -22,27 +26,63 @@ interface Session {
   endTime: string
   duration: number
   meetingLink: string
-  status: 'scheduled' | 'active' | 'completed' | 'cancelled'
-  teacher: {
-    name: string
-    email: string
-  }
+  status: "scheduled" | "active" | "completed" | "cancelled"
+  teacher: TeacherInfo
   recurrence?: {
     isRecurring: boolean
     pattern: string
     daysOfWeek: number[]
     startDate: string
     endDate: string
-    totalSessions?: number
+    time: string
   }
-  timezone: string
+}
+
+const getStatusColor = (status: string, startTime: string) => {
+  const isPastSession = isPast(new Date(startTime))
+  if (isPastSession && status === "scheduled") {
+    return "bg-red-500"
+  }
+  switch (status.toLowerCase()) {
+    case "scheduled":
+      return "bg-blue-500"
+    case "active":
+      return "bg-green-500"
+    case "completed":
+      return "bg-gray-500"
+    case "cancelled":
+      return "bg-red-500"
+    default:
+      return "bg-gray-500"
+  }
+}
+
+const getSessionStatus = (session: Session) => {
+  if (!session.recurrence?.isRecurring) {
+    const isPastSession = isPast(new Date(session.startTime))
+    if (isPastSession && session.status === "scheduled") {
+      return "Past Due"
+    }
+  } else {
+    const endDate = new Date(session.recurrence.endDate)
+    if (isPast(endDate) && session.status === "scheduled") {
+      return "Series Ended"
+    }
+  }
+  return session.status.charAt(0).toUpperCase() + session.status.slice(1)
+}
+
+const isSessionActive = (session: Session) => {
+  if (session.recurrence?.isRecurring) {
+    const endDate = new Date(session.recurrence.endDate)
+    return !isPast(endDate)
+  }
+  return !isPast(new Date(session.startTime))
 }
 
 export default function StudentSessionsPage() {
-  const { data: session } = useSession()
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
 
   useEffect(() => {
     fetchSessions()
@@ -50,11 +90,11 @@ export default function StudentSessionsPage() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('/api/student/sessions')
-      if (!response.ok) throw new Error('Failed to fetch sessions')
+      const response = await fetch("/api/student/sessions")
+      if (!response.ok) throw new Error("Failed to fetch sessions")
       const data = await response.json()
       setSessions(data)
-    } catch (error) {
+    } catch {
       toast.error("Failed to load sessions")
     } finally {
       setLoading(false)
@@ -63,30 +103,98 @@ export default function StudentSessionsPage() {
 
   const formatRecurrenceInfo = (session: Session) => {
     if (!session.recurrence?.isRecurring) return null
-
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    const selectedDays = session.recurrence.daysOfWeek.map(d => days[d]).join(', ')
-    const startDate = format(new Date(session.recurrence.startDate), 'PPP')
-    const endDate = format(new Date(session.recurrence.endDate), 'PPP')
-
-    return `${session.recurrence.pattern} sessions on ${selectedDays} until ${endDate}`
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ]
+    const selectedDays = session.recurrence.daysOfWeek
+      .map((d) => days[d])
+      .join(", ")
+    const endDate = format(new Date(session.recurrence.endDate), "PPP")
+    return `🔄 ${session.recurrence.pattern} on ${selectedDays} until ${endDate}`
   }
 
-  const isSessionActive = (session: Session) => {
-    if (session.recurrence?.isRecurring) {
-      const endDate = new Date(session.recurrence.endDate)
-      return !isPast(endDate)
-    }
-    return !isPast(new Date(session.startTime))
-  }
+  const renderSession = (session: Session) => {
+    const isActiveSession = isSessionActive(session)
+    const statusColor = session.recurrence?.isRecurring
+      ? session.status === "cancelled"
+        ? "bg-red-500"
+        : "bg-blue-500"
+      : getStatusColor(session.status, session.startTime)
 
-  const canMessageTeacher = session?.user?.studentProfile?.registeredAs !== 'child'
-
-  if (loading) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
+      <Card key={session._id} className="mb-4">
+        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 gap-4">
+          <div className="space-y-2 w-full sm:w-auto">
+            {/* Header */}
+            <div className="flex flex-wrap items-start gap-2">
+              <div className="flex items-center space-x-2 flex-1">
+                <BookOpen className="h-4 w-4 flex-shrink-0" />
+                <span className="font-medium truncate">
+                  {session.subject.name}{" "}
+                  <span className="text-sm text-muted-foreground ml-1">
+                    ({session.subject.area})
+                  </span>
+                </span>
+              </div>
+              <Badge className={`${statusColor} whitespace-nowrap`}>
+                {getSessionStatus(session)}
+              </Badge>
+            </div>
+
+            {/* Date & Time */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center">
+                <Calendar className="mr-1 h-4 w-4 flex-shrink-0" />
+                <span>{format(new Date(session.startTime), "PPP")}</span>
+              </div>
+              <div className="flex items-center">
+                <Clock className="mr-1 h-4 w-4 flex-shrink-0" />
+                <span>{format(new Date(session.startTime), "p")}</span>
+              </div>
+            </div>
+
+            {/* Teacher */}
+            <div className="flex items-center space-x-2 text-sm">
+              <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="font-medium">
+                {session.teacher.name || "Not assigned"}
+              </span>
+            </div>
+
+            {/* Recurrence */}
+            {session.recurrence?.isRecurring && (
+              <p className="text-xs text-blue-600 break-words">
+                {formatRecurrenceInfo(session)}
+              </p>
+            )}
+          </div>
+
+          {/* Join Button */}
+          {session.meetingLink && (
+            <Button
+              className="w-full sm:w-auto whitespace-nowrap"
+              variant={isActiveSession ? "default" : "secondary"}
+              disabled={!isActiveSession}
+              onClick={() =>
+                isActiveSession && window.open(session.meetingLink, "_blank")
+              }
+            >
+              <Video className="w-4 h-4 mr-2" />
+              {isActiveSession
+                ? "Join Session"
+                : session.recurrence?.isRecurring
+                ? "Series Ended"
+                : "Session Ended"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     )
   }
 
@@ -95,12 +203,20 @@ export default function StudentSessionsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">My Sessions</h1>
-          <p className="text-muted-foreground">View all your scheduled classes</p>
+          <p className="text-muted-foreground">
+            View all your scheduled classes
+          </p>
         </div>
       </div>
 
       <div className="grid gap-4">
-        {sessions.length === 0 ? (
+        {loading ? (
+          <Card className="p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          </Card>
+        ) : sessions.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center h-48 space-y-4">
               <Calendar className="h-8 w-8 text-muted-foreground" />
@@ -108,95 +224,7 @@ export default function StudentSessionsPage() {
             </CardContent>
           </Card>
         ) : (
-          sessions.map((session) => {
-            const { teacherTime, studentTime } = formatAssessmentDateTime({
-              dateStr: session.startTime,
-              teacherTimezone: session.timezone || 'Africa/Lagos'
-            })
-
-            const isActive = isSessionActive(session)
-
-            return (
-              <Card key={session._id}>
-                <CardContent className="flex flex-col sm:flex-row items-center gap-4 p-4 md:p-6">
-                  <div className="flex-1 min-w-0 space-y-3 text-center sm:text-left">
-                    {/* Subject & Status */}
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2">
-                      <div className="flex items-center gap-2 flex-1">
-                        <BookOpen className="h-4 w-4 flex-shrink-0" />
-                        <span className="font-medium truncate">
-                          {session.subject.name}
-                          <span className="text-sm text-muted-foreground ml-1">
-                            ({session.subject.area})
-                          </span>
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={cn(
-                          "whitespace-nowrap",
-                          session.status === 'cancelled' ? "bg-red-500" : 
-                          isPast(new Date(session.startTime)) ? "bg-gray-500" : 
-                          "bg-green-500"
-                        )}>
-                          {session.status}
-                        </Badge>
-                        {session.recurrence?.isRecurring && (
-                          <Badge variant="outline" className="flex items-center">
-                            <RefreshCw className="mr-1 h-3 w-3" />
-                            Recurring
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Time & Teacher Info */}
-                    <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2 sm:gap-4 text-sm">
-                      <div className="flex items-center">
-                        <Clock className="mr-1 h-4 w-4 flex-shrink-0" />
-                        <div>
-                          <div>{studentTime}</div>
-                          <div className="text-xs text-muted-foreground">{teacherTime}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <Users className="mr-1 h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">Teacher: {session.teacher.name}</span>
-                      </div>
-                    </div>
-
-                    {/* Recurrence Info */}
-                    {session.recurrence?.isRecurring && (
-                      <div className="text-xs text-blue-600 text-center sm:text-left">
-                        {formatRecurrenceInfo(session)}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Join & Message Buttons */}
-                  <div className="flex items-center gap-2 mt-4">
-                    <Button
-                      variant="default"
-                      disabled={session.status === 'cancelled'}
-                      onClick={() => window.open(session.meetingLink, '_blank')}
-                    >
-                      <Video className="w-4 h-4 mr-2" />
-                      Join Session
-                    </Button>
-
-                    {canMessageTeacher && (
-                      <Button
-                        variant="outline"
-                        onClick={() => router.push(`/dashboard/student/messages?teacherId=${session.teacherId}`)}
-                      >
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        Message Teacher
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })
+          sessions.map(renderSession)
         )}
       </div>
     </div>
