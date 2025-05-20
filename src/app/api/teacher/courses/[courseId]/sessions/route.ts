@@ -9,25 +9,29 @@ export async function GET(
   { params }: { params: { courseId: string } }
 ) {
   try {
+    console.log('Request to fetch sessions for course:', params.courseId); // Add debug log
+    
     const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'teacher') {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
 
-    // Extract subject name from courseId
+    // Extract subject info from courseId (e.g., "67eab75d6f9ce9391b9acbd6-yoruba")
     const [_, subjectName] = params.courseId.split('-')
+    console.log('Subject name:', subjectName); // Add debug log
 
-    // Get all sessions for this subject
+    // Find sessions for this course
     const sessions = await TeachingSession.find({
       teacherId: session.user.id,
-      'subject.name': subjectName.toLowerCase(),
-      endTime: { $gte: new Date() }
+      'subject.name': subjectName.toLowerCase()
     })
     .populate('studentId', 'name email')
     .sort({ startTime: 1 })
     .lean()
+
+    console.log('Found sessions:', sessions.length); // Add debug log
 
     return NextResponse.json(sessions)
 

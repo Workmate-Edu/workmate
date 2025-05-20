@@ -1,8 +1,7 @@
-'use client'
+"use client"
 
 import { motion } from 'framer-motion'
 import { EduBackground } from '@/components/ui/edu-background'
-import { AfricanVectors } from '@/components/ui/african-vectors'
 import { CircularVectors } from '@/components/ui/circular-vectors'
 import { GraduationCap, Beaker, Globe2, Users, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
@@ -31,13 +30,40 @@ export function HeroSection() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-background/95 min-h-[90vh]">
-      <CircularVectors />
-      <div className="relative z-10">
-        <EduBackground />
-        <AfricanVectors />
-        
-        <motion.div className="relative z-20"
+    <section className="relative min-h-[90vh] bg-gradient-to-br from-primary/30 via-primary/10 to-background overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0">
+        <motion.div
+          className="absolute top-20 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px]"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+            x: [0, 50, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-1/4 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px]"
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.4, 0.2],
+            y: [0, -30, 0],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-32">
+        <motion.div 
+          className="relative z-20"
           variants={containerVariants}
           initial="hidden"
           animate="show"
@@ -45,7 +71,7 @@ export function HeroSection() {
           <div className="container mx-auto flex max-w-[64rem] flex-col items-center gap-4 text-center py-12 sm:py-16 lg:py-20">
             <motion.div
               variants={slideVariants}
-              className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary flex items-center gap-2"
+              className="rounded-full bg-black/10 px-4 py-1.5 text-sm font-medium text-foreground flex items-center gap-2 backdrop-blur-sm"
             >
               <GraduationCap className="h-4 w-4" />
               <span className="hidden sm:inline">Perfect for Ages 6-16</span>
@@ -54,57 +80,63 @@ export function HeroSection() {
 
             <motion.h1
               variants={slideVariants}
-              className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold"
+              className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold text-foreground"
             >
-              <span className="block">Give Your Child The Gift of</span>
-              <span className="block text-primary">STEM & African Languages</span>
+              <span className="block text-foreground">Give Your Child The Gift of</span>
+              <span className="block text-primary font-extrabold">
+                STEM & African Languages
+              </span>
             </motion.h1>
 
             <motion.p
               variants={slideVariants}
-              className="text-xl text-muted-foreground max-w-[42rem] leading-normal"
+              className="text-xl text-foreground/90 max-w-[42rem] leading-normal font-medium"
             >
               Help your children excel in science and mathematics while connecting with African languages
             </motion.p>
 
+            {/* Update cards with semi-transparent background */}
             <motion.div
               variants={slideVariants}
               className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8 max-w-3xl w-full"
             >
-              {/* Reorder cards to put STEM first */}
-              <div className="bg-card p-6 rounded-lg border shadow-sm flex items-start gap-4">
-                <Beaker className="h-8 w-8 text-secondary flex-shrink-0" />
+              {/* STEM Card with secondary gradient */}
+              <div className="bg-gradient-to-br from-secondary/90 to-secondary-foreground/70 p-6 rounded-lg border border-white/20 backdrop-blur-sm flex items-start gap-4 hover:shadow-lg transition-all">
+                <Beaker className="h-8 w-8 text-white flex-shrink-0" />
                 <div className="text-left">
-                  <h3 className="font-semibold">STEM Education</h3>
-                  <p className="text-muted-foreground text-sm">Fun experiments and math games</p>
+                  <h3 className="font-bold text-white">STEM Education</h3>
+                  <p className="text-white/90 text-sm">Fun experiments and math games</p>
                 </div>
               </div>
-              <div className="bg-card p-6 rounded-lg border shadow-sm flex items-start gap-4">
-                <Globe2 className="h-8 w-8 text-primary flex-shrink-0" />
+
+              {/* Languages Card with cultural gradient */}
+              <div className="bg-gradient-to-br from-primary/90 to-primary-foreground/70 p-6 rounded-lg border border-white/20 backdrop-blur-sm flex items-start gap-4 hover:shadow-lg transition-all">
+                <Globe2 className="h-8 w-8 text-white flex-shrink-0" />
                 <div className="text-left">
-                  <h3 className="font-semibold">African Languages</h3>
-                  <p className="text-muted-foreground text-sm">Interactive lessons with native speakers</p>
+                  <h3 className="font-bold text-white">African Languages</h3>
+                  <p className="text-white/90 text-sm">Interactive lessons with native speakers</p>
                 </div>
               </div>
             </motion.div>
 
+            {/* Update buttons with new styles */}
             <div className="flex flex-col sm:flex-row gap-4 sm:space-x-4 w-full sm:w-auto mt-8">
               <Link
                 href="/assessment"
-                className="inline-flex h-12 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all group"
+                className="inline-flex h-12 items-center justify-center rounded-md bg-primary px-8 text-lg font-medium text-primary-foreground hover:bg-primary/90 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 <span>Find Your Child's Learning Style</span>
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/sign-up"
-                className="inline-flex h-12 items-center justify-center rounded-md border border-primary bg-background px-8 text-sm font-medium text-primary hover:bg-primary/10 transition-all"
+                className="inline-flex h-12 items-center justify-center rounded-md bg-secondary/90 px-8 text-lg font-medium text-secondary-foreground hover:bg-secondary hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Start 14-Day Free Trial
               </Link>
             </div>
 
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm text-primary-foreground/80 mt-4 text-center sm:text-left">
               Take our 1-minute assessment to create a personalized learning path
             </p>
 

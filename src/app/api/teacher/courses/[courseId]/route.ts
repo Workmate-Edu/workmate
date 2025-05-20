@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const [areaId, subjectName] = params.courseId.split('-')
+    const [subjectId, subjectName] = params.courseId.split('-')
 
     await connectDB()
 
@@ -28,7 +28,7 @@ export async function GET(
 
     // Find the area and subject
     const area = teacher.teacherProfile.subjects?.find(s => 
-      s._id.toString() === areaId
+      s._id.toString() === subjectId
     )
 
     if (!area || !area.subjects.includes(subjectName)) {
@@ -43,15 +43,31 @@ export async function GET(
       )
     ) || []
 
+    // Get the students with their full profiles including subjects
+    const students = await User.find(
+      { _id: { $in: enrolledStudents.map(s => s._id) } }
+    ).select('name grade studentProfile.subjects')
+
+    // Format students with correct progress for this subject
+    const formattedStudents = students.map(student => {
+      const subjectProgress = student.studentProfile?.subjects?.find(
+        s => s.name.toLowerCase() === subjectName.toLowerCase()
+      )
+
+      return {
+        id: student._id,
+        name: student.name,
+        grade: student.grade,
+        progress: subjectProgress?.progress || 0,
+        subjects: student.studentProfile?.subjects // Include full subjects array
+      }
+    })
+
     return NextResponse.json({
       id: params.courseId,
       name: subjectName,
       area: area.area,
-      students: enrolledStudents.map(student => ({
-        id: student._id,
-        name: student.name,
-        grade: student.studentProfile?.grade
-      }))
+      students: formattedStudents
     })
 
   } catch (error) {

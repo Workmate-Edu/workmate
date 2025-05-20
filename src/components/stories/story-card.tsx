@@ -10,32 +10,37 @@ interface StoryCardProps {
 }
 
 export function StoryCard({ slug, title, excerpt, date, category }: StoryCardProps) {
+  // Get gradient based on category
+  const getGradient = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'language policy':
+        return 'from-blue-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-indigo-500/30'
+      case 'education':
+        return 'from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30'
+      case 'technology':
+        return 'from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30'
+      default:
+        return 'from-gray-500/20 to-slate-500/20 hover:from-gray-500/30 hover:to-slate-500/30'
+    }
+  }
+
   return (
     <Link 
       href={`/stories/${slug}`}
-      className="group block h-[280px] bg-card rounded-lg border shadow-sm hover:shadow-md transition-all"
+      className="block group"
     >
-      <div className="p-6 h-full flex flex-col">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          <span>{date}</span>
-          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-            {category}
-          </span>
+      <article className={`h-full rounded-lg p-6 transition-all duration-300 bg-gradient-to-br backdrop-blur-sm ${getGradient(category)} border border-white/10`}>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <span className="text-sm font-medium text-primary">{category}</span>
+            <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
+              {title}
+            </h3>
+          </div>
+          <p className="text-muted-foreground">{excerpt}</p>
+          <div className="text-sm text-muted-foreground">{date}</div>
         </div>
-
-        <h3 className="text-lg font-semibold mt-3 mb-2 group-hover:text-primary transition-colors line-clamp-2">
-          {title}
-        </h3>
-
-        <p className="text-sm text-muted-foreground flex-grow line-clamp-3">
-          {excerpt}
-        </p>
-
-        <span className="mt-4 text-sm font-medium text-primary group-hover:underline">
-          Read More →
-        </span>
-      </div>
+      </article>
     </Link>
   )
 }

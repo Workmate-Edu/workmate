@@ -34,6 +34,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertTriangle } from "lucide-react"
 
 interface Subject {
   _id: string
@@ -177,7 +179,7 @@ export default function StudentDashboard() {
     averageScore: 0
   })
   const [isChildStudent, setIsChildStudent] = useState(false)
-  const [studentProfile, setStudentProfile] = useState<any>(null)
+  const [initialAssessment, setInitialAssessment] = useState<any>(null)
 
   useEffect(() => {
     const checkStudentType = async () => {
@@ -193,20 +195,6 @@ export default function StudentDashboard() {
     }
 
     checkStudentType()
-  }, [])
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch('/api/student/profile')
-        const data = await res.json()
-        setStudentProfile(data)
-      } catch (error) {
-        console.error('Failed to fetch student profile:', error)
-      }
-    }
-
-    fetchProfile()
   }, [])
 
   useEffect(() => {
@@ -226,21 +214,45 @@ export default function StudentDashboard() {
     fetchAssessments()
   }, [])
 
+  const calculateSubjectProgress = (subjects: any[]) => {
+    if (!subjects?.length) return 0;
+    
+    // Get total progress from subjects array
+    const totalProgress = subjects.reduce((sum, subject) => {
+      return sum + (subject.progress || 0);
+    }, 0);
+
+    return subjects.length > 0 ? (totalProgress / subjects.length) : 0;
+  }
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        setLoading(true)
-        const statsRes = await fetch('/api/student/dashboard/stats')
+        setLoading(true);
         
-        if (!statsRes.ok) {
-          throw new Error('Failed to fetch dashboard data')
-        }
+        // Get user profile with subjects and progress
+        const profileRes = await fetch('/api/student/profile');
+        const profileData = await profileRes.json();
         
-        const statsData = await statsRes.json()
-        setStats(statsData)
+        // Calculate overall progress from subjects
+        const overallSubjectProgress = calculateSubjectProgress(profileData.studentProfile.subjects);
         
+        // Get stats data
+        const statsRes = await fetch('/api/student/dashboard/stats');
+        const statsData = await statsRes.json();
+
+        setStats(statsData);
+        setOverallProgress({
+          percentage: overallSubjectProgress, // Use subject progress
+          totalSubjects: profileData.studentProfile.subjects?.length || 0,
+          completedSubjects: profileData.studentProfile.subjects?.filter(
+            (s: any) => s.progress > 0
+          ).length || 0,
+          averageScore: statsData.assessments?.averageScore || 0 // Keep assessment score
+        });
+
       } catch (error) {
-        console.error('Dashboard data error:', error)
+        console.error('Dashboard data error:', error);
         toast.error("Failed to load dashboard data")
       } finally {
         setLoading(false)
@@ -256,74 +268,35 @@ export default function StudentDashboard() {
 
   const fetchSubjectsAndProgress = async () => {
     try {
-      // Fetch subjects with progress data
-      const response = await fetch('/api/student/subjects')
-      if (!response.ok) throw new Error('Failed to fetch subjects')
+      // Fetch user profile to get subjects and progress
+      const response = await fetch('/api/student/profile')
+      if (!response.ok) throw new Error('Failed to fetch profile')
       const data = await response.json()
       
-      // Transform data for display
-      const progresses = data.map(subject => ({
+      // Transform subjects data for display
+      const progresses = data.studentProfile.subjects.map((subject: any) => ({
         subjectId: subject._id,
         subjectName: subject.name,
         area: subject.area,
-        teacherName: subject.teacherId || 'Not Assigned',
-        scores: subject.scores || {
-          understanding: 0,
-          participation: 0,
-          homework: 0
-        },
-        averageScore: subject.averageScore || 0,
-        updatedAt: subject.updatedAt
+        progress: subject.progress || 0,
+        teacherName: 'Assigned Teacher' // You can fetch teacher name if needed
       }))
 
-      setSubjects(data)
+      // Calculate overall progress
+      const totalProgress = progresses.reduce((sum, s) => sum + s.progress, 0)
+      const averageProgress = progresses.length > 0 ? totalProgress / progresses.length : 0
+
       setSubjectProgresses(progresses)
-      setOverallProgress(calculateOverallProgress(progresses))
+      setOverallProgress({
+        percentage: averageProgress,
+        totalSubjects: progresses.length,
+        completedSubjects: progresses.filter(p => p.progress > 0).length,
+        averageScore: overallProgress.averageScore // Keep existing assessment score
+      })
 
     } catch (error) {
       console.error('Error:', error)
       toast.error('Failed to load subjects')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const calculateSubjectProgress = (scores: { understanding: number, participation: number, homework: number }) => {
-    if (!scores) return 0
-    const maxScore = 30 // 10 points max for each of 3 categories
-    const totalScore = scores.understanding + scores.participation + scores.homework
-    return (totalScore / maxScore) * 100
-  }
-
-  const calculateOverallProgress = (progresses: SubjectProgress[]) => {
-    const total = progresses.length
-    if (total === 0) return {
-      percentage: 0,
-      totalSubjects: 0,
-      completedSubjects: 0,
-      averageScore: 0
-    }
-
-    const completed = progresses.filter(p => 
-      p.scores?.understanding > 0 || 
-      p.scores?.participation > 0 || 
-      p.scores?.homework > 0
-    ).length
-
-    const validProgresses = progresses.filter(p => p.scores)
-    const totalProgress = validProgresses.reduce((sum, p) => {
-      const progress = calculateSubjectProgress(p.scores)
-      return sum + progress
-    }, 0)
-
-    const averageProgress = validProgresses.length > 0 ? 
-      totalProgress / validProgresses.length : 0
-
-    return {
-      percentage: averageProgress,
-      totalSubjects: total,
-      completedSubjects: completed,
-      averageScore: validProgresses.reduce((sum, p) => sum + (p.averageScore || 0), 0) / total
     }
   }
 
@@ -389,75 +362,60 @@ export default function StudentDashboard() {
     return acc
   }, {} as Record<string, SubjectWithProgress[]>)
 
-  // Update Assessment Section
-  const renderAssessmentSection = () => (
-    <Card className="p-4 md:p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-lg font-semibold">Assigned Assessments</h2>
-      </div>
+  useEffect(() => {
+    const checkInitialAssessment = async () => {
+      try {
+        const res = await fetch('/api/student/initial-assessment')
+        const data = await res.json()
+        setInitialAssessment(data)
+      } catch (error) {
+        console.error('Error checking initial assessment:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-      {assessments.length === 0 ? (
-        <div className="text-center space-y-4">
-          <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto" />
-          <h3 className="text-lg font-medium">No Assessments Yet</h3>
-          <p className="text-muted-foreground">
-            Your teacher will assign assessments as you progress
-          </p>
-        </div>
-      ) : (
-        <div className="divide-y">
-          {assessments.map((assessment) => (
-            <div key={assessment._id} className="py-4 first:pt-0 last:pb-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">{assessment.subject.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {assessment.subject.area} • Due {formatDate(assessment.dueDate)}
-                  </p>
+    // Only check for independent students
+    if (session?.user?.studentProfile?.registeredAs === 'independent') {
+      checkInitialAssessment()
+    } else {
+      setLoading(false)
+    }
+  }, [session])
+
+  return (
+    <div className="space-y-6">
+      {!isChildStudent && assessments.length === 0 && (
+        <div className="px-4 py-6">
+          <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-100">
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-2 bg-yellow-100 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-yellow-600" />
                 </div>
-                <div className="flex items-center gap-4">
-                  <Badge 
-                    variant={
-                      assessment.status === 'active' ? 'default' :
-                      assessment.status === 'submitted' ? 'secondary' :
-                      'outline'
-                    }
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-lg text-yellow-800">Initial Assessment Required</h3>
+                    <p className="text-yellow-700 mt-1">
+                      Complete your initial assessment to help us personalize your learning experience and track your progress effectively.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => router.push('/dashboard/student/initial-assessment')}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white shadow-sm transition-all hover:shadow-md"
                   >
-                    {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
-                  </Badge>
-                  
-                  {assessment.status && (
-                    <Button 
-                      variant="outline"
-                      onClick={() => router.push(`/dashboard/student/assessments/${assessment.id}`)}
-                    >
-                      View Details
-                    </Button>
-                  )}
+                    Start Assessment
+                  </Button>
                 </div>
               </div>
             </div>
-          ))}
+          </Card>
         </div>
       )}
-    </Card>
-  )
 
-  const isIndependentStudent = studentProfile?.registeredAs === 'independent'
-
-  return (
-    <div className="space-y-6 p-4 md:p-6 mt-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* Header - More responsive */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3  mt-4">
         <h1 className="text-2xl font-bold">Welcome, {session?.user?.name}</h1>
-        {isIndependentStudent && (
-          <Button 
-            onClick={() => router.push('/dashboard/student/messages')}
-            variant="outline"
-            className="mt-4 w-full md:w-auto"
-          >
-            View Messages
-          </Button>
-        )}
       </div>
 
       {/* Stats Grid - Better mobile layout */}
@@ -503,13 +461,13 @@ export default function StudentDashboard() {
       <Card className="p-4 md:p-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Label className="text-sm">Overall Progress</Label>
+            <Label className="text-sm">Subject Progress</Label>
             <div className="text-2xl font-bold mt-1">
               {overallProgress.percentage.toFixed(1)}%
             </div>
           </div>
           <div>
-            <Label className="text-sm">Average Score</Label>
+            <Label className="text-sm">Assessment Score</Label>
             <div className="text-2xl font-bold mt-1">
               {overallProgress.averageScore.toFixed(1)}/10
             </div>
@@ -540,39 +498,118 @@ export default function StudentDashboard() {
         </div>
         <div className="max-h-[400px] overflow-y-auto -mx-4 px-4">
           {subjectProgresses.map((progress) => (
-            <div key={progress.subjectId} className="space-y-2">
+            <div key={progress.subjectId} className="space-y-2 mb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-semibold">{progress.subjectName}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {progress.area} • {progress.teacherName}
+                  <h4 className="font-semibold capitalize">{progress.subjectName}</h4>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {progress.area}
                   </p>
                 </div>
                 <div className="text-2xl font-bold">
-                  {progress.averageScore ? `${progress.averageScore.toFixed(1)}` : '0'}
+                  {progress.progress}%
                 </div>
               </div>
               <Progress 
-                value={progress.averageScore * 10 || 0} 
+                value={progress.progress} 
                 className="h-2"
               />
-              {progress.updatedAt && (
-                <p className="text-xs text-muted-foreground">
-                  Last updated: {new Date(progress.updatedAt).toLocaleDateString()}
-                </p>
-              )}
             </div>
           ))}
-          {!loading && subjectProgresses.length === 0 && (
+          {subjectProgresses.length === 0 && (
             <p className="text-muted-foreground text-center py-6">
-              No subject progress available
+              No subjects assigned
             </p>
           )}
         </div>
       </Card>
 
-      {/* Replace the old assessment section with the new one */}
-      {renderAssessmentSection()}
+      {/* Assessment Section - Better mobile spacing */}
+      {!isChildStudent && (
+        <Card className="p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h2 className="text-lg font-semibold">Your Assessments</h2>
+            <Button 
+              onClick={() => router.push('/dashboard/student/assessments/initial')}
+              className="w-full sm:w-auto"
+            >
+              Take New Assessment
+            </Button>
+          </div>
+
+          { !isChildStudent && assessments.length === 0 ? (
+            <div className="text-center space-y-4">
+              <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto" />
+              <h3 className="text-lg font-medium">Start Your Learning Journey</h3>
+              <p className="text-muted-foreground">
+                Take your first assessment to get matched with the perfect teacher
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {assessments.map((assessment, index) => (
+                <div key={index} className="py-4 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">{assessment.subject.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {assessment.subject.area} • Completed {formatDate(assessment.completedAt)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {assessment.status === 'pending' ? (
+                        <Badge variant="outline">Under Review</Badge>
+                      ) : assessment.status === 'assigned' ? (
+                        <div className="text-right">
+                          <Badge variant="default">Teacher Assigned</Badge>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {assessment.assignedTeacher?.name}
+                          </p>
+                        </div>
+                      ) : (
+                        <Badge>Being Reviewed</Badge>
+                      )}
+                      {assessment.status === 'assigned' && (
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/dashboard/student/learn/${assessment.subject.name.toLowerCase()}`)}
+                        >
+                          Start Learning
+                        </Button>
+                      )}
+                      {assessment.status !== 'assigned' && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => 
+                              router.push(`/dashboard/student/assessments/edit/${assessment._id}`)
+                            }>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit Assessment
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setAssessmentToDelete(assessment._id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Assessment
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Recent Activity & Upcoming - Stack on mobile, side by side on larger screens */}
       {/* <div className="grid gap-6 md:grid-cols-2">

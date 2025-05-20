@@ -61,7 +61,7 @@ export default function ParentDashboardPage() {
           className="w-full mt-3"
           asChild
         >
-          <Link href={`/dashboard/parent/children/${child.id}/assessment/create`}>
+          <Link href={`/dashboard/parent/children/${child.id}/assessment`}>
             <ClipboardCheck className="mr-2 h-4 w-4" />
             Create Initial Assessment
           </Link>
@@ -89,7 +89,7 @@ export default function ParentDashboardPage() {
         <div className="mt-3">
           <Badge 
             variant="secondary"
-            className="w-full py-1 flex items-center justify-center"
+            className="w-full py-3 flex items-center justify-center"
           >
             <GraduationCap className="mr-2 h-4 w-4" />
             Inital Assessment Completed

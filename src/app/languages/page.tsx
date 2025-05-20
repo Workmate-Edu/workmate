@@ -14,35 +14,44 @@ const languages: Language[] = [
     description: 'Explore the rich language of Yorubaland',
     level: ['Beginner', 'Intermediate', 'Advanced'],
     cultural: 'West African Heritage',
-    icon: '🇳🇬'
+    icon: '🎭',
+    gradient: 'from-[#FF6B6B]/10 via-[#FF8E53]/10 to-[#FFA726]/10'
   },
   {
     name: 'Swahili',
-    description: "Learn East Africa's most spoken language'",
+    description: "Learn East Africa's most spoken language",
     level: ['Beginner', 'Intermediate', 'Advanced'],
     cultural: 'East African Culture',
-    icon: '🇹🇿'
+    icon: '🌊', // Ocean wave representing coastal culture
+    gradient: 'bg-gradient-to-br from-[#00CED1]/10 to-[#4169E1]/10 hover:from-[#00CED1]/20 hover:to-[#4169E1]/20',
+    culturalImage: '⛵' // Dhow sailing vessel
   },
   {
     name: 'Hausa',
     description: 'Master the lingua franca of Northern Nigeria',
     level: ['Beginner', 'Intermediate'],
     cultural: 'Hausa Culture & Traditions',
-    icon: '🇳🇬'
+    icon: '🐪', // Camel representing Sahel trade
+    gradient: 'bg-gradient-to-br from-[#FFD700]/10 to-[#DAA520]/10 hover:from-[#FFD700]/20 hover:to-[#DAA520]/20',
+    culturalImage: '🏰' // Traditional architecture
   },
   {
     name: 'Igbo',
     description: 'Discover the language of the Igbo people',
     level: ['Beginner', 'Intermediate'],
     cultural: 'Igbo Heritage',
-    icon: '🇳🇬'
+    icon: '🎋', // Palm wine tapping symbol
+    gradient: 'bg-gradient-to-br from-[#32CD32]/10 to-[#006400]/10 hover:from-[#32CD32]/20 hover:to-[#006400]/20',
+    culturalImage: '🎭' // Masquerade culture
   },
   {
     name: 'Arabic',
     description: 'Learn Classical and Modern Arabic',
     level: ['Beginner', 'Intermediate', 'Advanced'],
     cultural: 'Arabic Literature & Culture',
-    icon: '🌟'
+    icon: '📜', // Ancient scroll
+    gradient: 'bg-gradient-to-br from-[#B8860B]/10 to-[#CD853F]/10 hover:from-[#B8860B]/20 hover:to-[#CD853F]/20',
+    culturalImage: '🕌' // Islamic architecture
   }
 ]
 
@@ -103,13 +112,26 @@ export default function LanguagesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {languages.map((lang) => (
-            <div key={lang.name} className="group relative overflow-hidden rounded-lg border bg-card hover:border-primary transition-colors">
-              <div className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="text-4xl">{lang.icon}</span>
+            <div 
+              key={lang.name} 
+              className={`group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br ${lang.gradient} 
+                hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 
+                hover:-translate-y-1 backdrop-blur-sm`}
+            >
+              <div className="relative p-6 z-10">
+                {/* Animated gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-background/80 to-background/20 opacity-0 
+                  group-hover:opacity-100 transition-opacity duration-300" />
+                
+                <div className="flex items-center gap-4 mb-4 relative">
+                  <span className="text-4xl transform group-hover:scale-110 transition-transform duration-300">
+                    {lang.icon}
+                  </span>
                   <div>
-                    <h3 className="text-xl font-semibold">{lang.name}</h3>
-                    <p className="text-sm text-muted-foreground">{lang.description}</p>
+                    <div className="text-sm text-primary font-medium">{lang.cultural}</div>
+                    <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
+                      {lang.name}
+                    </h3>
                   </div>
                 </div>
                 
@@ -134,7 +156,8 @@ export default function LanguagesPage() {
 
                 <Button 
                   onClick={() => handleStartLearning()}
-                  className="mt-6 w-full"
+                  className="mt-6 w-full bg-primary/90 hover:bg-primary shadow-sm 
+                    hover:shadow-lg transition-all duration-300"
                 >
                   Start Learning
                 </Button>

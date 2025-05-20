@@ -91,7 +91,7 @@ export function TeacherSignUpForm() {
     resolver: zodResolver(teacherFormSchema),
     defaultValues: {
       name: "",
-      username: "", // Add username default value
+      username: "",
       email: "",
       password: "",
       gender: "",
@@ -107,7 +107,7 @@ export function TeacherSignUpForm() {
         bio: ""
       }
     }
-  })
+  });
 
   const {
     register,
@@ -332,35 +332,30 @@ export function TeacherSignUpForm() {
 
         <TermsAgreement />
 
-        <div className="flex justify-between pt-4">
+        <div className="flex justify-center gap-8 pt-4">
           {currentStep > 0 && (
             <Button
               type="button"
               variant="outline"
               onClick={handleBack}
               disabled={isSubmitting}
+              className="w-32"
             >
               Back
             </Button>
           )}
           <Button
             type="button"
-            className="ml-auto"
             onClick={handleNext}
             disabled={isSubmitting}
+            className={`whitespace-nowrap ${currentStep === 0 ? "w-full" : "w-32"}`}
           >
-            {currentStep === steps.length - 1 ? (
-              isSubmitting ? (
-                <>
-                  <FiLoader className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                "Create Account"
-              )
-            ) : (
-              "Next"
-            )}
+            {currentStep === steps.length - 1 
+              ? isSubmitting 
+                ? "Creating..." 
+                : "Create Account"
+              : "Next"
+            }
           </Button>
         </div>
       </form>

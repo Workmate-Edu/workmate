@@ -48,20 +48,17 @@ const submissionSchema = new mongoose.Schema({
     required: true
   },
   answers: [{
-    questionId: { type: String, required: true },
-    answer: String,
-    attachments: [{
-      name: { type: String, required: true },
-      type: { type: String, required: true },
-      size: { type: Number, required: true },
-      url: { type: String, required: true },
-      publicId: { type: String, required: true }
-    }]
+    questionId: String,
+    answer: mongoose.Schema.Types.Mixed,
+    grade: Number
   }],
   submittedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  gradedAt: Date,
+  totalPoints: Number,
+  feedback: String
 });
 
 // TeacherAssessment schema
@@ -99,12 +96,8 @@ const teacherAssessmentSchema = new mongoose.Schema({
     enum: ['draft', 'active', 'submitted', 'graded'],
     default: 'draft'
   },
-  timezone: {
-    type: String,
-    required: true
-  },
   dueDate: {
-    type: String, // Store as string to preserve exact format
+    type: Date,
     required: true
   },
   questions: [questionSchema],
@@ -125,8 +118,8 @@ const teacherAssessmentSchema = new mongoose.Schema({
   feedback: String
 }, {
   timestamps: true,
-  toJSON: { virtuals: true, getters: true }, // Enable virtuals and getters in JSON
-  toObject: { virtuals: true, getters: true } // Enable virtuals and getters in Object
+  toJSON: { virtuals: true }, // Enable virtuals in JSON
+  toObject: { virtuals: true } // Enable virtuals in Object
 });
 
 // Add transform to always include studentId
@@ -138,11 +131,6 @@ teacherAssessmentSchema.set('toJSON', {
     delete ret.__v
     return ret
   }
-})
-
-// Remove any timezone conversion middleware
-teacherAssessmentSchema.pre('save', function(next) {
-  next()
 })
 
 // Add an index for faster queries

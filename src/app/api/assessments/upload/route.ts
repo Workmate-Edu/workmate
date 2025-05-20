@@ -5,12 +5,15 @@ import authOptions from "@/lib/auth"
 import { FILE_UPLOAD_LIMITS } from "@/types/assessment"
 
 const ALLOWED_TYPES = {
-  'image/jpeg': { resource_type: 'image', folder: 'images' },
-  'image/png': { resource_type: 'image', folder: 'images' },
-  'image/jpg': { resource_type: 'image', folder: 'images' },
-  'application/pdf': { resource_type: 'raw', folder: 'documents' },
-  'application/msword': { resource_type: 'raw', folder: 'documents' },
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { resource_type: 'raw', folder: 'documents' },
+  // Images use 'image' resource_type
+  'image/jpeg': { resource_type: 'image' },
+  'image/png': { resource_type: 'image' },
+  'image/jpg': { resource_type: 'image' },
+  
+  // Documents use 'raw' resource_type
+  'application/pdf': { resource_type: 'raw' },
+  'application/msword': { resource_type: 'raw' },
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { resource_type: 'raw' },
   'application/vnd.ms-powerpoint': { resource_type: 'raw' },
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': { resource_type: 'raw' }
 }
@@ -23,14 +26,15 @@ const sanitizeFileName = (fileName: string): string => {
     .toLowerCase()                    // Convert to lowercase
 }
 
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
-
 export async function POST(req: NextRequest) {
   try {
+    // Configure cloudinary inside the handler
+    cloudinary.config({
+      cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    })
+
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -73,19 +77,19 @@ export async function POST(req: NextRequest) {
     try {
       const result = await new Promise((resolve, reject) => {
         cloudinary.uploader.upload(dataURI, {
-          folder: fileConfig.folder,
+          folder: 'assessment-attachments',
           public_id: publicId,
           resource_type: fileConfig.resource_type,
           access_mode: 'public', // Make sure files are publicly accessible
           type: 'upload',
           format: file.type.split('/')[1],
+          tags: ['assessment'],
           overwrite: true,
           invalidate: true,
-          // Add signed URLs for raw files
-          sign_url: fileConfig.resource_type === 'raw',
           // Add these parameters for PDFs
           ...(file.type === 'application/pdf' && {
             pages: true,
+            resource_type: 'raw'
           })
         }, (error, result) => {
           if (error) {
@@ -98,14 +102,15 @@ export async function POST(req: NextRequest) {
         })
       })
 
-      // Generate the correct URL based on resource type
-      const secureUrl = fileConfig.resource_type === 'raw' 
-        ? cloudinary.url((result as any).public_id, {
-            resource_type: 'raw',
-            secure: true,
-            sign_url: true
-          })
-        : (result as any).secure_url
+      // Generate a signed URL for PDFs and other documents
+      let secureUrl = (result as any).secure_url
+      if (fileConfig.resource_type === 'raw') {
+        secureUrl = cloudinary.url((result as any).public_id, {
+          resource_type: 'raw',
+          secure: true,
+          sign_url: true
+        })
+      }
 
       return NextResponse.json({
         secure_url: secureUrl,
@@ -132,9 +137,3 @@ export async function POST(req: NextRequest) {
 }
 
 export const runtime = 'nodejs'
-
-// Add proper response size config
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
-export const revalidate = 0
-export const maxDuration = 60;
