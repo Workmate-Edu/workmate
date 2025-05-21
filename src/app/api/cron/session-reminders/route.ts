@@ -3,7 +3,7 @@ import { checkUpcomingSessions } from "@/workers/session-reminder"
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
-export const schedule = "0 6,14,22 * * *" // Runs at 6 AM, 2 PM, and 10 PM UTC
+export const schedule = "0 14 * * *" // Runs once daily at 2 PM UTC
 
 export async function GET(req: Request) {
   try {
