@@ -104,3 +104,5 @@ async function sendReminders(session: any, minutes: number) {
     console.error(`Failed to send ${minutes}-minute reminders for session ${session._id}:`, error)
   }
 }
+
+// This is imported by cron jobs but doesn't itself define a schedule
