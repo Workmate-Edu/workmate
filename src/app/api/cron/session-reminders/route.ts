@@ -3,9 +3,9 @@ import { checkUpcomingSessions } from "@/workers/session-reminder"
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
+export const schedule = "0 12 * * *" // Runs once daily at 12:00 PM UTC
 
-// CRON DISABLED FOR DEPLOYMENT
-// export const schedule = "0 9 * * *" // This means: At 09:00 (9 AM) every day
+// This pattern tells Vercel it's a cron job:
 
 export async function GET(req: Request) {
   try {
