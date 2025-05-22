@@ -12,6 +12,10 @@ interface Question {
   level?: string;
 }
 
+// Add these exports to fix dynamic usage
+export const runtime = 'nodejs' // Add this line for MongoDB usage
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)

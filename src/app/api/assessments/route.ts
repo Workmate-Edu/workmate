@@ -114,7 +114,6 @@ export async function POST(req: Request) {
         subject: assessment.subject,
         description: assessment.description || "No description provided",
         dueDate: assessment.dueDate,
-        teacherTime: `Teacher's timezone: ${assessment.timezone}`,
         totalPoints: assessment.questions.reduce((sum, q) => sum + (q.points || 0), 0),
         type: assessment.type,
         assessmentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/student/assessments/${assessment._id}`
