@@ -8,6 +8,9 @@ import { encrypt, decrypt } from "@/lib/encryption";
 import { v2 as cloudinary } from 'cloudinary';
 import mongoose from "mongoose";
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 // Edit message
 export async function PATCH(
   req: Request,
