@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth/auth-options"
 import { ChildAssessment } from "@/models/child-assessment.model"
 import { connectDB } from "@/lib/mongodb"
 
+export const runtime = 'nodejs' // Add this line to use Node.js runtime
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
