@@ -465,10 +465,10 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
         <TabsContent value="progress" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-semibold">Progress Overview</h2>
-            <Button onClick={() => setShowProgressDialog(true)}>
+            {/* <Button onClick={() => setShowProgressDialog(true)}>
               <Trophy className="mr-2 h-4 w-4" />
               Update Progress
-            </Button>
+            </Button> */}
           </div>
 
           <Card className="p-6 bg-muted">
@@ -558,11 +558,11 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
         <TabsContent value="assessments">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Assessments</h2>
-            <Button asChild>
+            {/* <Button asChild>
               <Link href={`/dashboard/teacher/assessments/new?studentId=${params.studentId}`}>
                 Create Assessment
               </Link>
-            </Button>
+            </Button> */}
           </div>
           
           <Card>

@@ -117,10 +117,18 @@ export default function AssessmentsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Assessments</h1>
-        <Button onClick={() => router.push('/dashboard/teacher/assessments/new')}>
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Assessments</h1>
+          <p className="text-sm text-muted-foreground mt-1 sm:hidden">
+            Create and manage your assessments
+          </p>
+        </div>
+        <Button 
+          onClick={() => router.push('/dashboard/teacher/assessments/new')}
+          className="w-full sm:w-auto"
+        >
           <FiPlus className="mr-2" /> Create Assessment
         </Button>
       </div>

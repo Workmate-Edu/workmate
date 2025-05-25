@@ -1,7 +1,7 @@
 "use client"
 
 import { Menu, X } from "lucide-react"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useSession } from "next-auth/react"
 import { signOut } from "next-auth/react"
@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/auth-store"
 import { Logo } from "./logo"
 import { UserNav } from "./user-nav"
 import { BookOpen } from "lucide-react"
+
 
 const navItems = [
   { href: "/languages", label: "African Languages" },
@@ -29,6 +30,8 @@ const navItems = [
 
 export default function Nav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const { data: session, status } = useSession()
   const router = useRouter()
   const authStore = useAuthStore()
@@ -45,6 +48,27 @@ export default function Nav() {
     await signOut({ redirect: false })
     router.push('/')
   }
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!menuRef.current || !buttonRef.current) return;
+      
+      // Check if click is inside notification menu
+      const isNotificationClick = (event.target as Element)?.closest('[data-notification-menu="true"]');
+      
+      if (
+        isMenuOpen && 
+        !menuRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node) &&
+        !isNotificationClick // Don't close if clicking notification menu
+      ) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isMenuOpen])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur shadow-sm">
@@ -82,6 +106,7 @@ export default function Nav() {
 
         {/* Mobile Menu Button with enhanced hover */}
         <button 
+          ref={buttonRef}
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="p-2 -mr-2 md:hidden hover:bg-accent rounded-md transition-colors"
         >
@@ -91,14 +116,11 @@ export default function Nav() {
         {/* Enhanced Mobile Menu */}
         {isMenuOpen && (
           <>
-            {/* Backdrop */}
+            {/* Remove the backdrop div since we're handling clicks differently now */}
             <div 
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
-              onClick={() => setIsMenuOpen(false)}
-            />
-            
-            {/* Menu Panel */}
-            <div className="absolute top-full left-0 right-0 z-50 bg-background border-b shadow-lg md:hidden animate-in slide-in-from-top-2">
+              ref={menuRef}
+              className="absolute top-full left-0 right-0 z-50 bg-background border-b shadow-lg md:hidden animate-in slide-in-from-top-2"
+            >
               <div className="container py-4 flex flex-col space-y-4">
                 {/* Nav Items with enhanced hover */}
                 <div className="flex flex-col space-y-1">
@@ -118,7 +140,10 @@ export default function Nav() {
                 <div className="flex flex-col gap-2 pt-4 border-t">
                   {isAuthenticated ? (
                     <div className="px-4">
-                      <UserNav session={session} />
+                      <UserNav 
+                        session={session} 
+                        onNavigate={() => setIsMenuOpen(false)} 
+                      />
                     </div>
                   ) : (
                     <>

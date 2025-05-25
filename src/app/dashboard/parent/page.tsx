@@ -8,6 +8,8 @@ import { BookOpen, GraduationCap, Users, MessageSquare, Plus, ClipboardCheck, Ed
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertTriangle } from "lucide-react"
 
 interface Child {
   id: string;
@@ -121,6 +123,33 @@ export default function ParentDashboardPage() {
             Add Child
           </Link>
         </Button>
+      </div>
+
+      <div>
+        {children?.some(child => !child.assessmentStatus?.exists && child.assessmentStatus?.canCreate) && (
+          <Alert variant="warning" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Initial Assessment Required</AlertTitle>
+            <AlertDescription>
+              <div className="space-y-2">
+                {children
+                  .filter(child => !child.assessmentStatus?.exists && child.assessmentStatus?.canCreate)
+                  .map(child => (
+                    <div key={child.id} className="flex items-center justify-between">
+                      <span>
+                        {child.name} needs an initial assessment to help teachers understand their learning needs.
+                      </span>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/dashboard/parent/children/${child.id}/assessment`}>
+                          Start Assessment
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

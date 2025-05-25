@@ -27,7 +27,11 @@ interface Notification {
   createdAt: string
 }
 
-export function NotificationMenu() {
+interface NotificationMenuProps {
+  onNavigate?: () => void // Add this prop to handle mobile menu closing
+}
+
+export function NotificationMenu({ onNavigate }: NotificationMenuProps) {
   const { data: session, status } = useSession()
   const { 
     notifications = [], 
@@ -101,6 +105,22 @@ export function NotificationMenu() {
     router.push(notificationPath)
   }
 
+  const handleReadAll = () => {
+    setIsOpen(false) // Close dropdown
+    router.push('/notifications')
+  }
+
+  const handleMarkAllRead = () => {
+    setIsOpen(false) // Close dropdown
+    router.push('/notifications/mark-all-read')
+  }
+
+  const handleNavigation = (path: string) => {
+    setIsOpen(false) // Close dropdown
+    onNavigate?.() // Close mobile menu if exists
+    router.push(path)
+  }
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -116,7 +136,7 @@ export function NotificationMenu() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-80 p-0" align="end" data-notification-menu="true">
         <div className="flex items-center justify-between p-4 border-b">
           <h4 className="font-semibold">Notifications</h4>
           <Button 
@@ -153,6 +173,22 @@ export function NotificationMenu() {
             </div>
           )}
         </ScrollArea>
+        <div className="flex justify-between p-2 border-t">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleReadAll}
+          >
+            Read all
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleMarkAllRead}
+          >
+            Mark all as read
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   )
