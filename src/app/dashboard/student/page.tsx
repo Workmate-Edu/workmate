@@ -401,7 +401,7 @@ export default function StudentDashboard() {
                     </p>
                   </div>
                   <Button 
-                    onClick={() => router.push('/dashboard/student/initial-assessment')}
+                    onClick={() => router.push('/dashboard/student/assessments/initial')}
                     className="bg-yellow-600 hover:bg-yellow-700 text-white shadow-sm transition-all hover:shadow-md"
                   >
                     Start Assessment

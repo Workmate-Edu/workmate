@@ -122,20 +122,11 @@ const routes = [
     description: 'View all scheduled classes'
   },
   {
-    label: 'Teaching Schedule', 
-    icon: Calendar,
-    href: (role: string) => `/dashboard/teacher/sessions`,
-    color: "text-pink-500",
-    roles: ['teacher'],
-    description: 'View and manage your teaching sessions'
-  },
-  {
     label: 'Schedule',
     icon: Calendar,
     href: (role: string) => `/dashboard/${role}/schedule`,
     color: "text-pink-500",
-    roles: ['parent'], // Now only for parents
-    description: "View your children's schedules"
+    roles: ['teacher', 'parent'] // Removed 'student' from roles
   },
   {
     label: 'Messages',
@@ -238,8 +229,6 @@ export function DashboardNav() {
   const [availableRoutes, setAvailableRoutes] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const { socket } = useSocketContext()
-  const [studentProfile, setStudentProfile] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
 
   // Fetch initial unread count
   useEffect(() => {
@@ -272,24 +261,6 @@ export function DashboardNav() {
       socket.off('notification')
     }
   }, [socket])
-
-  useEffect(() => {
-    const fetchStudentProfile = async () => {
-      if (session?.user?.role === 'student') {
-        try {
-          const res = await fetch('/api/student/profile')
-          const data = await res.json()
-          setStudentProfile(data.studentProfile)
-        } catch (error) {
-          console.error('Failed to fetch student profile:', error)
-        }
-      }
-    }
-
-    fetchStudentProfile()
-  }, [session])
-
-  const isChildStudent = studentProfile?.registeredAs === 'child'
 
   useEffect(() => {
     let mounted = true;
@@ -338,52 +309,6 @@ export function DashboardNav() {
       mounted = false;
     };
   }, [session]);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (session?.user?.role === 'student') {
-        const res = await fetch('/api/student/profile')
-        const data = await res.json()
-        setProfile(data)
-      }
-    }
-    
-    fetchProfile()
-  }, [session])
-
-  const studentItems = [
-    {
-      title: "Dashboard",
-      href: "/dashboard/student",
-      icon: LayoutDashboard,
-      show: true
-    },
-    {
-      title: "Messages",
-      href: "/dashboard/student/messages",
-      icon: MessageSquare,
-      show: studentProfile?.registeredAs === 'independent'
-    },
-    {
-      title: "Teachers",
-      href: "/dashboard/student/teachers",
-      icon: Users,
-      show: true
-    },
-    {
-      title: "Assessments",
-      href: "/dashboard/student/assessments",
-      icon: ClipboardList,
-      show: true
-    }
-  ].filter(item => item.show)
-
-  const items = {
-    student: studentItems,
-    teacher: [/* ...existing teacher items... */],
-    admin: [/* ...existing admin items... */],
-    parent: [/* ...existing parent items... */]
-  }
 
   return (
     <div className="space-y-4 py-4">

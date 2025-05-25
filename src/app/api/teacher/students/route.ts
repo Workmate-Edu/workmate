@@ -13,18 +13,24 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get teacher with assignedStudents
+    // Get teacher with explicit field selection
     const teacher = await User.findById(session.user.id)
-      .select('assignedStudents')
+      .select('assignedStudents students teacherProfile')
       .lean();
 
-    if (!teacher?.assignedStudents?.length) {
+    // Use both arrays to ensure all students are included
+    const studentIds = [...new Set([
+      ...(teacher?.assignedStudents || []),
+      ...(teacher?.students || [])
+    ])];
+
+    if (!studentIds.length) {
       return NextResponse.json([]);
     }
 
     // Get all assigned students
     const students = await User.find({
-      _id: { $in: teacher.assignedStudents }
+      _id: { $in: studentIds }
     })
     .select('_id name email studentProfile grade')
     .lean();

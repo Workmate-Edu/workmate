@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
 import { CourseDocument } from "@/models/course-document"
+import { TeachingMaterial } from "@/models/teaching-material"
 
 export async function GET(
   req: Request,
@@ -42,7 +43,7 @@ export async function GET(
     // Get all documents that match:
     // 1. Documents marked as general
     // 2. Documents for subjects the student is enrolled in
-    const documents = await CourseDocument.find({
+    const documents = await TeachingMaterial.find({
       teacherId: { $in: teacherIds },
       $or: [
         { isGeneral: true },
