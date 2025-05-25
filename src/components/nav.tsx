@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { useSession } from "next-auth/react"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Button } from "./ui/button"
 import { useAuthStore } from "@/store/auth-store"
 import { Logo } from "./logo"
@@ -29,25 +29,14 @@ const navItems = [
 ]
 
 export default function Nav() {
+  const pathname = usePathname()
+  const isDashboard = pathname?.startsWith('/dashboard')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const { data: session, status } = useSession()
   const router = useRouter()
   const authStore = useAuthStore()
-
-  // Loading state
-  if (status === "loading") {
-    return <div className="h-16 border-b bg-background/95" />
-  }
-
-  const isAuthenticated = status === "authenticated"
-
-  const handleSignOut = async () => {
-    authStore.signOut()
-    await signOut({ redirect: false })
-    router.push('/')
-  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -70,10 +59,28 @@ export default function Nav() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isMenuOpen])
 
+  // Loading state after hooks
+  if (status === "loading") {
+    return <div className="h-16 border-b bg-background/95" />
+  }
+
+  const isAuthenticated = status === "authenticated"
+
+  const handleSignOut = async () => {
+    authStore.signOut()
+    await signOut({ redirect: false })
+    router.push('/')
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur shadow-sm">
-      <nav className="container flex h-16 items-center justify-between">
-        <Logo />
+      <nav className="container flex h-16 items-center justify-between max-w-screen-2xl mx-auto px-4 xl:px-8 2xl:px-16">
+        <div className={cn(
+          "flex items-center",
+          isDashboard && "md:invisible"
+        )}>
+          <Logo />
+        </div>
         
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-6 ml-6">
