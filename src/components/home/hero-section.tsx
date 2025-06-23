@@ -119,7 +119,7 @@ export function HeroSection() {
               
               <motion.div
                 variants={slideVariants}
-                className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary flex items-center gap-2"
+                className="rounded-full bg-secondary/10 px-4 py-1.5 text-sm font-medium text-secondary flex items-center gap-2"
               >
                 <GraduationCap className="h-4 w-4" />
                 <span className="hidden sm:inline">Perfect for Ages 6-16</span>

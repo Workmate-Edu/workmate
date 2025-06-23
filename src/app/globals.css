@@ -125,6 +125,32 @@
     100% { transform: translate(0px, 0px) scale(1); }
   }
 
+  @keyframes mesh {
+    0% {
+      transform: rotate(0deg);
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      transform: rotate(0deg);
+      background-position: 0% 50%;
+    }
+  }
+
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
   .animate-float {
     animation: float 4s ease-in-out infinite;
   }
@@ -149,12 +175,50 @@
     animation: blob 7s infinite;
   }
 
+  .animate-mesh {
+    animation: mesh 20s ease infinite;
+  }
+
+  .animate-gradient {
+    animation: gradient 15s ease infinite;
+  }
+
+  .bg-grid-primary {
+    background-size: 50px 50px;
+    background-image: linear-gradient(to right, oklch(var(--primary) / 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(var(--primary) / 0.1) 1px, transparent 1px);
+  }
+
   .animation-delay-2000 {
     animation-delay: 2s;
   }
 
   .animation-delay-4000 {
     animation-delay: 4s;
+  }
+
+  /* Add more animation utilities */
+  .duration-1000 {
+    animation-duration: 1000ms;
+  }
+
+  .slide-in-from-bottom-2 {
+    --tw-enter-translate-y: 0.5rem;
+  }
+
+  .slide-in-from-bottom-3 {
+    --tw-enter-translate-y: 0.75rem;
+    animation-delay: 100ms;
+  }
+
+  .slide-in-from-bottom-4 {
+    --tw-enter-translate-y: 1rem;
+    animation-delay: 200ms;
+  }
+
+  .slide-in-from-bottom-5 {
+    --tw-enter-translate-y: 1.25rem;
+    animation-delay: 300ms;
   }
 }
 
