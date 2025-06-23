@@ -17,6 +17,7 @@ import { BookOpen } from "lucide-react"
 const navItems = [
   { href: "/languages", label: "African Languages" },
   { href: "/stem", label: "STEM" },
+  // { href: "/pricing", label: "Pricing" },
   { href: "/about", label: "Our Story" },
   // {
   //   label: 'My Courses',
@@ -76,10 +77,13 @@ export default function Nav() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur shadow-sm">
       <nav className="container flex h-16 items-center justify-between max-w-screen-2xl mx-auto px-4 xl:px-8 2xl:px-16">
         <div className={cn(
-          "flex items-center",
+          "flex items-center relative",
           isDashboard && "md:invisible"
         )}>
           <Logo />
+          <span className="absolute -right-12 top-0 px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-sm">
+            BETA
+          </span>
         </div>
         
         {/* Desktop Navigation */}
