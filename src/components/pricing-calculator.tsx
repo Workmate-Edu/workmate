@@ -96,15 +96,27 @@ export function PricingCalculator() {
     }
     try {
       setIsLoading(true)
-      const config = {
+      const response = await fetch("/api/payment/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: totalCost,
+          subjects: selectedSubjects,
+        }),
+      })
+
+      const data = await response.json()
+      if (!data.success) throw new Error(data.error)
+
+      const paymentConfig = {
         public_key: process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY!,
-        tx_ref: Date.now().toString(),
+        tx_ref: data.tx_ref,
         amount: totalCost,
         currency: "USD",
         payment_options: "card",
         meta: {
           userId: session.user.id,
-          subjects: selectedSubjects,
+          subjects: selectedSubjects.map(s => s.subject).join(', '), // Ensure string
         },
         customer: {
           email: session.user.email!,
@@ -115,19 +127,10 @@ export function PricingCalculator() {
           description: "Payment for tutorial sessions",
           logo: `${window.location.origin}/logo.png`,
         },
-        callback: function (response: any) {
-          if (response.status === "successful") {
-            router.push("/payment/success")
-          } else {
-            router.push("/payment/failed")
-          }
-        },
-        onclose: function () {
-          setIsLoading(false)
-        },
+        redirect_url: `${window.location.origin}/payment/verify`
+        // No callback, no onclose
       }
-      console.log('Flutterwave config:', config)
-      window.FlutterwaveCheckout(config)
+      window.FlutterwaveCheckout(paymentConfig)
     } catch (error) {
       toast({
         title: "Payment Error",

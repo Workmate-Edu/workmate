@@ -7,20 +7,22 @@ import { Loader2 } from 'lucide-react'
 export default function VerifyPaymentPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   useEffect(() => {
     const status = searchParams.get('status')
     const transaction_id = searchParams.get('transaction_id')
 
     if (!status || !transaction_id) {
-      router.push('/payment/failed')
+      router.replace('/payment/failed')
       return
     }
 
+    // Optionally: verify transaction on your server here
+
     if (status === 'successful') {
-      router.push('/payment/success')
+      router.replace('/payment/success')
     } else {
-      router.push('/payment/failed')
+      router.replace('/payment/failed')
     }
   }, [router, searchParams])
 

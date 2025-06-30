@@ -98,7 +98,7 @@ export function PaymentForm() {
         payment_options: 'card',
         meta: {
           userId: session.user.id,
-          subjects: selectedSubjects,
+          subjects: selectedSubjects.map(s => s.subject).join(', '), // Ensure string
         },
         customer: {
           email: session.user.email!,
@@ -109,18 +109,9 @@ export function PaymentForm() {
           description: 'Payment for tutorial sessions',
           logo: `${window.location.origin}/logo.png`,
         },
-        callback: function(response: any) {
-          if (response.status === "successful") {
-            router.push('/payment/success')
-          } else {
-            router.push('/payment/failed')
-          }
-        },
-        onclose: function() {
-          setIsLoading(false)
-        }
+        redirect_url: `${window.location.origin}/payment/verify`
+        // No callback, no onclose
       }
-      console.log('Flutterwave config:', config)
       window.FlutterwaveCheckout(config)
     } catch (error) {
       toast({

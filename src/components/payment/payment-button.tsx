@@ -43,8 +43,12 @@ export function PaymentButton({
         public_key: process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY!,
         tx_ref: Date.now().toString(),
         amount,
-        currency: 'USD', // changed back from 'NGN' to 'USD'
+        currency: 'USD',
         payment_options: 'card',
+        meta: {
+          userId: session.user.id,
+          // If you have subjects, use: subjects: subjects.join(', ')
+        },
         customer: {
           email: session.user.email!,
           name: session.user.name!,
@@ -54,20 +58,8 @@ export function PaymentButton({
           description: 'Payment for tutorial session',
           logo: `${process.env.NEXT_PUBLIC_APP_URL}/logo.png`,
         },
-        callback: (response: any) => {
-          if (response.status === 'successful') {
-            router.push('/payment/success')
-          } else {
-            toast({
-              title: "Payment Failed",
-              description: "Please try again or contact support",
-              variant: "destructive"
-            })
-          }
-        },
-        onclose: () => {
-          setIsLoading(false)
-        },
+        redirect_url: `${window.location.origin}/payment/verify`
+        // No callback, no onclose
       })
     } catch (error) {
       setIsLoading(false)
@@ -81,6 +73,14 @@ export function PaymentButton({
 
   return (
     <Button 
+      onClick={handlePayment} 
+      disabled={isLoading}
+      className="w-full"
+    >
+      {isLoading ? "Processing..." : "Get Started Now"}
+    </Button>
+  )
+}
       onClick={handlePayment} 
       disabled={isLoading}
       className="w-full"
