@@ -13,9 +13,10 @@ import {
   Settings,
   GraduationCap,
   Users,
-  FolderOpen, // Add for Materials
-  UserCircle, // Add for Profile
-  Bell // Add Bell to imports
+  FolderOpen, 
+  UserCircle, 
+  Bell, 
+  CreditCard 
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
@@ -122,20 +123,11 @@ const routes = [
     description: 'View all scheduled classes'
   },
   {
-    label: 'Teaching Schedule', 
-    icon: Calendar,
-    href: (role: string) => `/dashboard/teacher/sessions`,
-    color: "text-pink-500",
-    roles: ['teacher'],
-    description: 'View and manage your teaching sessions'
-  },
-  {
     label: 'Schedule',
     icon: Calendar,
     href: (role: string) => `/dashboard/${role}/schedule`,
     color: "text-pink-500",
-    roles: ['parent'], // Now only for parents
-    description: "View your children's schedules"
+    roles: ['teacher', 'parent'] // Removed 'student' from roles
   },
   {
     label: 'Messages',
@@ -229,6 +221,13 @@ const routes = [
     },
     color: "text-slate-500",
     roles: ['teacher', 'student', 'parent', 'admin'] // Available to all users
+  },
+  {
+    label: "Subscriptions",
+    icon: CreditCard,
+    href: (role: string) => "/dashboard/admin/subscriptions",
+    color: "text-blue-500",
+    roles: ["admin"]
   }
 ]
 
@@ -238,8 +237,22 @@ export function DashboardNav() {
   const [availableRoutes, setAvailableRoutes] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const { socket } = useSocketContext()
-  const [studentProfile, setStudentProfile] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
+  const [isIndependentStudent, setIsIndependentStudent] = useState(false)
+
+  // Detect independent student
+  useEffect(() => {
+    const checkStudentType = async () => {
+      if (session?.user?.role !== "student") return
+      try {
+        const res = await fetch('/api/student/profile', { headers: { 'Cache-Control': 'no-cache' } })
+        const data = await res.json()
+        setIsIndependentStudent(data?.studentProfile?.registeredAs === 'independent')
+      } catch {
+        setIsIndependentStudent(false)
+      }
+    }
+    checkStudentType()
+  }, [session?.user?.role])
 
   // Fetch initial unread count
   useEffect(() => {
@@ -272,24 +285,6 @@ export function DashboardNav() {
       socket.off('notification')
     }
   }, [socket])
-
-  useEffect(() => {
-    const fetchStudentProfile = async () => {
-      if (session?.user?.role === 'student') {
-        try {
-          const res = await fetch('/api/student/profile')
-          const data = await res.json()
-          setStudentProfile(data.studentProfile)
-        } catch (error) {
-          console.error('Failed to fetch student profile:', error)
-        }
-      }
-    }
-
-    fetchStudentProfile()
-  }, [session])
-
-  const isChildStudent = studentProfile?.registeredAs === 'child'
 
   useEffect(() => {
     let mounted = true;
@@ -339,58 +334,33 @@ export function DashboardNav() {
     };
   }, [session]);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (session?.user?.role === 'student') {
-        const res = await fetch('/api/student/profile')
-        const data = await res.json()
-        setProfile(data)
-      }
+  const navItems = [
+    ...availableRoutes,
+    {
+      label: "Subscription",
+      icon: CreditCard,
+      href: (role: string) =>
+        role === "parent"
+          ? "/dashboard/parent/subscription"
+          : "/dashboard/student/subscription",
+      color: "text-blue-500",
+      roles: ["parent", "student"],
+      show:
+        (session?.user?.role === "parent") ||
+        (session?.user?.role === "student" && isIndependentStudent)
     }
-    
-    fetchProfile()
-  }, [session])
-
-  const studentItems = [
-    {
-      title: "Dashboard",
-      href: "/dashboard/student",
-      icon: LayoutDashboard,
-      show: true
-    },
-    {
-      title: "Messages",
-      href: "/dashboard/student/messages",
-      icon: MessageSquare,
-      show: studentProfile?.registeredAs === 'independent'
-    },
-    {
-      title: "Teachers",
-      href: "/dashboard/student/teachers",
-      icon: Users,
-      show: true
-    },
-    {
-      title: "Assessments",
-      href: "/dashboard/student/assessments",
-      icon: ClipboardList,
-      show: true
-    }
-  ].filter(item => item.show)
-
-  const items = {
-    student: studentItems,
-    teacher: [/* ...existing teacher items... */],
-    admin: [/* ...existing admin items... */],
-    parent: [/* ...existing parent items... */]
-  }
+  ].filter(item => {
+    if (!session?.user?.role) return false
+    // Only show if the current user's role is allowed for this route and show is not false
+    return item.roles.includes(session.user.role) && (item.show === undefined || item.show)
+  })
 
   return (
     <div className="space-y-4 py-4">
       <div className="px-3 py-2">
         <h2 className="mb-2 px-4 text-lg font-semibold">Dashboard</h2>
         <div className="space-y-1">
-          {availableRoutes.map((route) => (
+          {navItems.map((route) => (
             <Link
               key={route.href(session?.user?.role as string)}
               href={route.href(session?.user?.role as string)}

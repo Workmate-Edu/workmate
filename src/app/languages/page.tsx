@@ -59,12 +59,12 @@ export default function LanguagesPage() {
   const router = useRouter()
   const { data: session } = useSession()
 
-  const handleStartLearning = () => {
+  const handleStartLearning = (language: string) => {
     if (!session) {
       router.push('/sign-in')
       return
     }
-    router.push('/dashboard')
+    router.push(`/dashboard/learn/${language.toLowerCase()}`)
   }
 
   const languageStories = [
@@ -115,7 +115,7 @@ export default function LanguagesPage() {
             <div 
               key={lang.name} 
               className={`group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br ${lang.gradient} 
-                hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 
+                hover:border-primary/50 hover:shadow-lg transition-all duration-300 
                 hover:-translate-y-1 backdrop-blur-sm`}
             >
               <div className="relative p-6 z-10">
@@ -155,9 +155,10 @@ export default function LanguagesPage() {
                 </div>
 
                 <Button 
-                  onClick={() => handleStartLearning()}
+                  onClick={() => handleStartLearning(lang.name)}
                   className="mt-6 w-full bg-primary/90 hover:bg-primary shadow-sm 
-                    hover:shadow-lg transition-all duration-300"
+                    hover:shadow-lg transition-all duration-300 cursor-pointer 
+                    relative z-20"
                 >
                   Start Learning
                 </Button>

@@ -12,13 +12,20 @@ interface StudentAssessment extends Omit<ChildAssessmentDocument, '_id'> {
   }
 }
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     await connectDB()
 
     const assessments = await ChildAssessment
       .find()
-      .populate('studentId', 'name email')
+      .populate({
+        path: 'studentId',
+        model: 'User',
+        select: 'name email'
+      })
       .lean()
 
     return NextResponse.json({

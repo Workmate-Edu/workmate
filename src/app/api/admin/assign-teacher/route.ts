@@ -13,23 +13,79 @@ export async function POST(req: Request) {
 
     await connectDB()
 
-    // First validate assessment exists and is pending
+    // First validate assessment exists - support both pending and assigned states
     if (studentType === 'child') {
       const assessment = await ChildAssessment.findOne({ 
         childId: studentId,
-        status: 'pending'
+        status: { $in: ['pending', 'assigned'] }  // Allow both states
       });
       if (!assessment) {
-        throw new Error("No pending child assessment found");
+        throw new Error("No pending or assigned child assessment found");
       }
     } else {
       const assessment = await InitialAssessment.findOne({ 
         studentId,
-        status: 'pending'
+        status: { $in: ['pending', 'assigned'] }  // Allow both states
       });
       if (!assessment) {
-        throw new Error("No pending initial assessment found");
+        throw new Error("No pending or assigned initial assessment found");
       }
+    }
+
+    // Update teacher arrays
+    for (const assignment of assignments) {
+      // Update teacher's lists
+      await User.findByIdAndUpdate(
+        assignment.teacherId,
+        { 
+          $addToSet: { 
+            'teacherProfile.assignedStudents': studentId,
+            'students': studentId 
+          }
+        },
+        { new: true }
+      )
+
+      // Update student's lists
+      await User.findByIdAndUpdate(
+        studentId,
+        {
+          $addToSet: {
+            'teachers': assignment.teacherId,
+            'studentProfile.assignedTeachers': {
+              teacherId: assignment.teacherId,
+              subjects: [{
+                name: assignment.subject.name,
+                area: assignment.subject.area
+              }]
+            }
+          }
+        },
+        { new: true }
+      )
+
+      // Verify updates
+      const [updatedTeacher, updatedStudent] = await Promise.all([
+        User.findById(assignment.teacherId)
+          .select('teacherProfile.assignedStudents students')
+          .lean(),
+        User.findById(studentId)
+          .select('teachers studentProfile.assignedTeachers')
+          .lean()
+      ])
+
+      console.log('Assignment verification:', {
+        teacher: {
+          id: assignment.teacherId,
+          assignedStudents: updatedTeacher?.teacherProfile?.assignedStudents?.length || 0,
+          students: updatedTeacher?.students?.length || 0
+        },
+        student: {
+          id: studentId,
+          teachers: updatedStudent?.teachers?.length || 0,
+          assignedTeachers: updatedStudent?.studentProfile?.assignedTeachers?.length || 0
+        }
+      })
     }
 
     // Fetch student with all needed fields including parentId

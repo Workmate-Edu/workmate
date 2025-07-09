@@ -12,6 +12,7 @@ import { StudentTabs } from "@/components/admin/student-tabs"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
 
 interface Student {
   id: string
@@ -36,6 +37,8 @@ export default function AdminDashboard() {
     initial: any[]
     child: any[]
   }>({ initial: [], child: [] })
+  const [subscriptions, setSubscriptions] = useState<any[]>([])
+  const [subsLoading, setSubsLoading] = useState(true)
 
   const fetchData = async () => {
     try {
@@ -73,12 +76,16 @@ export default function AdminDashboard() {
       console.error("Error fetching assessments", err);
     }
   };
-  
-  useEffect(() => {
-      
-    fetchData();
-fetchPendingAssessments();
 
+  useEffect(() => {
+    fetchData();
+    fetchPendingAssessments();
+
+    // Fetch subscriptions for admin
+    fetch("/api/admin/subscriptions")
+      .then(res => res.json())
+      .then(data => setSubscriptions(data.subscriptions || []))
+      .finally(() => setSubsLoading(false))
   }, [])
 
   if (dashboardData.loading) {
@@ -156,6 +163,38 @@ fetchPendingAssessments();
           <TeacherTabs />
         </TabsContent>
       </Tabs>
+
+      {/* Subscription List Section */}
+      <div className="mt-10">
+        <h2 className="text-2xl font-semibold mb-4">All Subscriptions</h2>
+        {subsLoading ? (
+          <div className="p-8 text-center">Loading subscriptions...</div>
+        ) : subscriptions.length === 0 ? (
+          <Card className="p-8 text-center">No subscriptions found.</Card>
+        ) : (
+          <div className="space-y-4">
+            {subscriptions.map(sub => (
+              <Card key={sub._id} className="p-4 flex flex-col gap-2">
+                <div className="flex flex-wrap gap-4 items-center">
+                  <span className="font-semibold">{sub.userId?.name || "Unknown User"}</span>
+                  <span className="text-xs text-muted-foreground">{sub.userId?.email}</span>
+                  <Badge variant={sub.status === "active" ? "default" : "secondary"}>
+                    {sub.status}
+                  </Badge>
+                  <span className="text-xs">Plan: {sub.plan}</span>
+                  <span className="text-xs">
+                    {new Date(sub.startDate).toLocaleDateString()} - {new Date(sub.endDate).toLocaleDateString()}
+                  </span>
+                  <span className="text-xs">Children: {sub.children?.length || 0}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Subjects: {Array.isArray(sub.subjects) ? sub.subjects.map((s: any) => s.subject).join(", ") : ""}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

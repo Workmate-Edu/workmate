@@ -64,6 +64,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Paths that require subscription
+  const protectedPaths = ['/dashboard/lessons']
+  
+  if (protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
+    if (!token?.sub) {
+      return NextResponse.redirect(new URL('/sign-in', request.url))
+    }
+
+    // Check subscription status
+    const subscription = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/subscription/${token.sub}`)
+    const { isSubscribed } = await subscription.json()
+
+    if (!isSubscribed) {
+      return NextResponse.redirect(new URL('/pricing', request.url))
+    }
+  }
+
   return NextResponse.next()
 }
 

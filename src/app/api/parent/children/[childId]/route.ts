@@ -20,25 +20,33 @@ export async function GET(
       return NextResponse.json({ error: "Child not found" }, { status: 404 });
     }
 
-    // Get all subjects
+    // Get all subjects with progress from studentProfile.subjects
     const allSubjects = child.studentProfile.subjects.map(subject => ({
       name: subject.name,
       area: subject.area,
-      progress: 0
+      progress: subject.progress || 0  // Get actual progress
     }));
 
-    // Get active courses (subjects with assigned teachers)
+    // Get active courses with progress from studentProfile.subjects
     const activeCourses = child.studentProfile.assignedTeachers?.flatMap(assignment => 
-      assignment.subjects.map(subject => ({
-        name: subject.name,
-        area: subject.area,
-        progress: 0,
-        teacher: {
-          id: assignment.teacherId._id,
-          name: assignment.teacherId.name,
-          email: assignment.teacherId.email
-        }
-      }))
+      assignment.subjects.map(subject => {
+        // Find matching subject in studentProfile.subjects to get progress
+        const matchingSubject = child.studentProfile.subjects.find(
+          s => s.name.toLowerCase() === subject.name.toLowerCase() && 
+               s.area.toLowerCase() === subject.area.toLowerCase()
+        );
+
+        return {
+          name: subject.name,
+          area: subject.area,
+          progress: matchingSubject?.progress || 0,  // Get actual progress
+          teacher: {
+            id: assignment.teacherId._id,
+            name: assignment.teacherId.name,
+            email: assignment.teacherId.email
+          }
+        };
+      })
     ) || [];
 
     return NextResponse.json({

@@ -7,6 +7,9 @@ import mongoose from "mongoose";
 import { pusherServer } from "@/lib/pusher";
 import { encrypt, decrypt } from '@/lib/encryption';
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   req: Request,
   { params }: { params: { conversationId: string } }

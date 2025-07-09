@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/toaster"
 import Nav from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { AuthProvider } from "@/providers/auth-provider";
@@ -10,6 +10,7 @@ import { AuthProvider } from "@/providers/auth-provider";
 import 'react-phone-input-2/lib/style.css';
 import { Providers } from "./providers";
 import { NotificationProvider } from "@/contexts/notification-context"
+import { PaymentProvider } from "@/providers/payment-provider"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,15 +28,20 @@ export default function RootLayout({
 }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script src="https://checkout.flutterwave.com/v3.js" async />
+      </head>
       <body className={inter.className}>
         <Providers>
-          <NotificationProvider>
-            <div className="relative min-h-screen flex flex-col">
-              <Nav />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-          </NotificationProvider>
+          <PaymentProvider>
+            <NotificationProvider>
+              <div className="relative min-h-screen flex flex-col">
+                <Nav />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            </NotificationProvider>
+          </PaymentProvider>
           <Toaster />
         </Providers>
       </body>

@@ -192,7 +192,7 @@ const studentProfileSchema = new Schema({
 // -----------------------------
 const parentProfileSchema = new Schema({
   phone:                 String,
-  interestedInLearning:  Boolean,
+  interestedInLearning:  { type: Boolean, default: false }, // <-- already present, ensure this is set
   educationLevel:        String,
   subjects:             [String],
   children: [{ type: Schema.Types.ObjectId, ref: 'User' }],
@@ -279,7 +279,15 @@ const userSchema = new Schema<IUser>({
       contrast: { type: String, default: 'normal' },
       reduceMotion: { type: Boolean, default: false }
     }
-  }
+  },
+  subscription: {
+    status: { type: String, enum: ['active', 'inactive', 'cancelled'], default: 'inactive' },
+    lastPayment: Date,
+    lastTransactionId: String,
+    amount: Number,
+    currency: String
+  },
+  blogger: { type: Boolean, default: false } // <-- Add this line
 }, {
   timestamps: true,
   toJSON: {

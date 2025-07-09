@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Subscription Expiry Notice - Workmate</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9fafb; margin: 0; padding: 0; color: #1E293B; }
+    .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); overflow: hidden; }
+    .header { background: #00a6cf; color: #fff; padding: 32px 24px; text-align: center; }
+    .content { padding: 32px 24px; color: #1E293B; }
+    .button { display: inline-block; padding: 12px 32px; background: #F4A300; color: #1E293B; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 24px 0; }
+    .info-card { background: #F5F7FA; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .footer { background: #F5F7FA; color: #64748B; text-align: center; font-size: 14px; padding: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Your Subscription is Expiring Soon</h1>
+    </div>
+    <div class="content">
+      <p>Hi {{name}},</p>
+      <p>
+        This is a reminder that your Workmate subscription will expire in <strong>{{days}} day{{daysLabel}}</strong>.
+      </p>
+      <div class="info-card">
+        <p><strong>Expiry Date:</strong> {{endDate}}</p>
+      </div>
+      <p>
+        To avoid interruption of your learning experience, please renew your subscription before the expiry date.
+      </p>
+      <div style="text-align: center;">
+        <a href="{{dashboardUrl}}" class="button">
+          Renew Subscription
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      &copy; 2024 Workmate. All rights reserved.<br>
+      This is an automated message, please do not reply to this email.
+    </div>
+  </div>
+</body>
+</html>
+  </div>
+</body>
+</html>
+      background-color: #F5F7FA;
+      padding: 24px;
+      text-align: center;
+      color: #64748B;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <h1 style="margin: 0; font-size: 24px;">Your Subscription is Expiring Soon</h1>
+    </div>
+    <div class="email-content">
+      <p>Hi {{name}},</p>
+      <p>
+        This is a reminder that your Workmate subscription will expire in <strong>{{days}} day{{#if days}}{{#unless days "1"}}s{{/unless}}{{/if}}</strong>.
+      </p>
+      <div class="info-card">
+        <p><strong>Expiry Date:</strong> {{endDate}}</p>
+      </div>
+      <p>
+        To avoid interruption of your learning experience, please renew your subscription before the expiry date.
+      </p>
+      <div style="text-align: center;">
+        <a href="{{dashboardUrl}}" class="button-primary">
+          Renew Subscription
+        </a>
+      </div>
+      <p style="color: #DC2626; font-size: 14px;">
+        If you have already renewed, please ignore this message.
+      </p>
+    </div>
+    <div class="email-footer">
+      <p>© 2024 Workmate. All rights reserved.</p>
+      <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -24,10 +24,12 @@ import {
   Calendar,
   Video,
   TrendingUp,
-  BarChart4
+  BarChart4,
+  Award
 } from "lucide-react"
 import { ParentAssessmentForm } from "@/components/forms/parent-assessment-form"
 import { Progress } from "@/components/ui/progress"
+import { TeacherProfileModal } from "@/components/teacher/teacher-profile-modal"
 
 interface ChildDetails {
   id: string
@@ -129,6 +131,26 @@ interface OverallProgress {
   averageScore: number
 }
 
+interface TeacherQualification {
+  degree: string;
+  institution: string;
+  year: string;
+  _id?: string;
+}
+
+interface TeacherInfo {
+  _id: string;
+  name: string;
+  bio?: string;
+  teacherProfile?: {
+    qualifications?: TeacherQualification[];
+    subjects?: Array<{
+      name: string;
+      area: string;
+    }>;
+  };
+}
+
 export default function ChildDetailsPage({ params }: { params: { childId: string } }) {
   const [child, setChild] = useState<ChildDetails | null>(null)
   const [assessment, setAssessment] = useState<Assessment | null>(null)
@@ -142,6 +164,8 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
   const [progress, setProgress] = useState<SubjectProgress[]>([])
   const [progressLoading, setProgressLoading] = useState(false)
   const [sessionsLoading, setSessionsLoading] = useState(false)
+  const [selectedTeacher, setSelectedTeacher] = useState<any>(null)
+  const [showTeacherModal, setShowTeacherModal] = useState(false)
 
   const fetchChild = async () => {
     try {
@@ -194,6 +218,20 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
       toast.error("Failed to load progress data")
     } finally {
       setProgressLoading(false)
+    }
+  }
+
+  // Update the fetchTeacherDetails function
+  const fetchTeacherDetails = async (teacherId: string) => {
+    try {
+      const response = await fetch(`/api/teachers/${teacherId}`)
+      if (!response.ok) throw new Error("Failed to fetch teacher details")
+      const data = await response.json()
+      setSelectedTeacher(data)
+      setShowTeacherModal(true)
+    } catch (error) {
+      console.error('Error fetching teacher:', error)
+      toast.error("Failed to load teacher details")
     }
   }
 
@@ -361,16 +399,16 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
           </TabsTrigger>
           <TabsTrigger value="assessment">
             <ClipboardList className="w-4 h-4 mr-2" />
-            Assessment
+            Initial Assessment
           </TabsTrigger>
           <TabsTrigger value="schedule">
             <Calendar className="w-4 h-4 mr-2" />
             Schedule
           </TabsTrigger>
-          <TabsTrigger value="progress">
+          {/* <TabsTrigger value="progress">
             <TrendingUp className="w-4 h-4 mr-2" />
             Progress
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="overview">
@@ -473,7 +511,11 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
             <TabsContent value="active">
               <Card className="p-6">
                 <div className="grid gap-4">
-                  {child?.activeCourses?.map(course => (
+                  {child.activeCourses.length === 0 ? (
+                    <div className="text-center py-6 text-muted-foreground">
+                      No active courses available.
+                    </div>
+                  ): child?.activeCourses?.map(course => (
                     <div
                       key={`${course.area}-${course.name}`}
                       className="space-y-3 p-4 border rounded-lg"
@@ -488,14 +530,23 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
                         </Badge>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{course.teacher.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {course.teacher.email}
-                          </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">{course.teacher.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {course.teacher.email}
+                            </p>
+                          </div>
                         </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => fetchTeacherDetails(course.teacher.id)}
+                        >
+                          View Teacher
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -695,7 +746,26 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Learning Progress</h3>
-                {/* <Badge variant="outline">Term 1</Badge> */}
+                
+                {/* Calculate overall progress */}
+                <Card className="p-4">
+                  <div className="flex items-center gap-4">
+                    <TrendingUp className="h-8 w-8 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Progress</p>
+                      <p className="text-2xl font-bold">
+                        {child?.studentProfile?.subjects?.length > 0
+                          ? Math.round(
+                              child.studentProfile.subjects.reduce(
+                                (acc, subj) => acc + (subj.progress || 0), 
+                                0
+                              ) / child.studentProfile.subjects.length
+                            )
+                          : 0}%
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               </div>
 
               {progressLoading ? (
@@ -762,6 +832,12 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
           </Card>
         </TabsContent>
       </Tabs>
+
+      <TeacherProfileModal 
+        open={showTeacherModal}
+        onOpenChange={setShowTeacherModal}
+        teacher={selectedTeacher}
+      />
     </div>
   )
 }

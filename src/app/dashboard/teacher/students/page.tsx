@@ -10,13 +10,12 @@ import { toast } from "sonner"
 import { PageHeader } from "@/components/layouts/page-header"
 
 interface StudentInfo {
-  id: string
+  _id: string  // Changed from id to _id to match MongoDB
   name: string
-  subject: string
-  assessmentStatus: string
-  nextSession?: {
-    date: string
-    time: string
+  email: string
+  studentProfile?: {
+    grade?: string
+    registeredAs?: string
   }
 }
 
@@ -41,6 +40,8 @@ export default function TeacherStudentsPage() {
 
     fetchStudents()
   }, [])
+
+  console.log(students, "Studnet")
 
   if (loading) {
     return (
@@ -75,37 +76,29 @@ export default function TeacherStudentsPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {students.map((student) => (
-              <Card key={student.id} className="p-6">
+              <Card key={student._id} className="p-6">
                 <div className="flex flex-col h-full">
                   <div className="mb-4">
                     <h2 className="text-xl font-semibold">{student.name}</h2>
-                    <Badge className="mt-2">{student.subject}</Badge>
+                    <p className="text-sm text-muted-foreground">
+                      {student.studentProfile?.grade || 'No grade set'}
+                    </p>
                   </div>
-
-                  {student.nextSession && (
-                    <div className="text-sm text-muted-foreground mb-4">
-                      <p className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Next Class: {student.nextSession.date}
-                      </p>
-                      <p className="mt-1">{student.nextSession.time}</p>
-                    </div>
-                  )}
 
                   <div className="flex gap-2 mt-auto">
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => router.push(`/dashboard/teacher/messages?student=${student.id}`)}
+                      onClick={() => router.push(`/dashboard/teacher/messages?student=${student._id}`)}
                     >
-                      <MessageSquare className="w-4 h-4 mr-2" />
+                      <MessageSquare className="w-4 w-4 mr-2" />
                       Message
                     </Button>
                     <Button 
                       size="sm"
-                      onClick={() => router.push(`/dashboard/teacher/students/${student.id}`)}
+                      onClick={() => router.push(`/dashboard/teacher/students/${student._id}`)}
                     >
-                      <Book className="w-4 h-4 mr-2" />
+                      <Book className="w-4 w-4 mr-2" />
                       View Details
                     </Button>
                   </div>

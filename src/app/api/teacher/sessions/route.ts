@@ -196,7 +196,6 @@ export async function POST(req: Request) {
       startTime, 
       duration, 
       students: studentIds,
-      timezone, // Ensure timezone is included
       externalLink,
       recurrence
     } = await req.json()
@@ -255,9 +254,8 @@ export async function POST(req: Request) {
           name: subjectName.toLowerCase(),
           area: subjectArea.area
         },
-        timezone: timezone || 'Africa/Lagos', // Use selected timezone with fallback
-        startTime, // Use startTime directly from request body
-        endTime: new Date(new Date(startTime).getTime() + duration * 60000).toISOString(),
+        startTime: sessionStartTime,
+        endTime: sessionEndTime,
         duration,
         meetingLink,
         status: 'scheduled'
@@ -441,12 +439,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      sessions: sessions.map(s => ({
-        ...s.toObject(),
-        timezone: s.timezone || 'UTC', // Include timezone in response, default to UTC
-        startTime: s.startTime,
-        endTime: s.endTime
-      }))
+      sessions: sessions.map(s => s.toObject())
     })
 
   } catch (error) {
