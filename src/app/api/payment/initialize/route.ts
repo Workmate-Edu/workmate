@@ -11,9 +11,37 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { numberOfStudents, hoursPerSession, sessionsPerWeek } = body
+    // Accept both old and new payloads
+    let amount = 0
+    if (Array.isArray(body.subjects)) {
+      // New: array of subject configs
+      amount = body.subjects.reduce(
+        (sum, s) =>
+          sum +
+          calculateTutorialCost(
+            5,
+            s.numberOfStudents,
+            s.hoursPerSession,
+            s.sessionsPerWeek
+          ),
+        0
+      )
+    } else if (
+      typeof body.numberOfStudents === "number" &&
+      typeof body.hoursPerSession === "number" &&
+      typeof body.sessionsPerWeek === "number"
+    ) {
+      // Old: single subject config
+      amount = calculateTutorialCost(
+        5,
+        body.numberOfStudents,
+        body.hoursPerSession,
+        body.sessionsPerWeek
+      )
+    } else {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    }
 
-    const amount = calculateTutorialCost(5, numberOfStudents, hoursPerSession, sessionsPerWeek)
     const tx_ref = generatePaymentRef()
 
     return NextResponse.json({

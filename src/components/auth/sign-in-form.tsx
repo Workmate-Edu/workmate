@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Mail, Eye, EyeOff } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/components/ui/use-toast"
 import Link from "next/link"
 import { useAuthStore } from "@/store/auth-store"
 import type { AuthError, UserRole } from "@/types/auth"
@@ -59,7 +59,11 @@ export function SignInForm() {
       })
 
       if (result?.error) {
-        toast.error(result.error)
+        toast({
+          variant: "destructive",
+          description: result.error || "Invalid email/username or password."
+        })
+        setIsSubmitting(false)
         return
       }
 
@@ -70,9 +74,11 @@ export function SignInForm() {
       } else {
         router.push("/dashboard") // Default redirect
       }
-      
     } catch (error) {
-      toast.error("An unexpected error occurred")
+      toast({
+        variant: "destructive",
+        description: "An unexpected error occurred"
+      })
     } finally {
       setIsSubmitting(false)
     }

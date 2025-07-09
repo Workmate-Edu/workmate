@@ -13,9 +13,10 @@ import {
   Settings,
   GraduationCap,
   Users,
-  FolderOpen, // Add for Materials
-  UserCircle, // Add for Profile
-  Bell // Add Bell to imports
+  FolderOpen, 
+  UserCircle, 
+  Bell, 
+  CreditCard 
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
@@ -220,6 +221,13 @@ const routes = [
     },
     color: "text-slate-500",
     roles: ['teacher', 'student', 'parent', 'admin'] // Available to all users
+  },
+  {
+    label: "Subscriptions",
+    icon: CreditCard,
+    href: (role: string) => "/dashboard/admin/subscriptions",
+    color: "text-blue-500",
+    roles: ["admin"]
   }
 ]
 
@@ -229,6 +237,22 @@ export function DashboardNav() {
   const [availableRoutes, setAvailableRoutes] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const { socket } = useSocketContext()
+  const [isIndependentStudent, setIsIndependentStudent] = useState(false)
+
+  // Detect independent student
+  useEffect(() => {
+    const checkStudentType = async () => {
+      if (session?.user?.role !== "student") return
+      try {
+        const res = await fetch('/api/student/profile', { headers: { 'Cache-Control': 'no-cache' } })
+        const data = await res.json()
+        setIsIndependentStudent(data?.studentProfile?.registeredAs === 'independent')
+      } catch {
+        setIsIndependentStudent(false)
+      }
+    }
+    checkStudentType()
+  }, [session?.user?.role])
 
   // Fetch initial unread count
   useEffect(() => {
@@ -310,12 +334,33 @@ export function DashboardNav() {
     };
   }, [session]);
 
+  const navItems = [
+    ...availableRoutes,
+    {
+      label: "Subscription",
+      icon: CreditCard,
+      href: (role: string) =>
+        role === "parent"
+          ? "/dashboard/parent/subscription"
+          : "/dashboard/student/subscription",
+      color: "text-blue-500",
+      roles: ["parent", "student"],
+      show:
+        (session?.user?.role === "parent") ||
+        (session?.user?.role === "student" && isIndependentStudent)
+    }
+  ].filter(item => {
+    if (!session?.user?.role) return false
+    // Only show if the current user's role is allowed for this route and show is not false
+    return item.roles.includes(session.user.role) && (item.show === undefined || item.show)
+  })
+
   return (
     <div className="space-y-4 py-4">
       <div className="px-3 py-2">
         <h2 className="mb-2 px-4 text-lg font-semibold">Dashboard</h2>
         <div className="space-y-1">
-          {availableRoutes.map((route) => (
+          {navItems.map((route) => (
             <Link
               key={route.href(session?.user?.role as string)}
               href={route.href(session?.user?.role as string)}

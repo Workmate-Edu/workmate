@@ -423,9 +423,10 @@ export function ParentSignUpForm() {
         gender: data.gender,
         phone: data.phone,
         parentProfile: {
-          interestedInLearning: data.interestedInLearning,
+          interestedInLearning: data.interestedInLearning, // <-- ensure this is set
           educationLevel: data.educationLevel,
           subjects: data.subjects || [],
+          // ...existing code for children if you add children in the future
         }
       }
       
