@@ -1,25 +1,55 @@
-import mongoose from 'mongoose'
+// models/transaction.ts
+import mongoose, { Schema, model, models } from "mongoose";
 
-const transactionSchema = new mongoose.Schema({
-  transactionId: { type: String, required: true, unique: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-  amount: { type: Number, required: true },
-  currency: { type: String, required: true },
-  status: { 
-    type: String, 
-    enum: ['pending', 'completed', 'failed'], 
-    default: 'pending' 
+const transactionSchema = new Schema(
+  {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+    },
+    currency: {
+      type: String,
+      default: "NGN",
+    },
+    status: {
+      type: String,
+      enum: ["pending", "success", "failed"],
+      default: "pending",
+    },
+    reference: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    provider: {
+      type: String,
+      default: "flutterwave",
+    },
+    type: {
+      type: String,
+      enum: ["subscription", "purchase", "other"],
+      default: "other",
+    },
+    meta: {
+      type: Schema.Types.Mixed,
+    },
   },
-  paymentMethod: { type: String },
-  // Update: meta now supports per-subject subscription periods
-  meta: { 
-    type: Object 
-    // Optionally, you can add a comment:
-    // // Example: { subjects: [{ subject, childId, startDate, endDate, ... }], ... }
-  },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-})
+  {
+    timestamps: true, // <— adds createdAt & updatedAt
+  }
+);
 
-export const Transaction = mongoose.models.Transaction || 
-  mongoose.model('Transaction', transactionSchema)
+// Prevent model overwrite upon hot-reload in dev
+const Transaction =
+  models.Transaction ||
+  model("Transaction", transactionSchema);
+
+// **Named export**
+export { Transaction };
+// **Default export** (if you still want it)
+export default Transaction;
