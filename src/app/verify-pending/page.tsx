@@ -6,8 +6,17 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useSearchParams } from "next/navigation"
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-export default function VerifyPendingPage() {
+export default async function VerifyPendingPage() {
+  const session = await getServerSession(authOptions);
+
+  // Use session directly, do NOT use status
+  if (!session?.user) {
+    // handle unauthenticated
+  }
+
   const [isResending, setIsResending] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const searchParams = useSearchParams()
