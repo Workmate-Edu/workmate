@@ -17,13 +17,18 @@ export default function VerifyPaymentPage() {
       return
     }
 
-    // Optionally: verify transaction on your server here
-
-    if (status === 'successful') {
-      router.replace('/payment/success')
-    } else {
-      router.replace('/payment/failed')
-    }
+    // Always verify transaction on your server here for reliability
+    fetch(`/api/payment/verify?transaction_id=${transaction_id}&status=${status}`)
+      .then(() => {
+        if (status === 'successful') {
+          router.replace('/payment/success')
+        } else {
+          router.replace('/payment/failed')
+        }
+      })
+      .catch(() => {
+        router.replace('/payment/failed')
+      })
   }, [router, searchParams])
 
   return (

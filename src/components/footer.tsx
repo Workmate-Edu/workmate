@@ -16,7 +16,7 @@ const footerLinks = [
 		links: [
 			{ label: "African Languages", href: "/languages" },
 			{ label: "STEM", href: "/stem" },
-			{ label: "Stories", href: "/stories" },
+			{ label: "Blog", href: "/blog" },
 		],
 	},
 	{

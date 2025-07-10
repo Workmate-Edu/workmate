@@ -209,6 +209,7 @@ export async function POST(req: Request) {
         phone: phone || "",
         educationLevel: body.educationLevel || "",
         subjects: body.subjects || [],
+        interestedInLearning: !!body.interestedInLearning, // <-- ensure this is set from request
         children: [],
       };
 

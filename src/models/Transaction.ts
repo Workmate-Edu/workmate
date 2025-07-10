@@ -11,7 +11,12 @@ const transactionSchema = new mongoose.Schema({
     default: 'pending' 
   },
   paymentMethod: { type: String },
-  meta: { type: Map, of: String },
+  // Update: meta now supports per-subject subscription periods
+  meta: { 
+    type: Object 
+    // Optionally, you can add a comment:
+    // // Example: { subjects: [{ subject, childId, startDate, endDate, ... }], ... }
+  },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 })
