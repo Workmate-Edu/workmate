@@ -123,9 +123,9 @@ const routes = [
     description: 'View all scheduled classes'
   },
   {
-    label: 'Schedule',
+    label: 'Sessions',
     icon: Calendar,
-    href: (role: string) => `/dashboard/${role}/schedule`,
+    href: (role: string) => `/dashboard/${role}/sessions`,
     color: "text-pink-500",
     roles: ['teacher', 'parent'] // Removed 'student' from roles
   },

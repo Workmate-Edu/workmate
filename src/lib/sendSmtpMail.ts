@@ -21,6 +21,10 @@ interface EmailPayload {
 
 const sendEmail = async ({ to, subject, template, replacements }: EmailPayload) => {
   try {
+    if (!to || !to.includes('@')) {
+      throw new Error('Invalid recipient email address');
+    }
+
     // Load the email template
     let htmlContent = loadTemplate(template);
 

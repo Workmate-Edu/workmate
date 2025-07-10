@@ -182,7 +182,7 @@ export function PricingCalculator({ daysLeft = 0 }: PricingCalculatorProps) {
     })
   }
 
-  const hourlyRate = 5 // $5 per hour per student
+  const hourlyRate = 7.97 // $7.97 per hour per student
 
   const planObj = PLAN_OPTIONS.find(p => p.value === selectedPlan) || PLAN_OPTIONS[0]
   const planMultiplier = planObj.multiplier
