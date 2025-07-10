@@ -128,10 +128,24 @@ export function HeroSection() {
 
               <motion.h1
                 variants={slideVariants}
-                className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold"
+                className="font-heading font-bold leading-tight"
               >
-                <span className="block">Give Your Child The Gift of</span>
-                <span className="block text-primary">STEM & African Languages</span>
+                <span className="block text-center text-2xl sm:text-4xl md:text-5xl lg:text-6xl">
+                  Give Your
+                </span>
+                <span className="block text-center text-xl sm:text-3xl md:text-4xl lg:text-5xl">
+                  Child The Gift of
+                </span>
+                <span
+                  className="block text-center text-primary"
+                  style={{
+                    whiteSpace: "nowrap",
+                    fontSize: "clamp(1.25rem, 6vw, 2.5rem)",
+                    fontWeight: 700,
+                  }}
+                >
+                  STEM & African Languages
+                </span>
               </motion.h1>
 
               <motion.p

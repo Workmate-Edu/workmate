@@ -315,7 +315,7 @@ export default function CoursePage({ params }: { params: { courseId: string } })
             </div>
           ) : (
             <div className="space-y-4">
-              {sessions.map((session) => (
+              {sessions.slice().reverse().map((session) => (
                 <Card key={session._id}>
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start">

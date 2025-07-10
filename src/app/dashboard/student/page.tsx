@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
+import { getAllowedSubjectsForUser } from "@/lib/subscription-access"
 
 interface Subject {
   _id: string
@@ -180,6 +181,7 @@ export default function StudentDashboard() {
   })
   const [isChildStudent, setIsChildStudent] = useState(false)
   const [initialAssessment, setInitialAssessment] = useState<any>(null)
+  const [subscription, setSubscription] = useState<any>(null)
 
   useEffect(() => {
     const checkStudentType = async () => {
@@ -383,6 +385,41 @@ export default function StudentDashboard() {
     }
   }, [session])
 
+  useEffect(() => {
+    // Fetch subscription
+    fetch("/api/subscription/status")
+      .then(res => res.json())
+      .then(data => setSubscription(data.subscription))
+      .catch(() => setSubscription(null))
+  }, [])
+
+  // Only show subjects the student/child is subscribed for
+  // FIX: Support both independent students and children
+  const [allowedSubjects, setAllowedSubjects] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchAllowedSubjects() {
+      if (!session?.user?.id) {
+        setAllowedSubjects([]);
+        return;
+      }
+      // For independent students, childId is undefined or equals userId
+      const result = await getAllowedSubjectsForUser({
+        userId: session.user.id,
+        childId: session.user.studentProfile?.registeredAs === "child"
+          ? session.user.id
+          : undefined
+      });
+      setAllowedSubjects(result);
+    }
+    fetchAllowedSubjects();
+  }, [session?.user?.id, session?.user?.studentProfile?.registeredAs]);
+
+  // Example: filter subjectProgresses
+  const visibleSubjectProgresses = subjectProgresses.filter(
+    s => allowedSubjects.includes(s.subjectName)
+  )
+
   return (
     <div className="space-y-6">
       {!isChildStudent && assessments.length === 0 && (
@@ -497,7 +534,7 @@ export default function StudentDashboard() {
           </div>
         </div>
         <div className="max-h-[400px] overflow-y-auto -mx-4 px-4">
-          {subjectProgresses.map((progress) => (
+          {visibleSubjectProgresses.map((progress) => (
             <div key={progress.subjectId} className="space-y-2 mb-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -516,7 +553,7 @@ export default function StudentDashboard() {
               />
             </div>
           ))}
-          {subjectProgresses.length === 0 && (
+          {visibleSubjectProgresses.length === 0 && (
             <p className="text-muted-foreground text-center py-6">
               No subjects assigned
             </p>
