@@ -94,7 +94,7 @@ export default function LanguagesPage() {
             culture - discover the beauty of African languages through interactive learning
           </p>
           
-          <div className="flex flex-wrap justify-center gap-4 mt-6">
+          {/* <div className="flex flex-wrap justify-center gap-4 mt-6">
             <span className="px-4 py-2 bg-primary/10 rounded-full text-sm">
               Cultural Connection
             </span>
@@ -107,7 +107,7 @@ export default function LanguagesPage() {
             <span className="px-4 py-2 bg-primary/10 rounded-full text-sm">
               Personal Interest
             </span>
-          </div>
+          </div> */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -168,8 +168,8 @@ export default function LanguagesPage() {
         </div>
       </div>
 
-      {/* Language News Section */}
-      <div className="container mx-auto px-4 py-16 border-t">
+
+      {/* <div className="container mx-auto px-4 py-16 border-t">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Latest Language News</h2>
           <p className="text-muted-foreground">
@@ -182,7 +182,7 @@ export default function LanguagesPage() {
             <StoryCard key={story.slug} {...story} />
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }
