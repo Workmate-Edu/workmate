@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, models, model } from "mongoose";
+import mongoose, { Schema, Document, model } from "mongoose";
 
 export interface ISubscription extends Document {
   userId: mongoose.Types.ObjectId;
@@ -205,4 +205,4 @@ subscriptionSchema.index({ "learningPath.initialAssessmentId": 1 });
 subscriptionSchema.index({ "learningPath.goals.status": 1 });
 
 export const Subscription =
-  models.Subscription || model<ISubscription>("Subscription", subscriptionSchema);
+  (mongoose.models && mongoose.models.Subscription) || model<ISubscription>("Subscription", subscriptionSchema);

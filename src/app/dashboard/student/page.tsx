@@ -394,8 +394,27 @@ export default function StudentDashboard() {
   }, [])
 
   // Only show subjects the student/child is subscribed for
-  const allowedSubjects = getAllowedSubjectsForUser(subscription, session?.user?.id)
-  // Use allowedSubjects for access checks, rendering, etc.
+  // FIX: Support both independent students and children
+  const [allowedSubjects, setAllowedSubjects] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchAllowedSubjects() {
+      if (!session?.user?.id) {
+        setAllowedSubjects([]);
+        return;
+      }
+      // For independent students, childId is undefined or equals userId
+      const result = await getAllowedSubjectsForUser({
+        userId: session.user.id,
+        childId: session.user.studentProfile?.registeredAs === "child"
+          ? session.user.id
+          : undefined
+      });
+      setAllowedSubjects(result);
+    }
+    fetchAllowedSubjects();
+  }, [session?.user?.id, session?.user?.studentProfile?.registeredAs]);
+
   // Example: filter subjectProgresses
   const visibleSubjectProgresses = subjectProgresses.filter(
     s => allowedSubjects.includes(s.subjectName)

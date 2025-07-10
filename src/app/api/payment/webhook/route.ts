@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import crypto from 'crypto'
 import { connectDB } from "@/lib/mongodb"
-import { Transaction } from '@/models/transaction'
+import { Transaction } from '@/models/transactions'
 import { User } from '@/models/user'
 
 export async function POST(req: Request) {

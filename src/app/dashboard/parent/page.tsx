@@ -298,7 +298,7 @@ export default function ParentDashboardPage() {
           )
         })}
       </div>
-
+<br />
       {children.length === 0 && !loading && (
         <Card className="p-12 text-center">
           <Users className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />

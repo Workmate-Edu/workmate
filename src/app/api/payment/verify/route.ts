@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
-import { Transaction } from "@/models/transaction"
+import { Transaction } from "@/models/transactions"
 import { User } from "@/models/user"
 import { Subscription } from "@/models/subscription"
 import sendEmail from "@/lib/sendSmtpMail"
@@ -325,22 +325,46 @@ export async function GET(req: Request) {
               }
             })
             console.log("Subscription confirmation email sent to:", paidUserEmail)
+
+            // Only after user email is successful, send admin notification
+            try {
+              await sendEmail({
+                to: process.env.ADMIN_EMAIL || "admin@workmateteam.com",
+                subject: "New Workmate Subscription Payment",
+                template: "admin_subscription_notify",
+                replacements: {
+                  userName: paidUserName || "Unknown",
+                  userEmail: paidUserEmail || "N/A",
+                  amount: data.data.amount.toString(),
+                  currency: data.data.currency,
+                  date: new Date().toLocaleDateString(),
+                  transactionId: data.data.id.toString(),
+                  subjects: Array.isArray(subjects)
+                    ? subjects.map((s: any) => s.subject).join(", ")
+                    : "",
+                  dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
+                }
+              })
+              console.log("Admin notified of new payment")
+            } catch (adminEmailErr) {
+              console.error("Failed to send admin notification email:", adminEmailErr)
+            }
           } catch (emailErr) {
             console.error("Failed to send subscription confirmation email:", emailErr)
           }
         }
+
+        // --- DEBUG: Log updated user document ---
+        console.log("=== Updated user ===")
+        console.dir(updatedUser, { depth: null })
+
+        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/payment/success`)
       }
 
-      // --- DEBUG: Log updated user document ---
-      console.log("=== Updated user ===")
-      console.dir(updatedUser, { depth: null })
-
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/payment/success`)
+      // --- DEBUG: Log failed verification ---
+      console.error("Flutterwave verification failed or payment not successful")
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/payment/failed`)
     }
-
-    // --- DEBUG: Log failed verification ---
-    console.error("Flutterwave verification failed or payment not successful")
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/payment/failed`)
   } catch (error) {
     console.error('Payment verification error:', error)
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/payment/failed`)

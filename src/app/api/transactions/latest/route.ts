@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
-import { Transaction } from "@/models/transaction"
+import { Transaction } from "@/models/transactions"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
