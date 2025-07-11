@@ -125,9 +125,12 @@ const routes = [
   {
     label: 'Sessions',
     icon: Calendar,
-    href: (role: string) => `/dashboard/${role}/sessions`,
+    href: (role: string) =>
+      role === "admin"
+        ? "/dashboard/admin/sessions"
+        : `/dashboard/${role}/sessions`,
     color: "text-pink-500",
-    roles: ['teacher', 'parent'] // Removed 'student' from roles
+    roles: ["teacher", "parent", "admin"]
   },
   {
     label: 'Messages',
@@ -348,6 +351,16 @@ export function DashboardNav() {
       show:
         (session?.user?.role === "parent") ||
         (session?.user?.role === "student" && isIndependentStudent)
+    },
+    {
+      label: "Earnings",
+      icon: CreditCard,
+      href: (role: string) =>
+        role === "admin"
+          ? "/dashboard/admin/earnings"
+          : "/dashboard/teacher/earnings",
+      color: "text-green-600",
+      roles: ["admin", "teacher"]
     }
   ].filter(item => {
     if (!session?.user?.role) return false

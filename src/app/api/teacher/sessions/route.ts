@@ -131,7 +131,7 @@ export async function GET() {
     console.log('Found sessions:', sessions.length)
 
     const formattedSessions = sessions.map(s => ({
-      id: s._id,
+      _id: s._id, // <-- ensure this is _id, not id
       student: {
         id: s.studentId?._id,
         name: s.studentId?.name,

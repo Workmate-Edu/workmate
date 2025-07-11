@@ -73,7 +73,7 @@ export default function ParentSchedulePage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {sessions.map(session => (
+          {sessions.slice().reverse().map(session => (
             <Card key={session.id} className="p-4">
               <div className="space-y-3">
                 <div className="flex justify-between items-start">

@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useSession } from "next-auth/react"
 
 const passwordChangeSchema = z
   .object({
@@ -40,6 +41,14 @@ export default function TeacherProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const { data: session } = useSession()
+  const [accountDetails, setAccountDetails] = useState({
+    bankName: "",
+    accountNumber: "",
+    accountName: "",
+    bvn: "",
+  })
+  const [savingAccount, setSavingAccount] = useState(false)
 
   const passwordForm = useForm<PasswordChangeData>({
     resolver: zodResolver(passwordChangeSchema),
@@ -56,6 +65,26 @@ export default function TeacherProfilePage() {
       )
     }
   }, [action])
+
+  useEffect(() => {
+    // Fetch teacher account details if available
+    async function fetchAccountDetails() {
+      if (!session?.user?.id) return
+      const res = await fetch(`/api/teacher/profile`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data?.teacherProfile?.accountDetails) {
+          setAccountDetails({
+            bankName: data.teacherProfile.accountDetails.bankName || "",
+            accountNumber: data.teacherProfile.accountDetails.accountNumber || "",
+            accountName: data.teacherProfile.accountDetails.accountName || "",
+            bvn: data.teacherProfile.accountDetails.bvn || "",
+          })
+        }
+      }
+    }
+    fetchAccountDetails()
+  }, [session?.user?.id])
 
   const onPasswordSubmit = async (data: PasswordChangeData) => {
     try {
@@ -77,6 +106,31 @@ export default function TeacherProfilePage() {
     }
   }
 
+  const handleAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAccountDetails({ ...accountDetails, [e.target.name]: e.target.value })
+  }
+
+  const handleAccountSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSavingAccount(true)
+    try {
+      const res = await fetch("/api/teacher/profile/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(accountDetails),
+      })
+      if (res.ok) {
+        toast.success("Account details updated")
+      } else {
+        toast.error("Failed to update account details")
+      }
+    } catch {
+      toast.error("Failed to update account details")
+    } finally {
+      setSavingAccount(false)
+    }
+  }
+
   return (
     <>
       <div className="container py-8">
@@ -93,6 +147,61 @@ export default function TeacherProfilePage() {
           <h1 className="text-3xl font-bold mb-8">Teacher Profile</h1>
           <Card className="p-6">
             <TeacherProfileForm />
+            {/* Account Details Section */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold mb-4">Account Details</h2>
+              <form
+                onSubmit={handleAccountSave}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
+                <div>
+                  <Label>Bank Name</Label>
+                  <Input
+                    name="bankName"
+                    value={accountDetails.bankName}
+                    onChange={handleAccountChange}
+                    placeholder="e.g. Access Bank"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Account Number</Label>
+                  <Input
+                    name="accountNumber"
+                    value={accountDetails.accountNumber}
+                    onChange={handleAccountChange}
+                    placeholder="e.g. 0123456789"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Account Name</Label>
+                  <Input
+                    name="accountName"
+                    value={accountDetails.accountName}
+                    onChange={handleAccountChange}
+                    placeholder="e.g. John Doe"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>BVN</Label>
+                  <Input
+                    name="bvn"
+                    value={accountDetails.bvn}
+                    onChange={handleAccountChange}
+                    placeholder="e.g. 12345678901"
+                  />
+                </div>
+                <div className="md:col-span-2 flex justify-end mt-2">
+                  <Button type="submit" disabled={savingAccount}>
+                    {savingAccount
+                      ? "Saving..."
+                      : "Save Account Details"}
+                  </Button>
+                </div>
+              </form>
+            </div>
 
             <div className="mt-6">
               <Button

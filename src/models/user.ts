@@ -118,7 +118,13 @@ const teacherProfileSchema = new Schema({
       },
       url: String
     }]
-  }]
+  }],
+  accountDetails: {
+    bankName: { type: String },
+    accountNumber: { type: String },
+    accountName: { type: String },
+    bvn: { type: String }
+  }
 });
 
 // -----------------------------

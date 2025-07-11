@@ -687,7 +687,7 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {sessions.map(session => (
+                  {sessions.slice().reverse().map(session => (
                     <div 
                       key={session.id}
                       className="p-4 border rounded-lg space-y-3"
