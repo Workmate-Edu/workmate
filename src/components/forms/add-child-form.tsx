@@ -42,6 +42,7 @@ const subjectAreas = [
     label: "Languages",
     value: "languages",
     subjects: [
+      { label: "English", value: "english" },
       { label: "Hausa", value: "hausa" },
       { label: "Igbo", value: "igbo" },
       { label: "Yoruba", value: "yoruba" },

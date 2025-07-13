@@ -8,6 +8,7 @@ export interface StepProps {
   errors: FieldErrors<ParentFormData>;
   isSubmitting: boolean;
   getValues: UseFormGetValues<ParentFormData>;
+  control: Control<ParentFormData>
 }
 
 export interface LearningPreferencesStepProps extends StepProps {

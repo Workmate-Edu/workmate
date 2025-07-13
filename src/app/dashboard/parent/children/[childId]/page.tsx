@@ -401,10 +401,11 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
             <ClipboardList className="w-4 h-4 mr-2" />
             Initial Assessment
           </TabsTrigger>
-          <TabsTrigger value="schedule">
+          {/* <TabsTrigger value="schedule">
             <Calendar className="w-4 h-4 mr-2" />
             Schedule
-          </TabsTrigger>
+          </TabsTrigger> */}
+          
           {/* <TabsTrigger value="progress">
             <TrendingUp className="w-4 h-4 mr-2" />
             Progress

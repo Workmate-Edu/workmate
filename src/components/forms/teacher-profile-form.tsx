@@ -14,25 +14,57 @@ import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { subjectAreas, type SubjectArea, type Subject } from "@/lib/constants/subjects"
 
+// const profileSchema = z.object({
+//   bio: z.string().min(10, "Bio must be at least 10 characters"),
+//   phone: z.string().min(10, "Valid phone number required"),
+//   subjects: z.array(z.object({
+//     area: z.string(),
+//     subjects: z.array(z.string())
+//   })).min(1, "At least one subject area is required"),
+//   qualifications: z.array(z.object({
+//     degree: z.string(),
+//     institution: z.string(),
+//     year: z.number()
+//   })),
+//   availability: z.array(z.object({
+//     day: z.string(),
+//     slots: z.array(z.object({
+//       startTime: z.string(),
+//       endTime: z.string()
+//     }))
+//   }))
+// })
+
+// 1) Extend your schema to require bio & phone:
 const profileSchema = z.object({
   bio: z.string().min(10, "Bio must be at least 10 characters"),
   phone: z.string().min(10, "Valid phone number required"),
-  subjects: z.array(z.object({
-    area: z.string(),
-    subjects: z.array(z.string())
-  })).min(1, "At least one subject area is required"),
-  qualifications: z.array(z.object({
-    degree: z.string(),
-    institution: z.string(),
-    year: z.number()
-  })),
-  availability: z.array(z.object({
-    day: z.string(),
-    slots: z.array(z.object({
-      startTime: z.string(),
-      endTime: z.string()
-    }))
-  }))
+  subjects: z
+    .array(
+      z.object({
+        area: z.string(),
+        subjects: z.array(z.string()),
+      })
+    )
+    .min(1, "At least one subject area is required"),
+  qualifications: z.array(
+    z.object({
+      degree: z.string(),
+      institution: z.string(),
+      year: z.number(),
+    })
+  ),
+  availability: z.array(
+    z.object({
+      day: z.string(),
+      slots: z.array(
+        z.object({
+          startTime: z.string(),
+          endTime: z.string(),
+        })
+      ),
+    })
+  ),
 })
 
 interface SubjectSelection {
@@ -40,31 +72,55 @@ interface SubjectSelection {
   subjects: string[]
 }
 
+// interface TeacherProfile {
+//   name: string;
+//   email: string;
+//   bio: string;
+//   phone: string;
+//   teacherProfile: {
+//     qualifications: Array<{
+//       degree: string;
+//       institution: string;
+//       year: number;
+//     }>;
+//     subjects: Array<{
+//       area: string;
+//       subjects: string[];
+//     }>;
+//     verificationStatus: string;
+//     verificationHistory?: Array<{
+//       status: string;
+//       date: Date;
+//       reason: string;
+//       feedback: string;
+//       canReapplyAfter: Date;
+//     }>;
+//   };
+// }
+
+
+type FormValues = z.infer<typeof profileSchema>
+
 interface TeacherProfile {
-  name: string;
-  email: string;
-  bio: string;
-  phone: string;
+  name: string
+  email: string
+  bio: string
+  phone: string
   teacherProfile: {
-    qualifications: Array<{
-      degree: string;
-      institution: string;
-      year: number;
-    }>;
-    subjects: Array<{
-      area: string;
-      subjects: string[];
-    }>;
-    verificationStatus: string;
+    subjects: Array<{ area: string; subjects: string[] }>
+    qualifications: Array<{ degree: string; institution: string; year: number }>
+    availability: any[]
+    verificationStatus: string
     verificationHistory?: Array<{
-      status: string;
-      date: Date;
-      reason: string;
-      feedback: string;
-      canReapplyAfter: Date;
-    }>;
-  };
+      status: string
+      date: Date
+      reason: string
+      feedback: string
+      canReapplyAfter: Date
+    }>
+  }
 }
+
 
 export function TeacherProfileForm() {
   const [isLoading, setIsLoading] = useState(true)
@@ -82,16 +138,16 @@ export function TeacherProfileForm() {
     canReapplyAfter: Date;
   } | null>(null)
 
-  const form = useForm({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      bio: "",
-      phone: "",
-      subjects: [],
-      qualifications: [],
-      availability: []
-    }
-  })
+ const form = useForm<FormValues>({
+  resolver: zodResolver(profileSchema),
+  defaultValues: {
+    bio: "",
+    phone: "",
+    subjects: [],
+    qualifications: [],
+    availability: [],
+  },
+})
 
   useEffect(() => {
     fetchTeacherProfile()
@@ -118,15 +174,23 @@ export function TeacherProfileForm() {
       setTeacher(data)
 
       // Update form with existing data
+      // form.reset({
+      //   name: data.name || "",
+      //   email: data.email || "",
+      //   bio: data.bio || "",
+      //   phone: data.phone || "",
+      //   subjects: data.teacherProfile?.subjects || [],
+      //   qualifications: data.teacherProfile?.qualifications || [],
+      //   availability: data.teacherProfile?.availability || []
+      // })
+
       form.reset({
-        name: data.name || "",
-        email: data.email || "",
-        bio: data.bio || "",
-        phone: data.phone || "",
-        subjects: data.teacherProfile?.subjects || [],
-        qualifications: data.teacherProfile?.qualifications || [],
-        availability: data.teacherProfile?.availability || []
-      })
+  bio: data.bio,
+  phone: data.phone,
+  subjects: data.teacherProfile.subjects,
+  qualifications: data.teacherProfile.qualifications,
+  availability: data.teacherProfile.availability,
+})
 
       // Set state for complex fields
       setSelectedSubjects(data.teacherProfile?.subjects || [])
@@ -247,17 +311,16 @@ export function TeacherProfileForm() {
           </div>
 
           <div>
-            <Label>Bio</Label>
-            <Textarea
-              placeholder="Tell us about your teaching experience..."
-              {...form.register("bio")}
-            />
-          </div>
+  <Label>Bio</Label>
+  <Textarea {...form.register("bio")} placeholder="Tell us about your teaching experience…" />
+  {form.formState.errors.bio && <p className="text-destructive">{form.formState.errors.bio.message}</p>}
+</div>
 
-          <div>
-            <Label>Phone Number</Label>
-            <Input {...form.register("phone")} />
-          </div>
+<div>
+  <Label>Phone</Label>
+  <Input {...form.register("phone")} placeholder="08012345678" />
+  {form.formState.errors.phone && <p className="text-destructive">{form.formState.errors.phone.message}</p>}
+</div>
         </div>
 
         {/* Verification Status */}

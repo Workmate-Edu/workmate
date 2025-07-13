@@ -18,9 +18,15 @@ import { TermsAgreement } from "./terms-agreement"
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 
+// CTO Recommendation: Do NOT accept email as username. Only allow usernames with 3-20 chars, letters, numbers, underscores, hyphens.
+const usernameSchema = z.string().min(3).max(20).regex(
+  /^[a-zA-Z0-9_-]{3,20}$/,
+  "Username must be 3-20 chars and only letters, numbers, underscores, hyphens"
+)
+
 const teacherFormSchema = z.object({
   name: z.string().min(2),
-  username: z.string().min(3, "Username must be at least 3 characters"), // Add username
+  username: usernameSchema,
   email: z.string().email(),
   password: z.string().min(8),
   gender: z.string().min(1, "Please select your gender"),
@@ -63,6 +69,7 @@ const subjectAreas = [
     label: "Languages",
     value: "languages",
     subjects: [
+      { label: "English", value: "english" },
       { label: "Hausa", value: "hausa" },
       { label: "Igbo", value: "igbo" },
       { label: "Yoruba", value: "yoruba" },
@@ -86,6 +93,7 @@ export function TeacherSignUpForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [selectedAreas, setSelectedAreas] = React.useState<string[]>([])
   const [subjectsByArea, setSubjectsByArea] = React.useState<Record<string, string[]>>({})
+  const [backendError, setBackendError] = React.useState<string | null>(null)
 
   const form = useForm<z.infer<typeof teacherFormSchema>>({
     resolver: zodResolver(teacherFormSchema),
@@ -114,8 +122,8 @@ export function TeacherSignUpForm() {
     handleSubmit,
     setValue,
     trigger,
-    watch, // Add watch
-    formState: { errors },
+    watch,
+    formState: { errors, touchedFields },
   } = form
 
   // Watch all form fields
@@ -247,12 +255,19 @@ export function TeacherSignUpForm() {
     "Qualifications"
   ]
 
+  // On Next/Submit, show error if username is an email
   const handleNext = async () => {
     let isValid = false
-    
+    setBackendError(null)
     switch (currentStep) {
       case 0:
-        isValid = await trigger(["name", "email", "password", "gender", "phone"])
+        isValid = await trigger(["name", "email", "username", "password", "gender", "phone"])
+        // Extra check: do not allow email as username
+        const usernameVal = form.getValues("username")
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(usernameVal)) {
+          setBackendError("Please choose a username that is NOT an email address. Usernames must be 3-20 chars and only letters, numbers, underscores, hyphens.")
+          return
+        }
         break
       case 1:
         isValid = await trigger(["subjectAreas", "subjects"])
@@ -265,10 +280,7 @@ export function TeacherSignUpForm() {
         }
         break
     }
-
-    if (isValid) {
-      setCurrentStep((prev) => prev + 1)
-    }
+    if (isValid) setCurrentStep((prev) => prev + 1)
   }
 
   const handleBack = () => setCurrentStep((prev) => prev - 1)
@@ -294,12 +306,21 @@ export function TeacherSignUpForm() {
 
       <form className="space-y-6">
         {currentStep === 0 && (
-          <BasicInfoStep 
-            register={register}
-            setValue={setValue}
-            errors={errors}
-            isSubmitting={isSubmitting}
-          />
+          <>
+            <BasicInfoStep 
+              register={register}
+              setValue={setValue}
+              errors={errors}
+              isSubmitting={isSubmitting}
+            />
+            {/* Username error message, only show if touched or backend error */}
+            {/* {(errors.username && touchedFields.username) && (
+              <p className="text-sm text-red-500 mt-1">{errors.username.message}</p>
+            )}
+            {backendError && (
+              <p className="text-sm text-red-500 mt-1">{backendError}</p>
+            )} */}
+          </>
         )}
 
         {currentStep === 1 && (

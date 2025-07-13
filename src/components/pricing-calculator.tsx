@@ -15,6 +15,7 @@ const STEM_SUBJECTS = [
   "Physics",
   "Chemistry",
   "Biology",
+  "Computer Science",
 ]
 
 const LANGUAGE_SUBJECTS = [
@@ -408,14 +409,14 @@ export function PricingCalculator({ daysLeft = 0 }: PricingCalculatorProps) {
             {/* Parent self-learning option */}
             {userRole === "parent" && (
               <div className="mb-6">
-                <label className="flex items-center gap-2 font-medium">
+                {/* <label className="flex items-center gap-2 font-medium">
                   <input
                     type="checkbox"
                     checked={parentSelfLearning}
                     onChange={() => setParentSelfLearning(v => !v)}
                   />
                   I want to learn as a parent (Parent Learning Journey)
-                </label>
+                </label> */}
                 {parentSelfLearning && (
                   <div className="mt-4 border rounded-lg p-4">
                     <div className="font-semibold mb-2">Select Subjects for Yourself</div>

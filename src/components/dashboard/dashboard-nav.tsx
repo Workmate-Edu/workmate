@@ -34,7 +34,7 @@ const routes = [
   {
     label: 'Initial Assessment',
     icon: GraduationCap,
-    href: (role: string) => `/dashboard/student/assessments/initial`,
+    href: (role: string) => `/dashboard/${role}/assessments/initial`,
     color: "text-violet-500",
     roles: ['student'],
     description: 'Take your placement assessment',
@@ -55,7 +55,7 @@ const routes = [
   {
     label: 'My Teachers',
     icon: Users,
-    href: (role: string) => `/dashboard/student/teachers`,
+    href: (role: string) => `/dashboard/${role}/teachers`,
     color: "text-emerald-500",
     roles: ['student'] // Show for all students
   },
@@ -78,7 +78,7 @@ const routes = [
   {
     label: 'My Assessments',
     icon: ClipboardList,
-    href: (role: string) => `/dashboard/student/assessments`,
+    href: (role: string) => `/dashboard/${role}/assessments`,
     color: "text-violet-500",
     roles: ['student'],
     description: 'View and complete your assessments'
@@ -117,10 +117,10 @@ const routes = [
   {
     label: 'My Sessions',
     icon: Calendar,
-    href: (role: string) => `/dashboard/student/sessions`,
+    href: (role: string) => `/dashboard/${role}/sessions`,
     color: "text-pink-500",
     roles: ['student'],
-    description: 'View all scheduled classes'
+    description: 'View all scheduled classes',
   },
   {
     label: 'Sessions',
@@ -130,7 +130,15 @@ const routes = [
         ? "/dashboard/admin/sessions"
         : `/dashboard/${role}/sessions`,
     color: "text-pink-500",
-    roles: ["teacher", "parent", "admin"]
+    roles: ["teacher", "admin"]
+  },
+   {
+    label: 'Children Sessions',
+    icon: Calendar,
+    href: (role: string) =>
+      `/dashboard/parent/children-sessions`,
+    color: "text-pink-500",
+    roles: ["parent"]
   },
   {
     label: 'Messages',
@@ -241,6 +249,7 @@ export function DashboardNav() {
   const [unreadCount, setUnreadCount] = useState(0)
   const { socket } = useSocketContext()
   const [isIndependentStudent, setIsIndependentStudent] = useState(false)
+   const [isLearningParent, setIsLearningParent] = useState(false)
 
   // Detect independent student
   useEffect(() => {
@@ -257,6 +266,20 @@ export function DashboardNav() {
     checkStudentType()
   }, [session?.user?.role])
 
+  // wE WILL COME BACK TO PARENT THAT WANT TO LEARN TO HAVE ACCESS TO TEACHER FEATURES SUCH AS ASSESSMENT, MY TEACHERS ETC
+
+  // fetch “interestedInLearning” for parent users
+  //  useEffect(() => {
+  //   if (session?.user?.role !== "parent") return
+  //   fetch("/api/parent/profile", { headers: { "Cache-Control": "no-cache" } })
+  //     .then(r => r.json())
+  //     .then(data => {
+  //       setIsLearningParent(!!data.parentProfile?.interestedInLearning)
+  //     })
+  //     .catch(() => setIsLearningParent(false))
+  // }, [session?.user?.role])
+
+  
   // Fetch initial unread count
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -299,7 +322,16 @@ export function DashboardNav() {
       if (!userRole) return;
 
       try {
-        const filteredRoutes = routes.filter(route => route.roles.includes(userRole));
+        const filteredRoutes = routes.filter(route => 
+          route.roles.includes(userRole)
+          // We will come back to implment parent interest in learning features
+
+      //   || (userRole === 'parent'
+      //   && isLearningParent
+      //   && route.roles.includes('student')
+      // )
+
+    );
         console.log('Filtered routes before shouldShow:', filteredRoutes); // Debug log
 
         const results = await Promise.all(
@@ -335,7 +367,43 @@ export function DashboardNav() {
     return () => {
       mounted = false;
     };
+  // }, [session, isLearningParent, isIndependentStudent]);
   }, [session]);
+
+
+  //  useEffect(() => {
+  //   if (!session?.user?.role) return
+  //   let mounted = true
+
+  //   async function filterRoutes() {
+  //     const role = session.user.role
+  //     // first, pull in any route that matches your exact role,
+  //     // plus, if you’re a “learning parent,” also pull in all student-only routes
+  //     const filtered = routes.filter(rt =>
+  //       rt.roles.includes(role) ||
+  //       (role === "parent" && isLearningParent && rt.roles.includes("student"))
+  //     )
+
+  //     // apply any `shouldShow` hooks you have on each route
+  //     const withShouldShow = await Promise.all(
+  //       filtered.map(async rt => {
+  //         if (rt.shouldShow) {
+  //           try {
+  //             return (await rt.shouldShow(session)) ? rt : null
+  //           } catch {
+  //             return rt
+  //           }
+  //         }
+  //         return rt
+  //       })
+  //     ).then(list => list.filter(Boolean) as typeof routes)
+
+  //     if (mounted) setAvailableRoutes(withShouldShow)
+  //   }
+
+  //   filterRoutes()
+  //   return () => { mounted = false }
+  // }, [session, isLearningParent, isIndependentStudent])
 
   const navItems = [
     ...availableRoutes,
@@ -367,6 +435,49 @@ export function DashboardNav() {
     // Only show if the current user's role is allowed for this route and show is not false
     return item.roles.includes(session.user.role) && (item.show === undefined || item.show)
   })
+
+  //  const navItems = [
+  //   ...availableRoutes,
+  //   {
+  //     label: "Subscription",
+  //     icon: CreditCard,
+  //     href: (role: string) =>
+  //       role === "parent"
+  //         ? "/dashboard/parent/subscription"
+  //         : "/dashboard/student/subscription",
+  //     color: "text-blue-500",
+  //     roles: ["parent", "student"],
+  //     show:
+  //       session?.user?.role === "parent" ||
+  //       (session?.user?.role === "student" && isIndependentStudent)
+  //   },
+  //   {
+  //     label: "Earnings",
+  //     icon: CreditCard,
+  //     href: (role: string) =>
+  //       role === "admin"
+  //         ? "/dashboard/admin/earnings"
+  //         : "/dashboard/teacher/earnings",
+  //     color: "text-green-600",
+  //     roles: ["admin", "teacher"]
+  //   }
+  // ]
+  // .filter(item => {
+  //   const role = session?.user?.role
+  //   if (!role) return false
+
+  //   // allow if it’s your own role…
+  //   const okForYourRole = item.roles.includes(role)
+  //   // …or, if you’re a learning parent, allow student-only items too
+  //   const okAsLearningParent =
+  //     role === "parent" &&
+  //     isLearningParent &&
+  //     item.roles.includes("student")
+
+  //   const passesShowFlag = item.show === undefined || item.show
+
+  //   return (okForYourRole || okAsLearningParent) && passesShowFlag
+  // })
 
   return (
     <div className="space-y-4 py-4">

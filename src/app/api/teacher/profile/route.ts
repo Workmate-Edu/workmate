@@ -18,7 +18,9 @@ export async function GET() {
   return NextResponse.json({
     teacherProfile: user.teacherProfile || {},
     email: user.email,
-    name: user.name
+    name: user.name,
+    bio:  user.bio   || "", 
+    phone: user.phone || "", 
   })
 }
 
