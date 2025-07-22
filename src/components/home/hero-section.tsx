@@ -185,7 +185,7 @@ export function HeroSection() {
               <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <Button 
                   size="lg" 
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-lg px-8"
                   onClick={() => window.open('https://calendly.com/ibrahim-saliman-workmateteam/new-meeting', '_blank')}
                 >
                   <Calendar className="mr-2 h-5 w-5" />
@@ -195,7 +195,7 @@ export function HeroSection() {
                   variant="outline" 
                   size="lg"
                   asChild
-                  className="w-full sm:w-[200px] bg-secondary/10 hover:bg-secondary/20 text-secondary border-secondary/20"
+                  className="w-full sm:w-[200px] bg-secondary/10 hover:bg-secondary/20 text-secondary border-secondary/20 h-12 text-lg px-8"
                 >
                   <Link href="/sign-up">Get Started</Link>
                 </Button>
