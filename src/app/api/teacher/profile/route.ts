@@ -5,23 +5,21 @@ import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
 import sendEmail from "@/lib/sendSmtpMail"
 
-export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== "teacher") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+export async function GET(req: Request) {
+  const url = new URL(req.url)
+  const id = url.searchParams.get("id")
+  if (!id) {
+    return NextResponse.json({ error: "Missing teacher id" }, { status: 400 })
   }
   await connectDB()
-  const user = await User.findById(session.user.id).lean()
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 })
+  // No authentication required for public teacher profile (for ratings, etc)
+  const user = await User.findById(id)
+    .select("name email teacherProfile bio image role")
+    .lean()
+  if (!user || user.role !== "teacher") {
+    return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
   }
-  return NextResponse.json({
-    teacherProfile: user.teacherProfile || {},
-    email: user.email,
-    name: user.name,
-    bio:  user.bio   || "", 
-    phone: user.phone || "", 
-  })
+  return NextResponse.json(user)
 }
 
 export async function PUT(req: Request) {
@@ -112,3 +110,4 @@ export async function PUT(req: Request) {
     }, { status: 500 })
   }
 }
+  

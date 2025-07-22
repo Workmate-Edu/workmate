@@ -5,6 +5,7 @@ import { User } from "@/models/user"
 import { InitialAssessment } from "@/models/initial-assessment"
 import { ChildAssessment } from "@/models/child-assessment"
 import { TeachingSession } from "@/models/teaching-session"
+import { Assessment as TeacherAssessment } from "@/models/assessment"
 import authOptions from "@/lib/auth"
 
 export async function GET() {
@@ -16,39 +17,44 @@ export async function GET() {
 
     await connectDB()
 
-    const [student, teachingSessions, assessments] = await Promise.all([
-      // Update student query to properly populate teacher data
-      User.findById(session.user.id)
-        .select('studentProfile')
-        .populate([
-          {
-            path: 'studentProfile.assignedTeachers.teacherId',
-            select: 'name email subjects teacherProfile.rating'
-          },
-          {
-            path: 'teachers',
-            select: 'name email subjects teacherProfile.rating'
-          }
-        ])
-        .lean(),
-
-      TeachingSession.find({
-        studentId: session.user.id
-      })
-      .select('startTime endTime status subject')
-      .lean(),
-
-      Promise.all([
-        InitialAssessment.find({ studentId: session.user.id })
-          .select('status subject submittedAt')
-          .lean(),
-        ChildAssessment.find({ childId: session.user.id })
-          .select('status submittedAt')
-          .lean()
+    // Get student profile and assigned teachers
+    const student = await User.findById(session.user.id)
+      .select('studentProfile')
+      .populate([
+        {
+          path: 'studentProfile.assignedTeachers.teacherId',
+          select: 'name email subjects teacherProfile.rating'
+        },
+        {
+          path: 'teachers',
+          select: 'name email subjects teacherProfile.rating'
+        }
       ])
-    ])
+      .lean()
 
-    const [initialAssessments, childAssessments] = assessments
+    // Get all teaching sessions for this student
+    const teachingSessions = await TeachingSession.find({
+      studentId: session.user.id
+    })
+    .select('startTime endTime status subject')
+    .lean()
+
+    // --- Use TeacherAssessment for ongoing assessments ---
+    const teacherAssessments = await TeacherAssessment.find({
+      studentId: session.user.id
+    })
+    .select('status subject submittedAt grade points feedback')
+    .lean()
+
+    // Get initial/child assessment for reference (one-time, not for ongoing stats)
+    const [initialAssessments, childAssessments] = await Promise.all([
+      InitialAssessment.find({ studentId: session.user.id })
+        .select('status subject submittedAt')
+        .lean(),
+      ChildAssessment.find({ childId: session.user.id })
+        .select('status submittedAt')
+        .lean()
+    ])
 
     // Calculate teaching hours
     const completedSessions = teachingSessions.filter(s => s.status === 'completed')
@@ -82,7 +88,13 @@ export async function GET() {
       if (!acc[key]) acc[key] = []
       acc[key].push(session)
       return acc
-    }, {})
+    }, {} as Record<string, typeof teachingSessions>)
+
+    // --- Assessment stats from TeacherAssessment ---
+    const completedTeacherAssessments = teacherAssessments.filter(a => a.status === 'graded' || a.status === 'completed')
+    const averageScore = completedTeacherAssessments.length > 0
+      ? completedTeacherAssessments.reduce((sum, a) => sum + (a.grade ?? 0), 0) / completedTeacherAssessments.length
+      : 0
 
     const stats = {
       teachers: {
@@ -96,11 +108,11 @@ export async function GET() {
         })) || []
       },
       assessments: {
-        total: initialAssessments.length + childAssessments.length,
-        completed: initialAssessments.filter(a => a.status === 'completed').length +
-                  childAssessments.filter(a => a.status === 'completed').length,
-        recent: [...initialAssessments, ...childAssessments]
-          .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+        total: teacherAssessments.length,
+        completed: completedTeacherAssessments.length,
+        averageScore: Math.round(averageScore * 10) / 10,
+        recent: teacherAssessments
+          .sort((a, b) => new Date(b.submittedAt ?? 0).getTime() - new Date(a.submittedAt ?? 0).getTime())
           .slice(0, 5)
       },
       sessions: {

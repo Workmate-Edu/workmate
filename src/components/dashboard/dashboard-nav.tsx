@@ -239,6 +239,14 @@ const routes = [
     href: (role: string) => "/dashboard/admin/subscriptions",
     color: "text-blue-500",
     roles: ["admin"]
+  },
+  {
+    label: 'My Availability',
+    icon: Calendar,
+    href: (role: string) => `/dashboard/student/availability`,
+    color: "text-pink-500",
+    roles: ['student'],
+    description: 'View your availability schedule'
   }
 ]
 

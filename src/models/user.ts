@@ -124,6 +124,10 @@ const teacherProfileSchema = new Schema({
     accountNumber: { type: String },
     accountName: { type: String },
     bvn: { type: String }
+  },
+  ratings: {
+    average: { type: Number, default: 0 },
+    count: { type: Number, default: 0 }
   }
 });
 

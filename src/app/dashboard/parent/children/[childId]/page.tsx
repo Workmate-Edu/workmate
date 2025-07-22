@@ -151,6 +151,24 @@ interface TeacherInfo {
   };
 }
 
+interface Availability {
+  _id: string
+  timezone: string
+  days: Array<{
+    day: string
+    slots: Array<{
+      start: string
+      end: string
+      startDisplay?: string
+      endDisplay?: string
+    }>
+  }>
+  validFrom: string
+  validTo: string
+  createdAt: string
+  updatedAt: string
+}
+
 export default function ChildDetailsPage({ params }: { params: { childId: string } }) {
   const [child, setChild] = useState<ChildDetails | null>(null)
   const [assessment, setAssessment] = useState<Assessment | null>(null)
@@ -166,6 +184,10 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null)
   const [showTeacherModal, setShowTeacherModal] = useState(false)
+  const [availability, setAvailability] = useState<Availability | null>(null)
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
+
+  const firstName = child?.name?.split(" ")[0];
 
   const fetchChild = async () => {
     try {
@@ -270,8 +292,15 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
       fetchAssessment()
     } else if (activeTab === "progress") {
       fetchProgress()
+    } else if (activeTab === "availability") {
+      setAvailabilityLoading(true)
+      fetch(`/api/parent/children/${params.childId}/availability`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => setAvailability(data))
+        .catch(() => setAvailability(null))
+        .finally(() => setAvailabilityLoading(false))
     }
-  }, [activeTab])
+  }, [activeTab, params.childId])
 
   if (loading) {
     return (
@@ -401,15 +430,10 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
             <ClipboardList className="w-4 h-4 mr-2" />
             Initial Assessment
           </TabsTrigger>
-          {/* <TabsTrigger value="schedule">
+          <TabsTrigger value="availability">
             <Calendar className="w-4 h-4 mr-2" />
-            Schedule
-          </TabsTrigger> */}
-          
-          {/* <TabsTrigger value="progress">
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Progress
-          </TabsTrigger> */}
+            Availability
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -417,7 +441,7 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
             <div className="space-y-6">
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium">Login Credentials</h3>
+                  <h3 className="font-medium"> {firstName} Login Credentials</h3>
                   <Button
                     variant="outline"
                     size="sm"
@@ -673,7 +697,73 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="schedule">
+        <TabsContent value="availability">
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Availability</h2>
+              <Button asChild>
+                <Link href={`/dashboard/parent/children/${params.childId}/availability`}>
+                  View Availability
+                </Link>
+              </Button>
+            </div>
+            {availabilityLoading ? (
+              <div className="text-muted-foreground">Loading...</div>
+            ) : !availability ? (
+              <div className="text-muted-foreground">
+                No availability set.{" "}
+                <Link
+                  href={`/dashboard/parent/children/${params.childId}/availability`}
+                  className="text-primary underline"
+                >
+                  Set availability
+                </Link>
+              </div>
+            ) : (
+              <div>
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <span className="font-medium">Timezone:</span> {availability.timezone}
+                </div>
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <span className="font-medium">Valid:</span>{" "}
+                  {new Date(availability.validFrom).toLocaleDateString()} - {new Date(availability.validTo).toLocaleDateString()}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border rounded-lg bg-background shadow-sm">
+                    <thead>
+                      <tr>
+                        <th className="py-2 px-4 text-left bg-primary/10 text-primary rounded-tl-lg">Day</th>
+                        <th className="py-2 px-4 text-left bg-primary/10 text-primary">Time Slots</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availability.days.map(day => (
+                        <tr key={day.day} className="border-b last:border-b-0">
+                          <td className="py-2 px-4 font-semibold">{day.day}</td>
+                          <td className="py-2 px-4">
+                            {day.slots.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {day.slots.map((slot, idx) => (
+                                  <span key={idx} className="inline-block bg-primary/5 px-3 py-1 rounded text-sm">
+                                    {(slot.startDisplay || slot.start) + " - " + (slot.endDisplay || slot.end)}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">No slots</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        {/* <TabsContent value="schedule">
           <Card className="p-6">
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Upcoming Sessions</h3>
@@ -740,7 +830,7 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
               )}
             </div>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="progress">
           <Card className="p-6">

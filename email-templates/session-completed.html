@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Session Completed - Workmate</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9fafb; margin: 0; padding: 0; color: #1E293B; }
+    .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); overflow: hidden; }
+    .header { background: #2563eb; color: #fff; padding: 32px 24px; text-align: center; }
+    .content { padding: 32px 24px; color: #1E293B; }
+    .info-card { background: #F5F7FA; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .button { display: inline-block; padding: 16px 40px; background: linear-gradient(90deg,#2563eb 60%,#facc15 100%); color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 18px; margin: 32px 0; box-shadow: 0 2px 8px #2563eb22; border: none; }
+    .button:hover { background: linear-gradient(90deg,#1d4ed8 60%,#eab308 100%); }
+    .footer { background: #F5F7FA; color: #64748B; text-align: center; font-size: 14px; padding: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Congratulations, {{teacherName}}!</h1>
+    </div>
+    <div class="content">
+      <p>
+        You have successfully completed a session with <strong>{{studentName}}</strong>.
+      </p>
+      <div class="info-card">
+        <h3 style="margin-top:0;">Session Details</h3>
+        <p><strong>Date:</strong> {{sessionDate}}</p>
+        <p><strong>Student:</strong> {{studentName}}</p>
+        <p><strong>Hours:</strong> {{hours}}</p>
+      </div>
+      <p>
+        Every session and every hour counts towards your teaching journey. Thank you for your dedication and impact!
+      </p>
+      <div style="text-align:center;">
+        <a href="{{dashboardUrl}}" class="button">View Your Sessions</a>
+      </div>
+      <p style="color: #2563eb; font-size: 15px; font-weight: 500;">
+        Keep up the great work and continue making a difference!
+      </p>
+    </div>
+    <div class="footer">
+      &copy; 2024 Workmate. All rights reserved.<br>
+      This is an automated message, please do not reply to this email.
+    </div>
+  </div>
+</body>
+</html>
