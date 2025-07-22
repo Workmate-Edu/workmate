@@ -3,30 +3,23 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
-import { sendAssignmentNotifications } from "@/lib/email-service" // Fix import
 import sendEmail from "@/lib/sendSmtpMail"
 
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'teacher') {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    await connectDB()
-
-    const teacher = await User.findById(session.user.id)
-      .select('name email phone bio teacherProfile') // Updated to include phone
-      .lean()
-
-    if (!teacher) {
-      return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
-    }
-
-    return NextResponse.json(teacher)
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+export async function GET(req: Request) {
+  const url = new URL(req.url)
+  const id = url.searchParams.get("id")
+  if (!id) {
+    return NextResponse.json({ error: "Missing teacher id" }, { status: 400 })
   }
+  await connectDB()
+  // No authentication required for public teacher profile (for ratings, etc)
+  const user = await User.findById(id)
+    .select("name email teacherProfile bio image role")
+    .lean()
+  if (!user || user.role !== "teacher") {
+    return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
+  }
+  return NextResponse.json(user)
 }
 
 export async function PUT(req: Request) {
@@ -62,7 +55,7 @@ export async function PUT(req: Request) {
 
     const wasRejected = currentTeacher.teacherProfile?.verificationStatus === 'rejected'
 
-    const updateData = {
+    const updateData: any = {
       bio,
       phone,
       'teacherProfile.subjects': teacherProfile.subjects,
@@ -117,3 +110,4 @@ export async function PUT(req: Request) {
     }, { status: 500 })
   }
 }
+  

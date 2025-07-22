@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ProgressUpdateDialog } from "@/components/teacher/progress-update-dialog"
 import { toast } from "sonner"
-import { ArrowLeft, Trophy, Calendar } from "lucide-react"
+import { ArrowLeft, Trophy, Calendar, User, Clock, ClipboardCheck } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 import { format } from "date-fns"
@@ -108,6 +108,8 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
     completedSubjects: 0,
     averageScore: 0
   })
+  const [availability, setAvailability] = useState<any>(null)
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
 
   useEffect(() => {
     if (params.studentId) {
@@ -291,6 +293,25 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
     })
   }
 
+  // Fetch availability for this student (child)
+  useEffect(() => {
+    async function fetchAvailability() {
+      setAvailabilityLoading(true)
+      try {
+        const res = await fetch(`/api/parent/children/${params.studentId}/availability`)
+        if (res.ok) {
+          setAvailability(await res.json())
+        } else {
+          setAvailability(null)
+        }
+      } catch {
+        setAvailability(null)
+      }
+      setAvailabilityLoading(false)
+    }
+    fetchAvailability()
+  }, [params.studentId])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -316,6 +337,16 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
 
   return (
     <main className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      {/* Add Back Button at the top */}
+      <div className="mb-4">
+        <Button variant="ghost" asChild>
+          <Link href="/dashboard/teacher/students" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Students
+          </Link>
+        </Button>
+      </div>
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Student Details</h1>
@@ -324,23 +355,31 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
       </div>
 
       <Tabs defaultValue="details" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="progress">Progress</TabsTrigger>
-          <TabsTrigger value="assessments">Assessments</TabsTrigger>
+         <TabsList>
+          <TabsTrigger value="details" className="flex items-center">
+            <User className="w-4 h-4 mr-2" />
+            Details
+          </TabsTrigger>
+          <TabsTrigger value="sessions" className="flex items-center">
+            <Calendar className="w-4 h-4 mr-2" />
+            Sessions
+          </TabsTrigger>
+          <TabsTrigger value="progress" className="flex items-center">
+            <Trophy className="w-4 h-4 mr-2" />
+            Progress
+          </TabsTrigger>
+          <TabsTrigger value="assessments" className="flex items-center">
+            <ClipboardCheck className="w-4 h-4 mr-2" />
+            Assessments
+          </TabsTrigger>
+          <TabsTrigger value="availability" className="flex items-center">
+            <Clock className="w-4 h-4 mr-2" />
+            Availability
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
-          <div className="mb-6">
-            <Button variant="ghost" asChild>
-              <Link href="/dashboard/teacher/students" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Students
-              </Link>
-            </Button>
-          </div>
-
+      
           <div className="mb-6">
             <h1 className="text-2xl font-bold">{student.name}</h1>
             <p className="text-muted-foreground">{student.email}</p>
@@ -579,6 +618,61 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
                 {/* Assessment list will be implemented here */}
               </Tabs>
             </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="availability">
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Availability</h2>
+            </div>
+            {availabilityLoading ? (
+              <div className="text-muted-foreground">Loading...</div>
+            ) : !availability ? (
+              <div className="text-muted-foreground">
+                No availability set for this student.
+              </div>
+            ) : (
+              <div>
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <span className="font-medium">Timezone:</span> {availability.timezone}
+                </div>
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <span className="font-medium">Valid:</span>{" "}
+                  {new Date(availability.validFrom).toLocaleDateString()} - {new Date(availability.validTo).toLocaleDateString()}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border rounded-lg bg-background shadow-sm">
+                    <thead>
+                      <tr>
+                        <th className="py-2 px-4 text-left bg-primary/10 text-primary rounded-tl-lg">Day</th>
+                        <th className="py-2 px-4 text-left bg-primary/10 text-primary">Time Slots</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availability.days.map((day: any) => (
+                        <tr key={day.day} className="border-b last:border-b-0">
+                          <td className="py-2 px-4 font-semibold">{day.day}</td>
+                          <td className="py-2 px-4">
+                            {day.slots.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {day.slots.map((slot: any, idx: number) => (
+                                  <span key={idx} className="inline-block bg-primary/5 px-3 py-1 rounded text-sm">
+                                    {(slot.startDisplay || slot.start) + " - " + (slot.endDisplay || slot.end)}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">No slots</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </Card>
         </TabsContent>
       </Tabs>

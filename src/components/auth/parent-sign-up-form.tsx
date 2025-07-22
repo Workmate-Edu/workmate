@@ -15,7 +15,7 @@ import {
 import { educationLevels, gradesByLevel } from "@/lib/constants/education"
 import { genderOptions } from "@/lib/constants/general"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, Controller, type Control } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { toast } from "sonner"
@@ -55,10 +55,15 @@ const gradeOptions = [
   { value: "12", label: "Grade 12" },
 ]
 
+const usernameSchema = z.string().min(3).max(20).regex(
+  /^[a-zA-Z0-9_-]{3,20}$/,
+  "Username must be 3-20 chars and only letters, numbers, underscores, hyphens"
+)
+
 const parentFormSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  username: z.string().min(3),
+  username: usernameSchema,
   password: z.string().min(8),
   gender: z.string(),
   phone: z.string().min(10),
@@ -86,6 +91,7 @@ const subjectAreas = [
     label: "Languages",
     value: "languages",
     subjects: [
+      { label: "English", value: "english" },
       { label: "Hausa", value: "hausa" },
       { label: "Igbo", value: "igbo" },
       { label: "Yoruba", value: "yoruba" },
@@ -195,6 +201,7 @@ function LearningPreferencesStep({
   errors,
   isSubmitting,
   setValue,
+  control,
   interestedInLearning,
   setInterestedInLearning,
   selectedAreas,
@@ -212,15 +219,24 @@ function LearningPreferencesStep({
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          id="interestedInLearning"
-          className="rounded border-gray-300"
-          onChange={(e) => {
-            setInterestedInLearning(e.target.checked)
-            setValue("interestedInLearning", e.target.checked)
-          }}
-        />
+        <Controller
+  name="interestedInLearning"
+  control={control}
+  render={({ field }) => (
+    <input
+      type="checkbox"
+      id="interestedInLearning"
+      className="rounded border-gray-300"
+      checked={field.value} 
+      // keep your local state in sync if you need it:
+      onChange={e => {
+        field.onChange(e.target.checked)
+        setInterestedInLearning(e.target.checked)
+      }}
+    />
+  )}
+/>
+
         <Label htmlFor="interestedInLearning">
           I'm also interested in learning
         </Label>
@@ -340,6 +356,7 @@ export function ParentSignUpForm() {
   const [selectedSubjects, setSelectedSubjects] = React.useState<string[]>([])
   const [selectedAreas, setSelectedAreas] = React.useState<string[]>([])
   const [currentStep, setCurrentStep] = React.useState(0)
+  const [backendError, setBackendError] = React.useState<string | null>(null)
 
   const form = useForm<ParentFormData>({
     resolver: zodResolver(parentFormSchema),
@@ -357,13 +374,13 @@ export function ParentSignUpForm() {
     }
     
   })
-
   const {
     register,
+    control, 
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, touchedFields },
     trigger,
     getValues,
   } = form
@@ -458,24 +475,66 @@ export function ParentSignUpForm() {
     "Learning Preferences"
   ]
   
+  // const handleNext = async () => {
+  //   let isValid = false
+  //   setBackendError(null)
+  //   switch (currentStep) {
+  //     case 0:
+  //       isValid = await trigger(["name", "email", "username", "password", "gender", "phone"])
+  //       // Extra check: do not allow email as username
+  //       const usernameVal = getValues("username")
+  //       if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(usernameVal)) {
+  //         setBackendError("Please choose a username that is NOT an email address. Usernames must be 3-20 chars and only letters, numbers, underscores, hyphens.")
+  //         return
+  //       }
+  //       break
+  //     case 1:
+  //       isValid = true; // Learning preferences optional
+  //       if (isValid) await onSubmit(getValues());
+  //       return;
+  //   }
+  //   if (isValid) setCurrentStep((prev) => prev + 1)
+  // }
+  
   const handleNext = async () => {
-    let isValid = false;
-  
-    switch (currentStep) {
-      case 0:
-        isValid = await trigger(["name", "email", "username", "password", "gender", "phone"]);
-        break;
-      case 1:
-        isValid = true; // Learning preferences optional
-        if (isValid) await onSubmit(getValues());
+  let isValid = false;
+  setBackendError(null);
+
+  switch (currentStep) {
+    case 0:
+      // Validate required base fields
+      isValid = await trigger([
+        "name",
+        "email",
+        "username",
+        "password",
+        "gender",
+        "phone"
+      ]);
+
+      // Extra check: username must not be an email
+      const usernameVal = getValues("username");
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(usernameVal)) {
+        setBackendError(
+          "Please choose a username that is NOT an email address. " +
+          "Usernames must be 3-20 chars and only letters, numbers, underscores, hyphens."
+        );
         return;
-    }
-  
-    if (isValid) {
-      setCurrentStep((prev) => prev + 1);
-    }
-  };
-  
+      }
+      break;
+
+    case 1:
+      // Learning preferences are optional → submit the form
+      await handleSubmit(onSubmit)();
+      return;
+  }
+
+  // If Step 0 passed, advance to Step 1
+  if (isValid) {
+    setCurrentStep((prev) => prev + 1);
+  }
+};
+
 
   const handleBack = () => {
     setCurrentStep((prev) => prev - 1)
@@ -513,18 +572,27 @@ export function ParentSignUpForm() {
 
       <form className="space-y-6">
         {currentStep === 0 && (
-          <BasicInfoStep 
-            register={register}
-            setValue={setValue}
-            errors={errors}
-            isSubmitting={isSubmitting}
-            getValues={getValues}
-          />
+          <>
+            <BasicInfoStep 
+              register={register}
+              setValue={setValue}
+              errors={errors}
+              isSubmitting={isSubmitting}
+              getValues={getValues}
+            />
+            {/* {(errors.username && touchedFields.username) && (
+              <p className="text-sm text-red-500 mt-1">{errors.username.message}</p>
+            )}
+            {backendError && (
+              <p className="text-sm text-red-500 mt-1">{backendError}</p>
+            )} */}
+          </>
         )}
 
         {currentStep === 1 && (
           <LearningPreferencesStep 
             register={register}
+            control={control}
             setValue={setValue}
             errors={errors}
             isSubmitting={isSubmitting}
@@ -585,3 +653,4 @@ export function ParentSignUpForm() {
     </div>
   )
 }
+

@@ -11,10 +11,10 @@ import { Loader2 } from "lucide-react"
 
 const SUBJECTS = [
   "Mathematics",
+  "English",
   "Physics",
   "Chemistry",
   "Biology",
-  "English",
   "Yoruba",
   "Igbo",
   "Hausa",

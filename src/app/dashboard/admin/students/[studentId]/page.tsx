@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { User, Book, History, Star, BookOpen, UserX, Eye, ArrowLeft } from "lucide-react"
+import { User, Book, History, Star, BookOpen, UserX, Eye, ArrowLeft, Calendar } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { ViewAssessmentDialog } from "@/components/admin/view-assessment-dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -195,6 +195,8 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
   const [loading, setLoading] = useState(true);
   const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
   const [showAssessmentDialog, setShowAssessmentDialog] = useState(false);
+  const [availability, setAvailability] = useState<any>(null)
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const { assessments, loading: loadingAssessments } = useStudentAssessments(params.studentId);
   const { assessment: childAssessment, loading: loadingChildAssessment } = useChildAssessment(params.studentId)
 
@@ -210,6 +212,25 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
       console.log('Loading Child Assessment:', loadingChildAssessment)
     }
   }, [params.studentId, student?.type, childAssessment, loadingChildAssessment])
+
+  // Fetch availability for this student (child)
+  useEffect(() => {
+    async function fetchAvailability() {
+      setAvailabilityLoading(true)
+      try {
+        const res = await fetch(`/api/parent/children/${params.studentId}/availability`)
+        if (res.ok) {
+          setAvailability(await res.json())
+        } else {
+          setAvailability(null)
+        }
+      } catch {
+        setAvailability(null)
+      }
+      setAvailabilityLoading(false)
+    }
+    fetchAvailability()
+  }, [params.studentId])
 
   const fetchStudentDetails = async () => {
     try {
@@ -496,6 +517,10 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
           <TabsTrigger value="assessments">Initial Assessments</TabsTrigger>
           {/* <TabsTrigger value="teacher">Assigned Teacher</TabsTrigger> */}
           <TabsTrigger value="progress">Progress</TabsTrigger>
+          <TabsTrigger value="availability">
+            <Calendar className="w-4 h-4 mr-2" />
+            Availability
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -679,6 +704,61 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
               No subjects assigned yet
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="availability">
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Availability</h2>
+            </div>
+            {availabilityLoading ? (
+              <div className="text-muted-foreground">Loading...</div>
+            ) : !availability ? (
+              <div className="text-muted-foreground">
+                No availability set for this student.
+              </div>
+            ) : (
+              <div>
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <span className="font-medium">Timezone:</span> {availability.timezone}
+                </div>
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <span className="font-medium">Valid:</span>{" "}
+                  {new Date(availability.validFrom).toLocaleDateString()} - {new Date(availability.validTo).toLocaleDateString()}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border rounded-lg bg-background shadow-sm">
+                    <thead>
+                      <tr>
+                        <th className="py-2 px-4 text-left bg-primary/10 text-primary rounded-tl-lg">Day</th>
+                        <th className="py-2 px-4 text-left bg-primary/10 text-primary">Time Slots</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availability.days.map((day: any) => (
+                        <tr key={day.day} className="border-b last:border-b-0">
+                          <td className="py-2 px-4 font-semibold">{day.day}</td>
+                          <td className="py-2 px-4">
+                            {day.slots.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {day.slots.map((slot: any, idx: number) => (
+                                  <span key={idx} className="inline-block bg-primary/5 px-3 py-1 rounded text-sm">
+                                    {(slot.startDisplay || slot.start) + " - " + (slot.endDisplay || slot.end)}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">No slots</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </Card>
         </TabsContent>
       </Tabs>
 

@@ -35,7 +35,7 @@ export default function ParentSchedulePage() {
   useEffect(() => {
     async function fetchSessions() {
       try {
-        const response = await fetch('/api/parent/schedule')
+        const response = await fetch('/api/parent/parent-sessions')
         if (!response.ok) throw new Error('Failed to fetch schedule')
         const data = await response.json()
         setSessions(data)
@@ -61,7 +61,7 @@ export default function ParentSchedulePage() {
   return (
     <div className="container py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Children's Schedule</h1>
+        <h1 className="text-2xl font-bold">My Sessions</h1>
         <p className="text-muted-foreground">View all scheduled sessions</p>
       </div>
 
@@ -73,7 +73,7 @@ export default function ParentSchedulePage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {sessions.map(session => (
+          {sessions.slice().reverse().map(session => (
             <Card key={session.id} className="p-4">
               <div className="space-y-3">
                 <div className="flex justify-between items-start">

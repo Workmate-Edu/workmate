@@ -158,18 +158,6 @@ export default function Nav() {
 							<div className="flex flex-col gap-2 pt-4 border-t">
 								{isAuthenticated ? (
 									<>
-										<Link
-											href="/dashboard"
-											onClick={() => setIsMenuOpen(false)}
-										>
-											<Button
-												variant="outline"
-												className="w-full justify-start flex items-center gap-2"
-											>
-												Dashboard
-												<Bell className="w-4 h-4 ml-1" />
-											</Button>
-										</Link>
 										<div className="px-4">
 											<UserNav
 												session={session}

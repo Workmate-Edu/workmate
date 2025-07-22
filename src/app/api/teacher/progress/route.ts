@@ -7,29 +7,29 @@ import { User } from "@/models/user"
 export async function PUT(req: Request) {
   try {
     const session = await getServerSession(authOptions)
+
     if (!session?.user?.id || session.user.role !== "teacher") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { studentId, subjectId, progress } = await req.json()
+
     console.log("Update progress inputs:", { studentId, subjectId, progress })
 
-    // subjectId is now directly the subject name
+    // subjectId here refers to the subject name
     const subjectName = subjectId.toLowerCase()
-    console.log("Looking for subject:", subjectName)
 
     await connectDB()
 
-    const student = await User.findById(studentId)
-      .select("studentProfile.subjects")
+    const student = await User.findById(studentId).select("studentProfile.subjects")
 
     if (!student?.studentProfile?.subjects) {
-      return NextResponse.json({ error: "Student not found" }, { status: 404 })
+      return NextResponse.json({ error: "Student not found or no subjects" }, { status: 404 })
     }
 
-    // Find subject by name (case-insensitive)
+    // Find the index of the subject by name (case-insensitive)
     const subjectIndex = student.studentProfile.subjects.findIndex(
-      (s) => s.name.toLowerCase() === subjectName
+      (s: any) => s.name.toLowerCase() === subjectName
     )
 
     if (subjectIndex === -1) {
@@ -54,5 +54,3 @@ export async function PUT(req: Request) {
     )
   }
 }
-
-

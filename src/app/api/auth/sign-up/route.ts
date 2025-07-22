@@ -204,13 +204,15 @@ export async function POST(req: Request) {
     }
 
     // 👨‍👩‍👧 Parent with optional children
-    if (role === "parent") {
+    
+      if (role === "parent") {
       userData.parentProfile = {
-        phone: phone || "",
-        educationLevel: body.educationLevel || "",
-        subjects: body.subjects || [],
-        interestedInLearning: !!body.interestedInLearning, // <-- ensure this is set from request
-        children: [],
+        phone: body.phone || "",
+        // NOW reading from nested parentProfile payload
+        educationLevel:       body.parentProfile?.educationLevel || "",
+        subjects:             body.parentProfile?.subjects       || [],
+        interestedInLearning: !!body.parentProfile?.interestedInLearning,
+        children:             [],
       };
 
       // Create child accounts - deprecated for now - Parent can do that on dashboard

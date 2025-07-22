@@ -37,6 +37,8 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
 import { getAllowedSubjectsForUser } from "@/lib/subscription-access"
+import { Bar } from "react-chartjs-2"
+import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js"
 
 interface Subject {
   _id: string
@@ -161,6 +163,8 @@ interface OverallProgress {
   completedSubjects: number
   averageScore: number
 }
+
+Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 export default function StudentDashboard() {
   const { data: session } = useSession()
@@ -302,6 +306,49 @@ export default function StudentDashboard() {
     }
   }
 
+  // inside your StudentDashboard component…
+
+useEffect(() => {
+  const fetchDashboardData = async () => {
+    setLoading(true)
+    try {
+      // 1. fetch the “stats” payload
+      const statsRes = await fetch("/api/student/dashboard/stats")
+      const statsData = await statsRes.json()
+
+      // 2. fetch the raw sessions
+      const sessionsRes = await fetch("/api/student/sessions")
+      const sessionsData: Array<{ startTime: string; endTime: string }> =
+        await sessionsRes.json()
+
+      // 3. compute total hours
+      const totalHours = sessionsData.reduce((sum, s) => {
+        const start = new Date(s.startTime)
+        const end   = new Date(s.endTime)
+        return sum + (end.getTime() - start.getTime()) / 1000 / 60 / 60
+      }, 0)
+
+      // 4. merge it into your stats state
+      setStats({
+        ...statsData,
+        sessions: {
+          ...statsData.sessions,
+          totalHours: Math.round(totalHours)
+        }
+      })
+
+      // …and whatever else you were doing
+    } catch (err) {
+      toast.error("Failed to load dashboard data")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  fetchDashboardData()
+}, [])
+
+
   // Update the stats display to handle null state
   const displayStats = stats || {
     teachers: { total: 0, list: [] },
@@ -309,6 +356,7 @@ export default function StudentDashboard() {
     sessions: { completed: 0, upcoming: 0, totalHours: 0, bySubject: [] },
     subjects: []
   }
+  
 
   console.log("Stats", stats)
 
@@ -420,6 +468,83 @@ export default function StudentDashboard() {
     s => allowedSubjects.includes(s.subjectName)
   )
 
+  // Chart data for subject progress
+  const chartLabels = visibleSubjectProgresses.map(s => s.subjectName)
+  const chartData = {
+    labels: chartLabels,
+    datasets: [
+      {
+        label: "Progress (%)",
+        data: visibleSubjectProgresses.map(s => s.progress),
+        backgroundColor: "#2563eb",
+        borderRadius: 8,
+        borderSkipped: false,
+        barPercentage: 0.7,
+        categoryPercentage: 0.7
+      }
+    ]
+  }
+
+  // --- FIX: If visibleSubjectProgresses is empty but subjects exist, fallback to studentProfile.subjects ---
+  useEffect(() => {
+    if (visibleSubjectProgresses.length === 0 && subjects.length === 0) {
+      // Try to fetch from profileData if not already set
+      fetch('/api/student/profile')
+        .then(res => res.json())
+        .then(data => {
+          if (data?.studentProfile?.subjects?.length) {
+            const fallbackProgresses = data.studentProfile.subjects.map((subject: any) => ({
+              subjectId: subject._id,
+              subjectName: subject.name,
+              area: subject.area,
+              progress: subject.progress || 0,
+              teacherName: 'Assigned Teacher'
+            }))
+            setSubjectProgresses(fallbackProgresses)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [visibleSubjectProgresses.length, subjects.length])
+
+  // Chart data for dashboard stats (not just subjects)
+  const statsChartLabels = [
+    "Teachers",
+    "Assessments",
+    "Assessments Completed",
+    "Learning Hours",
+    "Upcoming Sessions",
+    "Completed Sessions"
+  ]
+  const statsChartData = {
+    labels: statsChartLabels,
+    datasets: [
+      {
+        label: "Dashboard Stats",
+        data: [
+          displayStats.teachers.total || 0,
+          displayStats.assessments.total || 0,
+          displayStats.assessments.completed || 0,
+          displayStats.sessions.totalHours || 0,
+          displayStats.sessions.upcoming || 0,
+          displayStats.sessions.completed || 0
+        ],
+        backgroundColor: [
+          "#2563eb", // Teachers
+          "#facc15", // Assessments
+          "#22c55e", // Assessments Completed
+          "#a78bfa", // Learning Hours
+          "#f472b6", // Upcoming
+          "#f59e42"  // Completed
+        ],
+        borderRadius: 8,
+        borderSkipped: false,
+        barPercentage: 0.7,
+        categoryPercentage: 0.7
+      }
+    ]
+  }
+
   return (
     <div className="space-y-6">
       {!isChildStudent && assessments.length === 0 && (
@@ -476,13 +601,16 @@ export default function StudentDashboard() {
           </p>
         </Card>
 
+    
         <Card className="p-4 md:p-6">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-green-500" />
-            <h3 className="font-medium">Learning Hours</h3>
-          </div>
-          <p className="text-2xl font-bold mt-2">{displayStats.sessions.totalHours}h</p>
-        </Card>
+  <div className="flex items-center gap-2">
+    <Clock className="h-4 w-4 text-green-500" />
+    <h3 className="font-medium">Learning Hours</h3>
+  </div>
+  <p className="text-2xl font-bold mt-2">
+    {stats?.sessions.totalHours ?? 0}h
+  </p>
+</Card>
 
         <Card className="p-4 md:p-6">
           <div className="flex items-center gap-2">
@@ -492,6 +620,7 @@ export default function StudentDashboard() {
           <p className="text-2xl font-bold mt-2">{displayStats.sessions.upcoming}</p>
           <p className="text-sm text-muted-foreground">scheduled lessons</p>
         </Card>
+        
       </div>
 
       {/* Progress Overview - Stack on mobile */}
@@ -523,43 +652,7 @@ export default function StudentDashboard() {
             />
           </div>
         </div>
-      </Card>
-
-      {/* Subject Progress - Scrollable container */}
-      <Card className="p-4 md:p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <h2 className="text-lg font-semibold">Subject Progress</h2>
-          <div className="mt-2 md:mt-0 w-full md:w-auto flex gap-2">
-            {/* Add filter and sort controls here if needed */}
-          </div>
-        </div>
-        <div className="max-h-[400px] overflow-y-auto -mx-4 px-4">
-          {visibleSubjectProgresses.map((progress) => (
-            <div key={progress.subjectId} className="space-y-2 mb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold capitalize">{progress.subjectName}</h4>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {progress.area}
-                  </p>
-                </div>
-                <div className="text-2xl font-bold">
-                  {progress.progress}%
-                </div>
-              </div>
-              <Progress 
-                value={progress.progress} 
-                className="h-2"
-              />
-            </div>
-          ))}
-          {visibleSubjectProgresses.length === 0 && (
-            <p className="text-muted-foreground text-center py-6">
-              No subjects assigned
-            </p>
-          )}
-        </div>
-      </Card>
+      </Card>   
 
       {/* Assessment Section - Better mobile spacing */}
       {!isChildStudent && (
@@ -647,6 +740,132 @@ export default function StudentDashboard() {
           )}
         </Card>
       )}
+
+      {/* Dashboard Stats Chart */}
+      <Card className="p-4 md:p-6">
+        <h2 className="text-lg font-semibold mb-4">Learning Overview</h2>
+        <div className="w-full h-80">
+          <Bar
+            data={statsChartData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              layout: { padding: { top: 16, bottom: 16, left: 8, right: 8 } },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: "#2563eb",
+                  titleColor: "#fff",
+                  bodyColor: "#fff",
+                  borderColor: "#facc15",
+                  borderWidth: 1,
+                  padding: 10,
+                  cornerRadius: 6,
+                  displayColors: false
+                }
+              },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: {
+                    color: "#2563eb",
+                    font: { size: 12, weight: "500" },
+                    autoSkip: false,
+                    maxRotation: 45,
+                    minRotation: 0
+                  }
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: {
+                    color: "#f1f5f9",
+                    borderDash: [4, 4]
+                  },
+                  ticks: {
+                    color: "#2563eb",
+                    font: { size: 12, weight: "500" }
+                  }
+                }
+              }
+            }}
+          />
+        </div>
+      </Card>
+
+      {/* Subject Progress Chart */}
+      <Card className="p-4 md:p-6">
+        <h2 className="text-lg font-semibold mb-4">Subject Progress Overview</h2>
+        {(visibleSubjectProgresses.length === 0 && subjectProgresses.length === 0) ? (
+          <div className="text-muted-foreground">No subjects to display.</div>
+        ) : (
+          <div className="w-full h-80">
+            <Bar
+              data={{
+                labels: (visibleSubjectProgresses.length > 0
+                  ? visibleSubjectProgresses
+                  : subjectProgresses
+                ).map(s => s.subjectName),
+                datasets: [
+                  {
+                    label: "Progress (%)",
+                    data: (visibleSubjectProgresses.length > 0
+                      ? visibleSubjectProgresses
+                      : subjectProgresses
+                    ).map(s => s.progress),
+                    backgroundColor: "#2563eb",
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.7
+                  }
+                ]
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 16, bottom: 16, left: 8, right: 8 } },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: "#2563eb",
+                    titleColor: "#fff",
+                    bodyColor: "#fff",
+                    borderColor: "#facc15",
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 6,
+                    displayColors: false
+                  }
+                },
+                scales: {
+                  x: {
+                    grid: { display: false },
+                    ticks: {
+                      color: "#2563eb",
+                      font: { size: 12, weight: "500" },
+                      autoSkip: true,
+                      maxRotation: 45,
+                      minRotation: 0
+                    }
+                  },
+                  y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                      color: "#f1f5f9",
+                      borderDash: [4, 4]
+                    },
+                    ticks: {
+                      color: "#2563eb",
+                      font: { size: 12, weight: "500" }
+                    }
+                  }
+                }
+              }}
+            />
+          </div>
+        )}
+      </Card>
 
       {/* Recent Activity & Upcoming - Stack on mobile, side by side on larger screens */}
       {/* <div className="grid gap-6 md:grid-cols-2">

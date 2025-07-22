@@ -16,18 +16,30 @@ import { TermsAgreement } from "./terms-agreement"
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 
+const usernameSchema = z.string().min(3).max(20).regex(
+  /^[a-zA-Z0-9_-]{3,20}$/,
+  "Username must be 3-20 chars and only letters, numbers, underscores, hyphens"
+)
+
 const studentFormSchema = z.object({
   name: z.string().min(2, "Name is required"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  username: usernameSchema,
   email: z.string().email("Valid email required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   phone: z.string().min(10, "Phone number is required"),
   gender: z.string().min(1, "Gender is required"),
-  ageGroup: z.string().min(1, "Age group is required"), // Add validation
+  ageGroup: z.string().min(1, "Age group is required"),
   educationLevel: z.string().min(1, "Education level is required"),
   grade: z.string().min(1, "Grade is required"),
   subjectAreas: z.array(z.string()).min(1, "Select at least one subject area"),
-  subjects: z.array(z.string()).min(1, "Select at least one subject")
+  subjects: z
+    .array(
+      z.object({
+        name: z.string(),
+        area: z.string()
+      })
+    )
+    .min(1, "Select at least one subject")
 });
 
 const subjectAreas = [
@@ -46,6 +58,7 @@ const subjectAreas = [
     label: "Languages",
     value: "languages",
     subjects: [
+      { label: "English", value: "english" },
       { label: "Hausa", value: "hausa" },
       { label: "Igbo", value: "igbo" },
       { label: "Yoruba", value: "yoruba" },
@@ -61,6 +74,8 @@ export function StudentSignUpForm() {
   const [selectedLevel, setSelectedLevel] = React.useState("")
   const [selectedAreas, setSelectedAreas] = React.useState<string[]>([])
   const [selectedSubjects, setSelectedSubjects] = React.useState<string[]>([])
+  const [backendError, setBackendError] = React.useState<string | null>(null)
+  
   const router = useRouter()
 
   const form = useForm<z.infer<typeof studentFormSchema>>({
@@ -136,14 +151,45 @@ export function StudentSignUpForm() {
   }
   
 
-  const handleNext = () => {
+  // const handleNext = () => {
+  //   if (currentStep === steps.length - 1) {
+  //     // On last step, directly call onSubmit with form values
+  //     onSubmit(form.getValues());
+  //     return;
+  //   }
+  //   setCurrentStep((prev) => prev + 1);
+  // };
+
+  const handleNext = async () => {
+  setBackendError(null);
+  console.log("Current step:", currentStep);
+
+  let fieldsToValidate: (keyof typeof studentFormSchema._type)[] = [];
+
+  if (currentStep === 0) {
+    fieldsToValidate = ["name","username","email","password","phone","gender","ageGroup"];
+  } else if (currentStep === 1) {
+    fieldsToValidate = ["educationLevel","grade"];
+  } else {
+    // validate everything on final "Create Account" click
+    fieldsToValidate = [
+      "name","username","email","password","phone","gender","ageGroup",
+      "educationLevel","grade","subjectAreas","subjects"
+    ];
+  }
+
+  const isValid = await trigger(fieldsToValidate);
+  console.log({ currentStep, isValid, errors: form.formState.errors });
+
+  if (isValid) {
     if (currentStep === steps.length - 1) {
-      // On last step, directly call onSubmit with form values
-      onSubmit(form.getValues());
-      return;
+      await handleSubmit(onSubmit)();
+    } else {
+      setCurrentStep(prev => prev + 1);
     }
-    setCurrentStep((prev) => prev + 1);
-  };
+  }
+};
+
 
   const handleBack = () => {
     if (currentStep > 0) {
@@ -221,6 +267,7 @@ export function StudentSignUpForm() {
 
       <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
         {currentStep === 0 && (
+          <>
           <BasicInfoStep 
             form={form}
             register={form.register}
@@ -228,6 +275,10 @@ export function StudentSignUpForm() {
             errors={form.formState.errors}
             isSubmitting={isSubmitting}
           />
+           {backendError && (
+                        <p className="text-sm text-red-500 mt-1">{backendError}</p>
+                      )}
+          </>
         )}
 
         {currentStep === 1 && (

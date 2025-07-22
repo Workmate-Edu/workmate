@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { CircleUser, Mail, Phone, Star, Users, GraduationCap, X } from "lucide-react" // Add icons
+import { useEffect, useState } from "react"
 
 interface TeacherDetailsDialogProps {
   teacher: any;
@@ -28,6 +29,32 @@ export function TeacherDetailsDialog({
   onReject
 }: TeacherDetailsDialogProps) {
   if (!teacher) return null;
+
+  // --- NEW: Get students count from teacherProfile.students array ---
+  const studentsCount =
+    Array.isArray(teacher.teacherProfile?.assignedStudents)
+      ? teacher.teacherProfile.assignedStudents.length
+      : 0
+    
+  // --- NEW: Fetch reviews from Review model by teacherId ---
+  const [externalReviews, setExternalReviews] = useState<any[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen || !teacher?._id) return
+    setReviewsLoading(true)
+    fetch(`/api/teacher/reviews?teacherId=${teacher._id}`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setExternalReviews(Array.isArray(data) ? data : []))
+      .finally(() => setReviewsLoading(false))
+  }, [isOpen, teacher?._id])
+
+  // Helper: reviews from teacherProfile.reviews (legacy) or show ratings/count from teacherProfile.ratings
+  const reviews: Array<any> = Array.isArray(teacher.teacherProfile?.reviews)
+    ? teacher.teacherProfile.reviews
+    : []
+
+  const ratings = teacher.teacherProfile?.ratings
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -122,19 +149,75 @@ export function TeacherDetailsDialog({
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-primary/5 p-4 rounded-lg space-y-2 text-center">
                 <Users className="h-5 w-5 mx-auto text-primary" />
-                <p className="text-2xl font-bold">{teacher.teacherProfile.students.length}</p>
+                <p className="text-2xl font-bold">{studentsCount}</p>
                 <p className="text-sm text-muted-foreground">Students</p>
               </div>
               <div className="bg-primary/5 p-4 rounded-lg space-y-2 text-center">
                 <Star className="h-5 w-5 mx-auto text-primary" />
-                <p className="text-2xl font-bold">{teacher.teacherProfile.rating?.toFixed(1) || 'N/A'}</p>
+                <p className="text-2xl font-bold">
+                  {typeof ratings?.average === "number"
+                    ? ratings.average.toFixed(1)
+                    : teacher.teacherProfile.rating?.toFixed?.(1) ?? 'N/A'}
+                </p>
                 <p className="text-sm text-muted-foreground">Rating</p>
               </div>
               <div className="bg-primary/5 p-4 rounded-lg space-y-2 text-center">
                 <GraduationCap className="h-5 w-5 mx-auto text-primary" />
-                <p className="text-2xl font-bold">{teacher.teacherProfile.reviews.length}</p>
+                <p className="text-2xl font-bold">
+                  {typeof ratings?.count === "number"
+                    ? ratings.count
+                    : Array.isArray(reviews) ? reviews.length : 0}
+                </p>
                 <p className="text-sm text-muted-foreground">Reviews</p>
               </div>
+            </div>
+
+            {/* Teacher Reviews Section */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <Star className="h-4 w-4 text-yellow-500" />
+                Teacher Reviews
+              </h4>
+              {reviewsLoading ? (
+                <div className="text-muted-foreground text-sm">Loading reviews...</div>
+              ) : Array.isArray(externalReviews) && externalReviews.length > 0 ? (
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {externalReviews.map((review, idx) => (
+                    <div key={review._id || idx} className="border rounded-lg p-3 bg-muted/50">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span className="font-semibold">{review.rating}/5</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {review.createdAt
+                            ? new Date(review.createdAt).toLocaleDateString()
+                            : ""}
+                        </span>
+                        {review.reviewerRole && (
+                          <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                            {review.reviewerRole.charAt(0).toUpperCase() + review.reviewerRole.slice(1)}
+                          </span>
+                        )}
+                      </div>
+                      {review.comment && (
+                        <div className="text-sm text-muted-foreground">{review.comment}</div>
+                      )}
+                      {review.parentEndorsed && (
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                          Parent Endorsed
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm">No reviews yet.</div>
+              )}
+              {/* Show summary if available */}
+              {ratings?.count > 0 && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Average Rating: <span className="font-semibold">{ratings.average?.toFixed(1) ?? "N/A"}</span> ({ratings.count} reviews)
+                </div>
+              )}
             </div>
 
             {/* Qualifications */}

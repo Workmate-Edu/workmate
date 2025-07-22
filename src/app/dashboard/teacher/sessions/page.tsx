@@ -4,11 +4,11 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Video, BookOpen, User, RefreshCw } from "lucide-react"
+import { Calendar, Clock, Video, BookOpen, User, RefreshCw, CheckCircle } from "lucide-react"
 import { format, isPast } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { formatAssessmentDateTime } from '@/lib/timezone-utils'
+import { formatAssessmentDateTime } from "@/lib/timezone-utils"
 
 interface TeacherSession {
   _id: string
@@ -24,7 +24,7 @@ interface TeacherSession {
   endTime: string
   duration: number
   meetingLink: string
-  status: 'scheduled' | 'active' | 'completed' | 'cancelled'
+  status: 'scheduled' | 'active' | 'completed' | 'cancelled' | 'teacher-completed'
   timezone: string
   recurrence?: {
     isRecurring: boolean
@@ -39,6 +39,7 @@ interface TeacherSession {
 export default function TeacherSchedulePage() {
   const [sessions, setSessions] = useState<TeacherSession[]>([])
   const [loading, setLoading] = useState(true)
+  const [marking, setMarking] = useState<string | null>(null)
 
   useEffect(() => {
     fetchSessions()
@@ -58,14 +59,35 @@ export default function TeacherSchedulePage() {
     }
   }
 
+  const handleMarkComplete = async (sessionId: string) => {
+    setMarking(sessionId)
+    try {
+      const res = await fetch(`/api/teacher/sessions/${sessionId}/complete`, {
+        method: "POST"
+      })
+      if (res.ok) {
+        setSessions(prev =>
+          prev.map(s =>
+            s._id === sessionId ? { ...s, status: "teacher-completed" } : s
+          )
+        )
+        toast.success("Session marked as complete. Awaiting admin confirmation.")
+      } else {
+        const data = await res.json()
+        toast.error(data.error || "Failed to mark as complete")
+      }
+    } catch (err) {
+      toast.error("Failed to mark as complete")
+    } finally {
+      setMarking(null)
+    }
+  }
+
   const formatRecurrenceInfo = (session: TeacherSession) => {
     if (!session.recurrence?.isRecurring) return null
-
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     const selectedDays = session.recurrence.daysOfWeek.map(d => days[d]).join(', ')
-    const startDate = format(new Date(session.recurrence.startDate), 'PPP')
     const endDate = format(new Date(session.recurrence.endDate), 'PPP')
-
     return `${session.recurrence.pattern} sessions on ${selectedDays} until ${endDate}`
   }
 
@@ -95,11 +117,15 @@ export default function TeacherSchedulePage() {
             </CardContent>
           </Card>
         ) : (
-          sessions.map((session) => {
+          sessions.slice().reverse().map((session) => {
             const { teacherTime, studentTime } = formatAssessmentDateTime({
               dateStr: session.startTime,
               teacherTimezone: session.timezone || 'Africa/Lagos'
             })
+
+            const canMarkComplete =
+              (session.status === "scheduled" || session.status === "active") &&
+              isPast(new Date(session.endTime))
 
             return (
               <Card key={session._id}>
@@ -119,11 +145,13 @@ export default function TeacherSchedulePage() {
                       <div className="flex items-center gap-2">
                         <Badge className={cn(
                           "whitespace-nowrap",
-                          session.status === 'cancelled' ? "bg-red-500" : 
-                          isPast(new Date(session.startTime)) ? "bg-gray-500" : 
+                          session.status === 'cancelled' ? "bg-red-500" :
+                          session.status === 'teacher-completed' ? "bg-yellow-500" :
+                          session.status === 'completed' ? "bg-green-500" :
+                          isPast(new Date(session.startTime)) ? "bg-gray-500" :
                           "bg-green-500"
                         )}>
-                          {session.status}
+                          {session.status.replace("-", " ")}
                         </Badge>
                         {session.recurrence?.isRecurring && (
                           <Badge variant="outline" className="flex items-center">
@@ -170,6 +198,31 @@ export default function TeacherSchedulePage() {
                         <Video className="w-4 h-4 mr-2" />
                         Join Session
                       </Button>
+
+                      {/* Mark as Complete Button */}
+                      {canMarkComplete && (
+                        <Button
+                          className="w-full mt-2 bg-yellow-600 hover:bg-yellow-700 text-white"
+                          disabled={marking === session._id}
+                          onClick={() => handleMarkComplete(session._id)}
+                        >
+                          {marking === session._id ? "Marking..." : "Mark as Complete"}
+                        </Button>
+                      )}
+
+                      {/* Status Info */}
+                      {session.status === "teacher-completed" && (
+                        <div className="flex items-center gap-2 text-yellow-700 mt-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Awaiting admin confirmation
+                        </div>
+                      )}
+                      {session.status === "completed" && (
+                        <div className="flex items-center gap-2 text-green-700 mt-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Completed
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

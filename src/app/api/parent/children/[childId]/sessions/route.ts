@@ -1,3 +1,4 @@
+// src/app/api/parent/children/[childId]/sessions/route.ts
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -9,37 +10,51 @@ export async function GET(
   { params }: { params: { childId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'parent') {
+    const userSession = await getServerSession(authOptions)
+    if (!userSession?.user || userSession.user.role !== "parent") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
 
-    const sessions = await TeachingSession.find({
-      studentId: params.childId
-    })
-    .populate('teacherId', 'name email')
-    .populate('subject')
-    .sort({ startTime: 1 })
-    .lean()
+    // Optional date‐range filtering
+    const url = new URL(req.url)
+    const from = url.searchParams.get("from")  // e.g. "2025-07-21"
+    const to   = url.searchParams.get("to")    // e.g. "2025-08-21"
 
-    return NextResponse.json(sessions.map(session => ({
-      id: session._id,
-      teacher: {
-        name: session.teacherId.name,
-        email: session.teacherId.email
-      },
-      subject: session.subject,
-      startTime: session.startTime,
-      endTime: session.endTime,
-      duration: session.duration,
-      meetingLink: session.meetingLink,
-      status: session.status
-    })))
+    const query: any = { studentId: params.childId }
+    if (from && to) {
+      query.startTime = {
+        $gte: new Date(`${from}T00:00:00.000Z`),
+        $lte: new Date(`${to}T23:59:59.999Z`),
+      }
+    }
 
+    const sessions = await TeachingSession.find(query)
+      .populate("teacherId", "name email")
+      .populate("subject")
+      .sort({ startTime: 1 })
+      .lean()
+
+    return NextResponse.json(
+      sessions.map((s) => ({
+        id: s._id,
+        teacher: {
+          name: s.teacherId.name,
+          email: s.teacherId.email,
+        },
+        subject: s.subject,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        duration: s.duration,
+        meetingLink: s.meetingLink,
+        status: s.status,
+        // <-- include the entire recurrence block
+        recurrence: s.recurrence,
+      }))
+    )
   } catch (error) {
-    console.error('[GET_CHILD_SESSIONS_ERROR]', error)
+    console.error("[GET_CHILD_SESSIONS_ERROR]", error)
     return NextResponse.json(
       { error: "Failed to fetch sessions" },
       { status: 500 }

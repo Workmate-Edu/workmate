@@ -26,9 +26,11 @@ const teachingSessionSchema = new Schema({
   meetingLink: { type: String, required: true },
   status: {
     type: String,
-    enum: ['scheduled', 'active', 'completed', 'cancelled'],
+    enum: ['scheduled', 'active', 'completed', 'cancelled', 'teacher-completed'],
     default: 'scheduled'
   },
+  teacherCompletedAt: { type: Date },
+  adminCompletedAt: { type: Date },
   recurrence: { 
     type: recurrenceSchema,
     required: false

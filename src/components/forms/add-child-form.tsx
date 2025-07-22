@@ -42,6 +42,7 @@ const subjectAreas = [
     label: "Languages",
     value: "languages",
     subjects: [
+      { label: "English", value: "english" },
       { label: "Hausa", value: "hausa" },
       { label: "Igbo", value: "igbo" },
       { label: "Yoruba", value: "yoruba" },
@@ -51,9 +52,18 @@ const subjectAreas = [
   }
 ]
 
+// Username rules: 3–20 chars, letters/numbers/underscores/hyphens only
+const usernameSchema = z.string()
+  .min(3, "Username must be at least 3 characters")
+  .max(20, "Username must be at most 20 characters")
+  .regex(
+    /^[a-zA-Z0-9_-]+$/,
+    "Username must be 3-20 chars, and only letters, numbers, underscores or hyphens"
+  )
+
 const childFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  username: usernameSchema,
   password: z.string().min(6, "Password must be at least 6 characters"),
   phone: z.string().min(10, "Phone number is required"),
   gender: z.string().min(1, "Gender is required"),
@@ -93,6 +103,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
       subjects: [],
     },
   })
+  const { register, handleSubmit, setValue, formState: { errors, touchedFields } } = form
 
   const handleAddSubject = (area: string, subject: { label: string, value: string }) => {
     setSelectedSubjects(prev => {
@@ -189,12 +200,14 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <Input placeholder="Child's Name" {...form.register("name")} />
-      {form.formState.errors.name && <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <Input placeholder="Child's Name" {...register("name")} />
+      {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
 
-      <Input placeholder="Child's Username" {...form.register("username")} />
-      {form.formState.errors.username && <p className="text-sm text-red-500">{form.formState.errors.username.message}</p>}
+      <Input placeholder="Child's Username" {...register("username")} />
+      {touchedFields.username && errors.username && (
+        <p className="text-sm text-red-500 mt-1">{errors.username.message}</p>
+      )}
 
       <div>
         <Label>Phone Number</Label>
@@ -212,8 +225,8 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
             buttonClass="!border-0 !bg-transparent !absolute !left-3 !top-1/2 !-translate-y-1/2 z-10"
             dropdownClass="!bg-white !text-black !z-[1000]"
           />
-          {form.formState.errors.phone && (
-            <p className="text-sm text-red-500 mt-1">{form.formState.errors.phone.message}</p>
+          {errors.phone && (
+            <p className="text-sm text-red-500 mt-1">{errors.phone.message}</p>
           )}
         </div>
       </div>
@@ -222,7 +235,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
         <Input
           type={showPassword ? "text" : "password"}
           placeholder="Child's Password"
-          {...form.register("password")}
+          {...register("password")}
           className="pr-10"
         />
         <button
@@ -233,7 +246,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
-      {form.formState.errors.password && <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>}
+      {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
 
       <Select onValueChange={(value) => form.setValue("ageGroup", value)}>
         <SelectTrigger><SelectValue placeholder="Select age group" /></SelectTrigger>
@@ -243,6 +256,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
           ))}
         </SelectContent>
       </Select>
+      {errors.ageGroup && <p className="text-sm text-red-500">{errors.ageGroup.message}</p>}
 
       <Select onValueChange={(value) => form.setValue("gender", value)}>
         <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
@@ -252,6 +266,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
           ))}
         </SelectContent>
       </Select>
+      {errors.gender && <p className="text-sm text-red-500">{errors.gender.message}</p>}
 
       <Select onValueChange={(value) => {
         form.setValue("educationLevel", value)
@@ -264,6 +279,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
           ))}
         </SelectContent>
       </Select>
+      {errors.educationLevel && <p className="text-sm text-red-500">{errors.educationLevel.message}</p>}
 
       {form.watch("educationLevel") && (
         <Select onValueChange={(value) => form.setValue("grade", value)}>
@@ -275,6 +291,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
           </SelectContent>
         </Select>
       )}
+      {errors.grade && <p className="text-sm text-red-500">{errors.grade.message}</p>}
 
       <div className="space-y-4">
         <Label>Subjects</Label>
@@ -312,6 +329,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
             </div>
           </div>
         ))}
+        {errors.subjects && <p className="text-sm text-red-500">{errors.subjects.message}</p>}
       </div>
 
       <Button type="submit" className="w-full" disabled={isLoading}>

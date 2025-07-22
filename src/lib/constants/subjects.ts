@@ -21,9 +21,16 @@ export const subjectAreas = [
     ]
   },
   {
-    label: "African Languages",
+    label: "Languages",
     value: "languages",
     subjects: [
+      { 
+        label: "English", 
+        value: "english",
+        region: "West Africa",
+        country: "Nigeria",
+        description: "Learn English Language from expert teachers"
+      },
       { 
         label: "Yoruba", 
         value: "yoruba",
