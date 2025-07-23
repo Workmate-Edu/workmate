@@ -262,24 +262,26 @@ export default function StudentAvailabilityPage() {
                   <label className="font-medium">Valid From</label>
                   <input
                     type="date"
-                    className="border rounded px-3 py-2 w-full mt-1"
+                    className="border rounded px-3 py-2 w-full mt-1 bg-gray-100 cursor-not-allowed"
                     value={validFrom}
                     min={new Date().toISOString().slice(0,10)}
                     max={validTo}
                     required
-                    onChange={e=>setValidFrom(e.target.value)}
+                    disabled
+                    title={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
                   />
                 </div>
                 <div>
                   <label className="font-medium">Valid To</label>
                   <input
                     type="date"
-                    className="border rounded px-3 py-2 w-full mt-1"
+                    className="border rounded px-3 py-2 w-full mt-1 bg-gray-100 cursor-not-allowed"
                     value={validTo}
                     min={validFrom}
                     max={getNextMonthDate(validFrom)}
                     required
-                    onChange={e=>setValidTo(e.target.value)}
+                    disabled
+                    title={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
                   />
                 </div>
               </div>

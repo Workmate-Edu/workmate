@@ -83,6 +83,14 @@ export default function ChildAvailabilityPage({
   const [loading, setLoading] = useState(false)
   const [sessions, setSessions] = useState<any[]>([])
 
+  // Helper: check if there are unsaved changes (new slots or changes to days)
+  const [formDirty, setFormDirty] = useState(false)
+
+  // Track changes to days/slots to enable Save button only when there are changes
+  useEffect(() => {
+    setFormDirty(days.some((d) => d.slots.some((slot) => slot.start || slot.end)))
+  }, [days])
+
   // 0) fetch child info
   useEffect(() => {
     async function loadChild() {
@@ -108,20 +116,19 @@ export default function ChildAvailabilityPage({
       if (res.ok) {
         const data = await res.json()
         setDays(data.days || [])
-        setValidFrom(
-          data.validFrom
-            ? new Date(data.validFrom).toISOString().slice(0, 10)
-            : new Date().toISOString().slice(0, 10)
-        )
-        setValidTo(
-          data.validTo
-            ? new Date(data.validTo).toISOString().slice(0, 10)
-            : getNextMonthDate()
-        )
+        // Lock validFrom and validTo for one month window
+        const initialFrom = data.validFrom
+          ? new Date(data.validFrom).toISOString().slice(0, 10)
+          : new Date().toISOString().slice(0, 10)
+        const initialTo = getNextMonthDate(initialFrom)
+        setValidFrom(initialFrom)
+        setValidTo(initialTo)
         setTimezone({ value: data.timezone || timezone.value })
       } else {
-        setValidFrom(new Date().toISOString().slice(0, 10))
-        setValidTo(getNextMonthDate())
+        const initialFrom = new Date().toISOString().slice(0, 10)
+        const initialTo = getNextMonthDate(initialFrom)
+        setValidFrom(initialFrom)
+        setValidTo(initialTo)
       }
       setLoading(false)
     }
@@ -295,7 +302,6 @@ export default function ChildAvailabilityPage({
     setLoading(false)
   }
 
-
   return (
     <div className="max-w-3xl mx-auto py-10">
       <Button
@@ -323,11 +329,11 @@ export default function ChildAvailabilityPage({
               <input
                 type="date"
                 value={validFrom}
-                onChange={(e) => setValidFrom(e.target.value)}
-                className="border rounded px-3 py-2 w-full mt-1"
+                disabled
+                className="border rounded px-3 py-2 w-full mt-1 bg-gray-100 cursor-not-allowed"
                 required
-                min={new Date().toISOString().slice(0, 10)}
-                max={validTo}
+                // Overlay tooltip on hover
+                title={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
               />
             </div>
             <div>
@@ -335,11 +341,10 @@ export default function ChildAvailabilityPage({
               <input
                 type="date"
                 value={validTo}
-                onChange={(e) => setValidTo(e.target.value)}
-                className="border rounded px-3 py-2 w-full mt-1"
+                disabled
+                className="border rounded px-3 py-2 w-full mt-1 bg-gray-100 cursor-not-allowed"
                 required
-                min={validFrom}
-                max={getNextMonthDate(validFrom)}
+                title={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
               />
             </div>
           </div>
@@ -484,8 +489,12 @@ export default function ChildAvailabilityPage({
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving…" : "Save Availability"}
+            <Button 
+              type="submit" 
+              disabled={loading || !formDirty}
+              title={!formDirty ? "Add or change slots to enable saving" : ""}
+            >
+              {loading ? "Loading…" : "Save Availability"}
             </Button>
           </div>
         </form>
