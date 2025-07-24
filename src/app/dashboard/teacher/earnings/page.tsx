@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Loader2, CreditCard, Calendar, TrendingUp, CheckCircle, Clock } from "lucide-react"
+import { Loader2, CreditCard, CheckCircle, Calendar, TrendingUp, Clock } from "lucide-react"
 
 interface Earning {
   _id: string
@@ -17,6 +17,7 @@ export default function TeacherEarningsPage() {
   const [earnings, setEarnings] = useState<Earning[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
+  const [paidTotal, setPaidTotal] = useState(0)
   const [monthly, setMonthly] = useState(0)
   const [weekly, setWeekly] = useState(0)
 
@@ -24,22 +25,29 @@ export default function TeacherEarningsPage() {
     async function fetchEarnings() {
       setLoading(true)
       const res = await fetch("/api/earnings/teacher")
-      const data = res.ok ? await res.json() : []
+      const data: Earning[] = res.ok ? await res.json() : []
       setEarnings(data)
       setLoading(false)
 
-      // Calculate totals
       const now = new Date()
-      let totalSum = 0, monthSum = 0, weekSum = 0
-      data.forEach((e: Earning) => {
-        totalSum += e.amount
+      let tot = 0, paidSum = 0, monthSum = 0, weekSum = 0
+      data.forEach((e) => {
+        tot += e.amount
+        if (e.status === "paid") paidSum += e.amount
+
         const d = new Date(e.date)
-        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) monthSum += e.amount
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          monthSum += e.amount
+        }
         const weekAgo = new Date(now)
         weekAgo.setDate(now.getDate() - 7)
-        if (d >= weekAgo) weekSum += e.amount
+        if (d >= weekAgo) {
+          weekSum += e.amount
+        }
       })
-      setTotal(totalSum)
+
+      setTotal(tot)
+      setPaidTotal(paidSum)
       setMonthly(monthSum)
       setWeekly(weekSum)
     }
@@ -49,26 +57,43 @@ export default function TeacherEarningsPage() {
   return (
     <div className="max-w-3xl mx-auto py-10 px-2 sm:px-4">
       <h1 className="text-3xl font-bold mb-6 text-primary">My Earnings</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        {/* Total Earnings */}
         <Card className="p-6 flex flex-col items-center bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow">
           <CreditCard className="h-8 w-8 text-green-600 mb-2" />
           <div className="text-sm text-muted-foreground">Total Earnings</div>
           <div className="text-3xl font-bold text-green-700 mt-1">₦{total.toLocaleString()}</div>
         </Card>
+
+        {/* Total Paid */}
         <Card className="p-6 flex flex-col items-center bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow">
-          <Calendar className="h-8 w-8 text-blue-600 mb-2" />
-          <div className="text-sm text-muted-foreground">This Month</div>
-          <div className="text-3xl font-bold text-blue-700 mt-1">₦{monthly.toLocaleString()}</div>
+          <CheckCircle className="h-8 w-8 text-blue-600 mb-2" />
+          <div className="text-sm text-muted-foreground">Total Paid</div>
+          <div className="text-3xl font-bold text-blue-700 mt-1">₦{paidTotal.toLocaleString()}</div>
         </Card>
+
+        {/* This Month */}
+        <Card className="p-6 flex flex-col items-center bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200 shadow">
+          <Calendar className="h-8 w-8 text-indigo-600 mb-2" />
+          <div className="text-sm text-muted-foreground">This Month</div>
+          <div className="text-3xl font-bold text-indigo-700 mt-1">₦{monthly.toLocaleString()}</div>
+        </Card>
+
+        {/* This Week */}
         <Card className="p-6 flex flex-col items-center bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200 shadow">
           <TrendingUp className="h-8 w-8 text-yellow-600 mb-2" />
           <div className="text-sm text-muted-foreground">This Week</div>
           <div className="text-3xl font-bold text-yellow-700 mt-1">₦{weekly.toLocaleString()}</div>
         </Card>
       </div>
+
       <h2 className="text-lg font-semibold mb-4">Earning History</h2>
+
       {loading ? (
-        <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Loading...</div>
+        <div className="flex items-center gap-2">
+          <Loader2 className="animate-spin" /> Loading...
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg shadow">
           <table className="min-w-full border rounded bg-white">
@@ -89,10 +114,17 @@ export default function TeacherEarningsPage() {
                 </tr>
               ) : (
                 earnings.map(e => (
-                  <tr key={e._id} className="border-b hover:bg-muted/40 transition">
-                    <td className="px-4 py-2">{new Date(e.date).toLocaleDateString()}</td>
+                  <tr
+                    key={e._id}
+                    className="border-b hover:bg-muted/40 transition"
+                  >
+                    <td className="px-4 py-2">
+                      {new Date(e.date).toLocaleDateString()}
+                    </td>
                     <td className="px-4 py-2">{e.hours}</td>
-                    <td className="px-4 py-2 font-semibold text-green-700">₦{e.amount.toLocaleString()}</td>
+                    <td className="px-4 py-2 font-semibold text-green-700">
+                      ₦{e.amount.toLocaleString()}
+                    </td>
                     <td className="px-4 py-2">
                       {e.status === "paid" ? (
                         <span className="inline-flex items-center gap-1 text-green-600 font-medium">

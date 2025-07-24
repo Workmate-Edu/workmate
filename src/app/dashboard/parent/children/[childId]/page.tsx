@@ -243,6 +243,14 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
     }
   }
 
+function formatTimeAMPM(time: string): string {
+  const [h, m] = time.split(":").map(Number)
+  const ampm = h >= 12 ? "PM" : "AM"
+  const hour = h % 12 === 0 ? 12 : h % 12
+  const minute = m.toString().padStart(2, "0")
+  return `${hour}:${minute} ${ampm}`
+}
+
   // Update the fetchTeacherDetails function
   const fetchTeacherDetails = async (teacherId: string) => {
     try {
@@ -745,7 +753,8 @@ export default function ChildDetailsPage({ params }: { params: { childId: string
                               <div className="flex flex-wrap gap-2">
                                 {day.slots.map((slot, idx) => (
                                   <span key={idx} className="inline-block bg-primary/5 px-3 py-1 rounded text-sm">
-                                    {(slot.startDisplay || slot.start) + " - " + (slot.endDisplay || slot.end)}
+                                    {/* {(slot.startDisplay || slot.start) + " - " + (slot.endDisplay || slot.end)} */}
+                                     {formatTimeAMPM(slot.start)} – {formatTimeAMPM(slot.end)}
                                   </span>
                                 ))}
                               </div>

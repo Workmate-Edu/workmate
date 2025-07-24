@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { TeachingSession } from "@/models/teaching-session";
 import { User } from "@/models/user";
 import sendEmail from "@/lib/sendSmtpMail";
+import { Earning } from "@/models/earning";
 
 export async function POST(
   req: Request,
@@ -59,7 +60,7 @@ export async function POST(
           .lean()
       : null;
 
-    // 6) Decide which template & subject/url to use
+    // 6) Decide review‐request recipient & template
     let reviewEmail = "";
     let reviewName  = "";
     let reviewRole: "student" | "parent" = "student";
@@ -90,7 +91,6 @@ export async function POST(
     // 7) Send the proper review‐request email
     if (reviewEmail) {
       if (reviewRole === "parent") {
-        // **Parent template**
         await sendEmail({
           to: reviewEmail,
           subject: "How was your child's lesson? Leave a review",
@@ -106,7 +106,6 @@ export async function POST(
         });
         console.log(`[COMPLETE_SESSION] Parent review email → ${reviewEmail}`);
       } else {
-        // **Student template**
         await sendEmail({
           to: reviewEmail,
           subject: "How was your lesson? Leave a review",
@@ -123,33 +122,63 @@ export async function POST(
       }
     }
 
-    // 8) Congratulate the teacher
+    // 8) Calculate & persist the earning
+    // `duration` is stored in minutes; fall back to start/end if missing
+    const minutes = sessionDoc.duration != null
+      ? sessionDoc.duration
+      : (new Date(sessionDoc.endTime).getTime() - new Date(sessionDoc.startTime).getTime())
+        / 1000 / 60;
+
+    // convert to hours for pay
+    const rawHours    = minutes / 60;
+    const roundedHours = Math.round(rawHours * 100) / 100; // e.g. 1.5
+    const ratePerHour  = 5000;
+    const amount       = roundedHours * ratePerHour;
+
+    // human‑friendly duration label
+    const durationLabel = minutes < 60
+      ? `${minutes} minute${minutes === 1 ? "" : "s"}`
+      : `${roundedHours} hour${roundedHours === 1 ? "" : "s"}`;
+
+    const earning = await Earning.create({
+      teacherId: sessionDoc.teacherId,
+      sessionId: params.id,
+      hours:     roundedHours,
+      amount,
+      date:      sessionDoc.endTime,
+      status:    "pending",
+    });
+    console.log(`[COMPLETE_SESSION] Earning created: ${earning._id}`);
+
+    // 9) Send single combined session+earning notification
     if (teacher?.email) {
       await sendEmail({
         to: teacher.email,
-        subject: "Congratulations! Session Completed",
-        template: "session-completed",
+        subject: "🎉 Session Completed & Earnings Unlocked!",
+        template: "session-earning-notification",
         replacements: {
-          teacherName: teacher.name,
-          studentName: student?.name ?? "",
-          sessionDate,
-          hours:       String(sessionDoc.duration ?? ""),
+          teacherName:  teacher.name,
+          studentName:  student?.name ?? "",
+          sessionDate,                    // e.g. "7/22/2025"
+          hours:        durationLabel,    // "1 hour" or "45 minutes"
+          amount:       `₦${amount.toLocaleString()}`,
+          status:       earning.status,   // "pending"
           dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/teacher/sessions`,
+          earningsUrl:  `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/teacher/earnings`,
         },
       });
-      console.log(`[COMPLETE_SESSION] Teacher email → ${teacher.email}`);
+      console.log(`[COMPLETE_SESSION] Combined notification → ${teacher.email}`);
     }
 
     console.log(`[COMPLETE_SESSION] Success for ${params.id}`);
     return NextResponse.json({ success: true });
 
   } catch (err) {
-    console.error("[COMPLETE_SESSION] Error sending emails:", err);
+    console.error("[COMPLETE_SESSION] Error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
-
   } finally {
     console.log(`[COMPLETE_SESSION] Finished for ${params.id}`);
   }

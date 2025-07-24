@@ -14,6 +14,7 @@ import {
   ArrowLeft,
 } from "lucide-react"
 import TimezoneSelect, { ITimezone } from "react-timezone-select"
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip"
 
 const DAYS = [
   "Monday",
@@ -33,18 +34,24 @@ function getNextMonthDate(fromDate?: string) {
   return nextMonth.toISOString().slice(0, 10)
 }
 
-// Format a "HH:MM" time string into "hh:mm AM/PM"
+// Format a "HH:MM" time string into "hh:mm AM/PM" in the selected timezone, showing the time as entered (not converted to local time)
 function formatTimeDisplay(time: string, timezone: string) {
   if (!time) return ""
+  // Instead of using Date, just display the input time as-is in the selected timezone
+  // This avoids browser conversion and always shows the time the parent/student picked
+  // Example: "10:00 AM (Africa/Lagos)"
   const [hour, minute] = time.split(":")
-  const date = new Date()
-  date.setHours(Number(hour), Number(minute), 0, 0)
-  return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: timezone || "UTC",
-  })
+  let hourNum = Number(hour)
+  let ampm = "AM"
+  if (hourNum >= 12) {
+    ampm = "PM"
+    if (hourNum > 12) hourNum -= 12
+  }
+  if (hourNum === 0) hourNum = 12
+  const formatted = `${hourNum}:${minute.padStart(2, "0")} ${ampm}`
+  // return `${formatted} (${timezone})`
+  return `${formatted}`
+
 }
 
 // Check if two time ranges overlap
@@ -264,9 +271,9 @@ export default function ChildAvailabilityPage({
   }
 
   const handleRemoveSlot = (day: string, idx: number) => {
-    const today = new Date().toISOString().slice(0, 10)
     const slot = days.find((d) => d.day === day)!.slots[idx]
-    if (isSlotBooked(day, slot) || validFrom < today) return
+    // Only prevent removal if slot is locked (has a session booked)
+    if (isSlotBooked(day, slot)) return
     setDays((prev) =>
       prev
         .map((d) =>
@@ -303,202 +310,226 @@ export default function ChildAvailabilityPage({
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-10">
-      <Button
-        variant="outline"
-        size="sm"
-        className="mb-4"
-        onClick={() => router.back()}
-      >
-        <ArrowLeft className="w-4 h-4 mr-1" /> Back
-      </Button>
+    <TooltipProvider>
+      <div className="max-w-3xl mx-auto py-4 px-2 sm:px-4">
+        <Button
+          variant="outline"
+          size="sm"
+          className="mb-4"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+        </Button>
 
-      <Card className="p-8">
-        <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-          <CalendarIcon className="w-6 h-6 text-primary" />
+        <Card className="p-4 sm:p-8">
+          <h1 className="text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+            <CalendarIcon className="w-6 h-6 text-primary" />
             {`Set ${childName.split(" ")[0]}’s Weekly Availability`}
-        </h1>
-        <p className="mb-4 text-muted-foreground">
-          Locked slots (🔒) can't be removed
-        </p>
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* validity window */}
-          <div className="grid md:grid-cols-2 gap-6">
+          </h1>
+          <p className="mb-4 text-muted-foreground">
+            Slots marked with 🔒 are already booked by teacher and can't be removed.
+          </p>
+          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+            {/* validity window */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="relative">
+                <label className="font-medium">From</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <input
+                      type="date"
+                      value={validFrom}
+                      disabled
+                      className="border rounded px-3 py-2 w-full mt-1 bg-gray-100 cursor-not-allowed"
+                      required
+                      title={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
+                      aria-label={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
+                      data-tooltip
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="start" className="z-50 max-w-xs text-xs">
+                    Update can be made only by next month ({getNextMonthDate(validFrom)})
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="relative">
+                <label className="font-medium">To</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <input
+                      type="date"
+                      value={validTo}
+                      disabled
+                      className="border rounded px-3 py-2 w-full mt-1 bg-gray-100 cursor-not-allowed"
+                      required
+                      title={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
+                      aria-label={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
+                      data-tooltip
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="start" className="z-50 max-w-xs text-xs">
+                    Update can be made only by next month ({getNextMonthDate(validFrom)})
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+
+            {/* timezone */}
             <div>
-              <label className="font-medium">Valid From</label>
-              <input
-                type="date"
-                value={validFrom}
-                disabled
-                className="border rounded px-3 py-2 w-full mt-1 bg-gray-100 cursor-not-allowed"
-                required
-                // Overlay tooltip on hover
-                title={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
-              />
+              <label className="font-medium mb-2 block">Timezone</label>
+              <TimezoneSelect value={timezone} onChange={setTimezone} />
+              <span className="text-xs text-muted-foreground mt-1 block">
+                All slots below use this timezone: <strong>{timezone.value}</strong>
+              </span>
             </div>
+
+            {/* slots table */}
             <div>
-              <label className="font-medium">Valid To</label>
-              <input
-                type="date"
-                value={validTo}
-                disabled
-                className="border rounded px-3 py-2 w-full mt-1 bg-gray-100 cursor-not-allowed"
-                required
-                title={`Update can be made only by next month (${getNextMonthDate(validFrom)})`}
-              />
+              <label className="font-medium mb-2 block">
+                Weekly Availability
+              </label>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border rounded-lg bg-background shadow-sm text-xs sm:text-sm">
+                  <thead>
+                    <tr>
+                      <th className="py-2 px-2 sm:px-4 bg-primary/10 text-primary text-left rounded-tl-lg">
+                        Day
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 bg-primary/10 text-primary text-left">
+                        Slots
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 bg-primary/10 rounded-tr-lg" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DAYS.map((day) => {
+                      const row = days.find((d) => d.day === day)
+                      return (
+                        <tr key={day} className="border-b last:border-b-0">
+                          <td className="py-2 px-2 sm:px-4 font-semibold">{day}</td>
+                          <td className="py-2 px-2 sm:px-4">
+                            {row?.slots.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {row.slots.map((slot, i) => {
+                                  const booked = isSlotBooked(day, slot)
+                                  const pastLock =
+                                    validFrom < new Date().toISOString().slice(0, 10)
+                                  return (
+                                    <div
+                                      key={i}
+                                      className={`flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 px-2 py-1 rounded ${
+                                        booked
+                                          ? "bg-gray-200 text-gray-500"
+                                          : "bg-primary/5"
+                                      }`}
+                                    >
+                                      <div className="flex gap-1 items-center">
+                                        <input
+                                          type="time"
+                                          value={slot.start}
+                                          onChange={(e) =>
+                                            handleSlotChange(
+                                              day,
+                                              i,
+                                              "start",
+                                              e.target.value
+                                            )
+                                          }
+                                          className="border rounded px-2 py-1 w-20 sm:w-24"
+                                          required
+                                          disabled={booked}
+                                        />
+                                        <span>to</span>
+                                        <input
+                                          type="time"
+                                          value={slot.end}
+                                          onChange={(e) =>
+                                            handleSlotChange(
+                                              day,
+                                              i,
+                                              "end",
+                                              e.target.value
+                                            )
+                                          }
+                                          className="border rounded px-2 py-1 w-20 sm:w-24"
+                                          required
+                                          disabled={booked}
+                                        />
+                                      </div>
+                                      <span className="text-xs text-muted-foreground">
+                                        {slot.startDisplay ||
+                                          formatTimeDisplay(
+                                            slot.start,
+                                            timezone.value
+                                          )}{" "}
+                                        –{" "}
+                                        {slot.endDisplay ||
+                                          formatTimeDisplay(
+                                            slot.end,
+                                            timezone.value
+                                          )}
+                                      </span>
+                                      {booked ? (
+                                        <Lock className="w-4 h-4 text-gray-500" />
+                                      ) : (
+                                        <Button
+                                          type="button"
+                                          size="icon"
+                                          variant="ghost"
+                                          onClick={() =>
+                                            handleRemoveSlot(day, i)
+                                          }
+                                          disabled={pastLock}
+                                          title={
+                                            pastLock
+                                              ? "Cannot remove past slots"
+                                              : "Remove slot"
+                                          }
+                                        >
+                                          <Trash2 className="w-4 h-4 text-destructive" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">
+                                No slots
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 px-2 sm:px-4">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAddSlot(day)}
+                              className="flex items-center gap-1"
+                            >
+                              <Plus className="w-4 h-4" /> Add Slot
+                            </Button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
 
-          {/* timezone */}
-          <div>
-            <label className="font-medium mb-2 block">Timezone</label>
-            <TimezoneSelect value={timezone} onChange={setTimezone} />
-          </div>
-
-          {/* slots table */}
-          <div>
-            <label className="font-medium mb-2 block">
-              Weekly Availability
-            </label>
-            <div className="overflow-x-auto">
-              <table className="min-w-full border rounded-lg bg-background shadow-sm">
-                <thead>
-                  <tr>
-                    <th className="py-2 px-4 bg-primary/10 text-primary text-left rounded-tl-lg">
-                      Day
-                    </th>
-                    <th className="py-2 px-4 bg-primary/10 text-primary text-left">
-                      Slots
-                    </th>
-                    <th className="py-2 px-4 bg-primary/10 rounded-tr-lg" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {DAYS.map((day) => {
-                    const row = days.find((d) => d.day === day)
-                    return (
-                      <tr key={day} className="border-b last:border-b-0">
-                        <td className="py-2 px-4 font-semibold">{day}</td>
-                        <td className="py-2 px-4">
-                          {row?.slots.length ? (
-                            <div className="flex flex-wrap gap-2">
-                              {row.slots.map((slot, i) => {
-                                const booked = isSlotBooked(day, slot)
-                                const pastLock =
-                                  validFrom < new Date().toISOString().slice(0, 10)
-                                return (
-                                  <div
-                                    key={i}
-                                    className={`flex items-center gap-2 px-2 py-1 rounded ${
-                                      booked
-                                        ? "bg-gray-200 text-gray-500"
-                                        : "bg-primary/5"
-                                    }`}
-                                  >
-                                    <input
-                                      type="time"
-                                      value={slot.start}
-                                      onChange={(e) =>
-                                        handleSlotChange(
-                                          day,
-                                          i,
-                                          "start",
-                                          e.target.value
-                                        )
-                                      }
-                                      className="border rounded px-2 py-1 w-24"
-                                      required
-                                      disabled={booked}
-                                    />
-                                    <span>to</span>
-                                    <input
-                                      type="time"
-                                      value={slot.end}
-                                      onChange={(e) =>
-                                        handleSlotChange(
-                                          day,
-                                          i,
-                                          "end",
-                                          e.target.value
-                                        )
-                                      }
-                                      className="border rounded px-2 py-1 w-24"
-                                      required
-                                      disabled={booked}
-                                    />
-                                    <span className="text-xs text-muted-foreground">
-                                      {slot.startDisplay ||
-                                        formatTimeDisplay(
-                                          slot.start,
-                                          timezone.value
-                                        )}{" "}
-                                      –{" "}
-                                      {slot.endDisplay ||
-                                        formatTimeDisplay(
-                                          slot.end,
-                                          timezone.value
-                                        )}
-                                    </span>
-                                    {booked ? (
-                                      <Lock className="w-4 h-4 text-gray-500" />
-                                    ) : (
-                                      <Button
-                                        type="button"
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() =>
-                                          handleRemoveSlot(day, i)
-                                        }
-                                        disabled={pastLock}
-                                        title={
-                                          pastLock
-                                            ? "Cannot remove past slots"
-                                            : "Remove slot"
-                                        }
-                                      >
-                                        <Trash2 className="w-4 h-4 text-destructive" />
-                                      </Button>
-                                    )}
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">
-                              No slots
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 px-4">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAddSlot(day)}
-                            className="flex items-center gap-1"
-                          >
-                            <Plus className="w-4 h-4" /> Add Slot
-                          </Button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            <div className="flex justify-end">
+              <Button 
+                type="submit" 
+                disabled={loading || !formDirty}
+                title={!formDirty ? "Add or change slots to enable saving" : ""}
+              >
+                {loading ? "Loading…" : "Save Availability"}
+              </Button>
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button 
-              type="submit" 
-              disabled={loading || !formDirty}
-              title={!formDirty ? "Add or change slots to enable saving" : ""}
-            >
-              {loading ? "Loading…" : "Save Availability"}
-            </Button>
-          </div>
-        </form>
-      </Card>
-    </div>
+          </form>
+        </Card>
+      </div>
+    </TooltipProvider>
   )
 }
