@@ -296,7 +296,7 @@ export function StartClassDialog({
       }
     }
 
-    console.log('Final submission data:', submissionData)
+    // console.log('Final submission data:', submissionData)
 
     try {
       setLoading(true)

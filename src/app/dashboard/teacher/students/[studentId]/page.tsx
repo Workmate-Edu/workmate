@@ -293,6 +293,8 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
     })
   }
 
+  const firstName = student?.name.split(" ")[0]
+
   // Fetch availability for this student (child)
   useEffect(() => {
     async function fetchAvailability() {
@@ -349,30 +351,41 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
 
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Student Details</h1>
-          <p className="text-muted-foreground">View and manage student progress</p>
+          <h1 className="text-xl sm:text-3xl font-bold">{firstName} Details</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">View and manage student progress</p>
         </div>
       </div>
 
       <Tabs defaultValue="details" className="mt-6">
-         <TabsList>
-          <TabsTrigger value="details" className="flex items-center">
+        <TabsList
+           className="
+              flex justify-start items-center gap-2 whitespace-nowrap
+              overflow-x-auto sm:overflow-x-visible 
+              overflow-y-hidden 
+              px-4 py-1 
+              scroll-pl-4 scroll-pr-4 
+              snap-x snap-mandatory
+              "
+               style={{ scrollbarWidth: "thin" }}
+
+        >
+          <TabsTrigger value="details" className="min-w-[120px] flex items-center justify-center">
             <User className="w-4 h-4 mr-2" />
             Details
           </TabsTrigger>
-          <TabsTrigger value="sessions" className="flex items-center">
+          <TabsTrigger value="sessions" className="min-w-[120px] flex items-center justify-center">
             <Calendar className="w-4 h-4 mr-2" />
             Sessions
           </TabsTrigger>
-          <TabsTrigger value="progress" className="flex items-center">
+          <TabsTrigger value="progress" className="min-w-[120px] flex items-center justify-center">
             <Trophy className="w-4 h-4 mr-2" />
             Progress
           </TabsTrigger>
-          <TabsTrigger value="assessments" className="flex items-center">
+          <TabsTrigger value="assessments" className="min-w-[120px] flex items-center justify-center">
             <ClipboardCheck className="w-4 h-4 mr-2" />
             Assessments
           </TabsTrigger>
-          <TabsTrigger value="availability" className="flex items-center">
+          <TabsTrigger value="availability" className="min-w-[120px] flex items-center justify-center">
             <Clock className="w-4 h-4 mr-2" />
             Availability
           </TabsTrigger>
@@ -381,7 +394,7 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
         <TabsContent value="details">
       
           <div className="mb-6">
-            <h1 className="text-2xl font-bold">{student.name}</h1>
+            <h1 className="text-2xl font-bold">{firstName}</h1>
             <p className="text-muted-foreground">{student.email}</p>
             <div className="flex items-center gap-2 mt-2">
               <Badge>{student.type}</Badge>
@@ -502,179 +515,252 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Progress Overview</h2>
-            {/* <Button onClick={() => setShowProgressDialog(true)}>
-              <Trophy className="mr-2 h-4 w-4" />
-              Update Progress
-            </Button> */}
-          </div>
+  {/* Header */}
+  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+    <h2 className="text-lg sm:text-2xl font-semibold">Progress Overview</h2>
+    {/* <Button onClick={() => setShowProgressDialog(true)}>
+      <Trophy className="mr-2 h-4 w-4" />
+      Update Progress
+    </Button> */}
+  </div>
 
-          <Card className="p-6 bg-muted">
-            <div className="grid gap-4 md:grid-cols-4">
-              <div>
-                <Label className="text-sm">Overall Progress</Label>
-                <div className="text-2xl font-bold mt-1">
-                  {overallProgress.percentage.toFixed(1)}%
-                </div>
+  {/* Summary Cards */}
+  <Card className="p-4 sm:p-6 bg-muted text-xs sm:text-sm">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Overall Progress */}
+      <div className="space-y-1">
+        <Label className="text-xs sm:text-sm">Overall Progress</Label>
+        <p className="text-xl sm:text-2xl font-bold">
+          {overallProgress.percentage.toFixed(1)}%
+        </p>
+      </div>
+      {/* Average Score */}
+      <div className="space-y-1">
+        <Label className="text-xs sm:text-sm">Average Score</Label>
+        <p className="text-xl sm:text-2xl font-bold">
+          {overallProgress.averageScore.toFixed(1)}/10
+        </p>
+      </div>
+      {/* Subjects Completed */}
+      <div className="space-y-1">
+        <Label className="text-xs sm:text-sm">Subjects Completed</Label>
+        <p className="text-xl sm:text-2xl font-bold">
+          {overallProgress.completedSubjects}/{overallProgress.totalSubjects}
+        </p>
+      </div>
+      {/* Progress Bar */}
+      <div className="space-y-1">
+        <Label className="text-xs sm:text-sm">Progress</Label>
+        <Progress 
+          value={overallProgress.percentage} 
+          className="mt-2 h-2 sm:h-3" 
+        />
+      </div>
+    </div>
+  </Card>
+
+  {/* Per‑Subject Cards */}
+  <div className="space-y-4">
+    {student?.subjects
+      .filter((s) => s.isTeaching)
+      .map((subject) => {
+        const subjectId = `${subject.area}-${subject.name}`.toLowerCase()
+        const prog = subjectProgresses.find((p) => p.subjectId === subjectId)
+        const pct = prog?.scores
+          ? calculateSubjectProgress(prog.scores).toFixed(1)
+          : "0"
+        return (
+          <Card key={subjectId} className="p-4 sm:p-6 text-xs sm:text-sm">
+            {/* Title Row */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+              <h3 className="text-base sm:text-lg font-semibold">{subject.name}</h3>
+              <p className="mt-1 sm:mt-0 text-muted-foreground">
+                Progress: {pct}%
+              </p>
+            </div>
+
+            {/* Bar */}
+            <Progress value={Number(pct)} className="mb-3 h-2 sm:h-3" />
+
+            {/* Scores Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs sm:text-sm">Understanding</Label>
+                <p className="text-lg sm:text-xl font-bold">
+                  {prog?.scores?.understanding ?? "N/A"}/10
+                </p>
               </div>
-              <div>
-                <Label className="text-sm">Average Score</Label>
-                <div className="text-2xl font-bold mt-1">
-                  {overallProgress.averageScore.toFixed(1)}/10
-                </div>
+              <div className="space-y-1">
+                <Label className="text-xs sm:text-sm">Participation</Label>
+                <p className="text-lg sm:text-xl font-bold">
+                  {prog?.scores?.participation ?? "N/A"}/10
+                </p>
               </div>
-              <div>
-                <Label className="text-sm">Subjects Completed</Label>
-                <div className="text-2xl font-bold mt-1">
-                  {overallProgress.completedSubjects}/{overallProgress.totalSubjects}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm">Progress</Label>
-                <Progress 
-                  value={overallProgress.percentage} 
-                  className="mt-3"
-                />
+              <div className="space-y-1">
+                <Label className="text-xs sm:text-sm">Homework</Label>
+                <p className="text-lg sm:text-xl font-bold">
+                  {prog?.scores?.homework ?? "N/A"}/10
+                </p>
               </div>
             </div>
-          </Card>
 
-          {student?.subjects?.filter(s => s.isTeaching).map((subject) => {
-            // Create the same composite ID format
-            const subjectId = `${subject.area}-${subject.name}`.toLowerCase()
-            const progress = subjectProgresses.find(p => p.subjectId === subjectId)
-            
-            return (
-              <Card key={subjectId} className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">{subject.name}</h3>
-                  <div className="text-sm text-muted-foreground">
-                    Progress: {progress?.scores ? 
-                      calculateSubjectProgress(progress.scores).toFixed(1) : '0'}%
-                  </div>
-                </div>
-                <Progress 
-                  value={progress?.scores ? calculateSubjectProgress(progress.scores) : 0} 
-                  className="mb-4"
-                />
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <Label className="text-sm">Understanding</Label>
-                    <div className="text-2xl font-bold mt-1">
-                      {progress?.scores?.understanding !== undefined ? 
-                        `${progress.scores.understanding}/10` : 
-                        'N/A'}
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm">Participation</Label>
-                    <div className="text-2xl font-bold mt-1">
-                      {progress?.scores?.participation !== undefined ? 
-                        `${progress.scores.participation}/10` : 
-                        'N/A'}
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm">Homework</Label>
-                    <div className="text-2xl font-bold mt-1">
-                      {progress?.scores?.homework !== undefined ? 
-                        `${progress.scores.homework}/10` : 
-                        'N/A'}
-                    </div>
-                  </div>
-                </div>
-                {progress?.updatedAt && (
-                  <div className="mt-4 text-sm text-muted-foreground">
-                    Last updated: {new Date(progress.updatedAt).toLocaleDateString()}
-                  </div>
-                )}
-              </Card>
-            )
-          })}
-        </TabsContent>
-
-        <TabsContent value="assessments">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold">Assessments</h2>
-            {/* <Button asChild>
-              <Link href={`/dashboard/teacher/assessments/new?studentId=${params.studentId}`}>
-                Create Assessment
-              </Link>
-            </Button> */}
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Assessments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="pending">
-                <TabsList>
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
-                  <TabsTrigger value="submitted">Submitted</TabsTrigger>
-                  <TabsTrigger value="graded">Graded</TabsTrigger>
-                </TabsList>
-                {/* Assessment list will be implemented here */}
-              </Tabs>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="availability">
-          <Card className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Availability</h2>
-            </div>
-            {availabilityLoading ? (
-              <div className="text-muted-foreground">Loading...</div>
-            ) : !availability ? (
-              <div className="text-muted-foreground">
-                No availability set for this student.
-              </div>
-            ) : (
-              <div>
-                <div className="mb-2 text-sm text-muted-foreground">
-                  <span className="font-medium">Timezone:</span> {availability.timezone}
-                </div>
-                <div className="mb-2 text-sm text-muted-foreground">
-                  <span className="font-medium">Valid:</span>{" "}
-                  {new Date(availability.validFrom).toLocaleDateString()} - {new Date(availability.validTo).toLocaleDateString()}
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border rounded-lg bg-background shadow-sm">
-                    <thead>
-                      <tr>
-                        <th className="py-2 px-4 text-left bg-primary/10 text-primary rounded-tl-lg">Day</th>
-                        <th className="py-2 px-4 text-left bg-primary/10 text-primary">Time Slots</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {availability.days.map((day: any) => (
-                        <tr key={day.day} className="border-b last:border-b-0">
-                          <td className="py-2 px-4 font-semibold">{day.day}</td>
-                          <td className="py-2 px-4">
-                            {day.slots.length ? (
-                              <div className="flex flex-wrap gap-2">
-                                {day.slots.map((slot: any, idx: number) => (
-                                  <span key={idx} className="inline-block bg-primary/5 px-3 py-1 rounded text-sm">
-                                    {(slot.startDisplay || slot.start) + " - " + (slot.endDisplay || slot.end)}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">No slots</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+            {/* Last Updated */}
+            {prog?.updatedAt && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Last updated:{" "}
+                {new Date(prog.updatedAt).toLocaleDateString()}
+              </p>
             )}
           </Card>
+        )
+      })}
+  </div>
+</TabsContent>
+
+
+       <TabsContent value="assessments">
+  <div className="flex justify-between items-center mb-6">
+    <h2 className="text-2xl font-semibold">Assessments</h2>
+  </div>
+  <Card>
+    <CardHeader>
+      <CardTitle>Student Assessments</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <Tabs defaultValue="pending" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="submitted">Submitted</TabsTrigger>
+          <TabsTrigger value="graded">Graded</TabsTrigger>
+        </TabsList>
+
+        {/* Pending Assessments */}
+        <TabsContent value="pending" className="p-4">
+          <p className="text-center text-muted-foreground py-6">
+            No pending assessments
+          </p>
         </TabsContent>
+
+        {/* Submitted Assessments */}
+        <TabsContent value="submitted" className="p-4">
+          <p className="text-center text-muted-foreground py-6">
+            No submitted assessments
+          </p>
+        </TabsContent>
+
+        {/* Graded Assessments */}
+        <TabsContent value="graded" className="p-4">
+          <p className="text-center text-muted-foreground py-6">
+            No graded assessments
+          </p>
+        </TabsContent>
+      </Tabs>
+    </CardContent>
+  </Card>
+</TabsContent>
+
+
+        <TabsContent value="availability">
+  <Card className="p-6">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-lg sm:text-xl font-semibold">Availability</h2>
+    </div>
+
+    {availabilityLoading ? (
+      <p className="text-center text-sm text-muted-foreground">Loading...</p>
+    ) : !availability ? (
+      <p className="text-center text-sm text-muted-foreground">
+        No availability set for this student.
+      </p>
+    ) : (
+      <div className="space-y-4 text-xs sm:text-sm">
+        {/* Meta info */}
+        <div>
+          <p>
+            <span className="font-medium">Timezone:</span>{" "}
+            {availability.timezone}
+          </p>
+          <p>
+            <span className="font-medium">Valid:</span>{" "}
+            {new Date(availability.validFrom).toLocaleDateString()} –{" "}
+            {new Date(availability.validTo).toLocaleDateString()}
+          </p>
+        </div>
+
+        {/* Table for sm+ */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full border rounded-lg bg-background shadow-sm">
+            <thead>
+              <tr>
+                <th className="py-2 px-4 text-left bg-primary/10 text-primary">
+                  Day
+                </th>
+                <th className="py-2 px-4 text-left bg-primary/10 text-primary">
+                  Time Slots
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {availability.days.map((day: any) => (
+                <tr
+                  key={day.day}
+                  className="border-b last:border-b-0 even:bg-muted/10"
+                >
+                  <td className="py-2 px-4 font-medium">{day.day}</td>
+                  <td className="py-2 px-4">
+                    <div className="flex flex-wrap gap-2">
+                      {day.slots.length ? (
+                        day.slots.map((slot: any, idx: number) => (
+                          <span
+                            key={idx}
+                            className="inline-block bg-primary/5 px-2 py-1 rounded"
+                          >
+                            {(slot.startDisplay || slot.start)} –{" "}
+                            {(slot.endDisplay || slot.end)}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">No slots</span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Card list for mobile */}
+        <div className="space-y-2 sm:hidden">
+          {availability.days.map((day: any) => (
+            <div
+              key={day.day}
+              className="border rounded-lg p-3 bg-background shadow-sm"
+            >
+              <h4 className="font-medium mb-1">{day.day}</h4>
+              {day.slots.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {day.slots.map((slot: any, idx: number) => (
+                    <span
+                      key={idx}
+                      className="inline-block bg-primary/5 px-2 py-1 rounded text-xs"
+                    >
+                      {(slot.startDisplay || slot.start)} –{" "}
+                      {(slot.endDisplay || slot.end)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No slots</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </Card>
+</TabsContent>
+
       </Tabs>
 
       <ProgressUpdateDialog

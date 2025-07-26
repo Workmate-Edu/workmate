@@ -270,7 +270,7 @@ export default function StudentAvailabilityPage() {
               <Calendar className="w-6 h-6 text-primary"/> My Availability
             </h1>
             <p className="mb-4 text-muted-foreground">
-              Slots marked with 🔒 are already booked by teacher and can't be removed.
+               Slots marked 🔒 are already booked and can’t be changed until your current one‑month period ends.
             </p>
             {error && <p className="text-destructive">{error}</p>}
 

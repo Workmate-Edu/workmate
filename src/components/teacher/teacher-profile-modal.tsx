@@ -28,13 +28,25 @@ interface TeacherProfileProps {
         name: string
         area: string
       }>
-      rating?: number
+      ratings?: {
+        average: number
+        count: number
+      }
     }
   }
 }
 
-export function TeacherProfileModal({ open, onOpenChange, teacher }: TeacherProfileProps) {
+export function TeacherProfileModal({
+  open,
+  onOpenChange,
+  teacher,
+}: TeacherProfileProps) {
   if (!teacher) return null
+
+  // Pull ratings out of teacherProfile, not top‑level:
+  const avgRating = teacher.teacherProfile?.ratings?.average ?? 0
+  const ratingCount = teacher.teacherProfile?.ratings?.count ?? 0
+  const fullStars = Math.floor(avgRating)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -46,8 +58,14 @@ export function TeacherProfileModal({ open, onOpenChange, teacher }: TeacherProf
           <div className="space-y-6 p-4">
             {/* Verification Status */}
             <div className="flex justify-end">
-              <Badge variant={teacher.teacherProfile?.verificationStatus  === 'verified' ? 'default' : 'secondary'}>
-                {teacher?.teacherProfile?.verificationStatus || 'Verified'}
+              <Badge
+                variant={
+                  teacher.teacherProfile?.verificationStatus === "verified"
+                    ? "default"
+                    : "secondary"
+                }
+              >
+                {teacher.teacherProfile?.verificationStatus ?? "Unverified"}
               </Badge>
             </div>
 
@@ -67,8 +85,8 @@ export function TeacherProfileModal({ open, onOpenChange, teacher }: TeacherProf
                   Qualifications
                 </h4>
                 <ul className="list-disc list-inside text-muted-foreground">
-                  {teacher.teacherProfile.qualifications.map((qual: Qualification, idx) => (
-                    <li key={idx}>
+                  {teacher.teacherProfile.qualifications.map((qual, i) => (
+                    <li key={i}>
                       {qual.degree} from {qual.institution} ({qual.year})
                     </li>
                   ))}
@@ -84,9 +102,9 @@ export function TeacherProfileModal({ open, onOpenChange, teacher }: TeacherProf
                   Teaching Subjects
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {teacher.teacherProfile.subjects.map((subject, idx) => (
-                    <Badge key={idx} variant="outline">
-                      {subject.name} ({subject.area})
+                  {teacher.teacherProfile.subjects.map((subj, i) => (
+                    <Badge key={i} variant="outline">
+                      {subj.name} ({subj.area})
                     </Badge>
                   ))}
                 </div>
@@ -94,29 +112,33 @@ export function TeacherProfileModal({ open, onOpenChange, teacher }: TeacherProf
             )}
 
             {/* Rating */}
-            {teacher.teacherProfile?.rating !== undefined && (
-              <div>
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  Rating
-                </h4>
+            <div>
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <Star className="h-4 w-4" />
+                Rating
+              </h4>
+
+              {ratingCount > 0 ? (
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
                       className={`h-4 w-4 ${
-                        i < Math.floor(teacher.teacherProfile.rating)
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300'
+                        i < fullStars
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
                       }`}
                     />
                   ))}
                   <span className="text-sm text-muted-foreground ml-2">
-                    ({teacher.teacherProfile.rating}/5)
+                    {avgRating.toFixed(1)}/5&nbsp;({ratingCount}{" "}
+                    {ratingCount === 1 ? "review" : "reviews"})
                   </span>
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-muted-foreground">No reviews yet</p>
+              )}
+            </div>
           </div>
         </ScrollArea>
       </DialogContent>

@@ -327,7 +327,7 @@ export default function ChildAvailabilityPage({
             {`Set ${childName.split(" ")[0]}’s Weekly Availability`}
           </h1>
           <p className="mb-4 text-muted-foreground">
-            Slots marked with 🔒 are already booked by teacher and can't be removed.
+            Slots marked 🔒 are already booked and can’t be changed until your current one‑month period ends.
           </p>
           <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
             {/* validity window */}

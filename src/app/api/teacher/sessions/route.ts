@@ -281,6 +281,7 @@ export async function POST(req: Request) {
           )
         };
 
+        
         sessionData.recurrence = recurrenceData;
 
         console.log('Creating recurring session with data:', {

@@ -252,18 +252,34 @@ function formatTimeAMPM(time: string): string {
 }
 
   // Update the fetchTeacherDetails function
-  const fetchTeacherDetails = async (teacherId: string) => {
-    try {
-      const response = await fetch(`/api/teachers/${teacherId}`)
-      if (!response.ok) throw new Error("Failed to fetch teacher details")
-      const data = await response.json()
-      setSelectedTeacher(data)
-      setShowTeacherModal(true)
-    } catch (error) {
-      console.error('Error fetching teacher:', error)
-      toast.error("Failed to load teacher details")
-    }
+ const fetchTeacherDetails = async (teacherId: string) => {
+  try {
+    const res = await fetch(`/api/teachers/${teacherId}`)
+    if (!res.ok) throw new Error("Failed to fetch teacher details")
+    const data = await res.json()
+
+    // Flatten the `subjects` array-of-arrays into { name, area } pairs:
+    const subjects = (data.teacherProfile.subjects || []).flatMap(
+      (grp: { area: string; subjects: string[] }) =>
+        grp.subjects.map((name) => ({ name, area: grp.area }))
+    )
+
+    setSelectedTeacher({
+      name: data.name,
+      bio: data.bio,
+      teacherProfile: {
+        verificationStatus: data.teacherProfile.verificationStatus ?? "unverified",
+        qualifications: data.teacherProfile.qualifications || [],
+        subjects,
+        ratings: data.teacherProfile.ratings,   // { average, count }
+      },
+    })
+    setShowTeacherModal(true)
+  } catch (err) {
+    console.error("Error fetching teacher:", err)
+    toast.error("Failed to load teacher details")
   }
+}
 
   useEffect(() => {
     async function fetchData() {
@@ -421,356 +437,492 @@ function formatTimeAMPM(time: string): string {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">
+        <TabsList 
+            className="
+              flex justify-start items-center gap-2 whitespace-nowrap
+              overflow-x-auto sm:overflow-x-visible 
+              overflow-y-hidden 
+              px-4 py-1 
+              scroll-pl-4 scroll-pr-4 
+              snap-x snap-mandatory
+              "
+               style={{ scrollbarWidth: "thin" }}
+            >
+          <TabsTrigger value="overview" className="flex-none snap-start px-4 py-2">
             <UserCircle className="w-4 h-4 mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="subjects">
+          <TabsTrigger value="subjects" className="flex-none snap-start px-4 py-2">
             <BookOpen className="w-4 h-4 mr-2" />
             Subjects
           </TabsTrigger>
-          <TabsTrigger value="documents">
+          <TabsTrigger value="documents" className="flex-none snap-start px-4 py-2">
             <FileIcon className="w-4 h-4 mr-2" />
             Documents
           </TabsTrigger>
-          <TabsTrigger value="assessment">
+          <TabsTrigger value="assessment" className="flex-none snap-start px-4 py-2">
             <ClipboardList className="w-4 h-4 mr-2" />
             Initial Assessment
           </TabsTrigger>
-          <TabsTrigger value="availability">
+          <TabsTrigger value="availability" className="flex-none snap-start px-4 py-2">
             <Calendar className="w-4 h-4 mr-2" />
             Availability
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <Card className="p-6">
-            <div className="space-y-6">
-              <div className="bg-muted p-4 rounded-lg">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium"> {firstName} Login Credentials</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowCredentials(!showCredentials)}
-                    className="gap-2"
-                  >
-                    {showCredentials ? (
-                      <>
-                        <EyeOff className="h-4 w-4" />
-                        Hide Credentials
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="h-4 w-4" />
-                        Show Credentials
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {showCredentials ? (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground text-sm">Username</Label>
-                      <div className="bg-background p-2 rounded border">
-                        <code className="font-mono">{child?.username}</code>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground text-sm">Email</Label>
-                      <div className="bg-background p-2 rounded border">
-                        <code className="font-mono">{child?.email}</code>
-                      </div>
-                    </div>
-                    <Button variant="default" className="w-full mt-4" asChild>
-                      <Link href={`/dashboard/parent/children/${child?.id}/reset-password`}>
-                        <Key className="h-4 w-4 mr-2" />
-                        Change Password
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-sm text-muted-foreground">
-                    <LockIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                    <p>Credentials are hidden for security.</p>
-                    <p>Click "Show Credentials" to view.</p>
-                  </div>
-                )}
-              </div>
+      <TabsContent value="overview">
+  <Card className="p-4 sm:p-6">
+    {/* All text inside here is small on mobile, base on tablet+ */}
+    <div className="space-y-6 text-sm sm:text-base">
+      {/* Credentials card */}
+      <div className="bg-muted p-4 rounded-lg">
+        <div className="flex justify-between items-center mb-4">
+          {/* ↓ smaller on xs, larger on sm+ */}
+          <h3 className="text-lg sm:text-xl font-medium">
+            {firstName} Login Credentials
+          </h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCredentials(!showCredentials)}
+            className="text-xs sm:text-sm gap-2"
+          >
+            {showCredentials ? (
+              <>
+                <EyeOff className="h-4 w-4" />
+                Hide
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4" />
+                Show
+              </>
+            )}
+          </Button>
+        </div>
 
-              <div className="grid gap-4">
-                <div>
-                  <label className="text-sm text-muted-foreground">Gender</label>
-                  <p className="font-medium">{child?.gender}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">Grade</label>
-                  <p className="font-medium">{child?.grade}</p>
-                </div>
+        {showCredentials ? (
+          <div className="space-y-4">
+            {/* Username */}
+            <div className="space-y-1">
+              <Label className="text-xs sm:text-sm text-muted-foreground">
+                Username
+              </Label>
+              <div className="bg-background p-2 rounded border text-xs sm:text-sm font-mono">
+                {child?.username}
               </div>
             </div>
-          </Card>
-        </TabsContent>
+
+            {/* Email */}
+            <div className="space-y-1">
+              <Label className="text-xs sm:text-sm text-muted-foreground">
+                Email
+              </Label>
+              <div className="bg-background p-2 rounded border text-xs sm:text-sm font-mono">
+                {child?.email}
+              </div>
+            </div>
+
+            {/* Change password button */}
+            <Button variant="default" className="w-full mt-4 text-xs sm:text-sm">
+              <Link
+                href={`/dashboard/parent/children/${child?.id}/reset-password`}
+                className="flex items-center gap-2"
+              >
+                <Key className="h-4 w-4" />
+                Change Password
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="text-center py-6 text-xs sm:text-sm text-muted-foreground">
+            <LockIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+            <p>Credentials are hidden for security.</p>
+            <p>Click “Show” to view.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Basic info grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs sm:text-sm text-muted-foreground">Gender</p>
+          <p className="text-sm sm:text-base font-medium">{child?.gender}</p>
+        </div>
+        <div>
+          <p className="text-xs sm:text-sm text-muted-foreground">Grade</p>
+          <p className="text-sm sm:text-base font-medium">{child?.grade}</p>
+        </div>
+      </div>
+    </div>
+  </Card>
+</TabsContent>
+
+
 
         <TabsContent value="subjects">
-          <Tabs defaultValue="all" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="all">All Subjects</TabsTrigger>
-              <TabsTrigger value="active">Active Courses</TabsTrigger>
-            </TabsList>
+  <Tabs defaultValue="all" className="space-y-4">
+    {/* Mobile‑only horizontal scroll, snaps, left‑aligned */}
+    <TabsList
+      className="
+        flex justify-start items-center gap-2 whitespace-nowrap
+        overflow-x-auto sm:overflow-x-visible overflow-y-hidden
+        px-4 py-1 scroll-pl-4 scroll-pr-4 snap-x snap-mandatory
+      "
+      style={{ scrollbarWidth: "thin" }}
+    >
+      <TabsTrigger
+        value="all"
+        className="flex-none snap-start px-3 py-2 text-xs sm:text-sm"
+      >
+        All Subjects
+      </TabsTrigger>
+      <TabsTrigger
+        value="active"
+        className="flex-none snap-start px-3 py-2 text-xs sm:text-sm"
+      >
+        Active Courses
+      </TabsTrigger>
+    </TabsList>
 
-            <TabsContent value="all">
-              <Card className="p-6">
-                <div className="grid gap-4">
-                  {child?.allSubjects?.map(subject => (
-                    <div
-                      key={`${subject.area}-${subject.name}`}
-                      className="flex justify-between items-center p-4 border rounded-lg"
-                    >
-                      <div>
-                        <h4 className="font-medium">{subject.name}</h4>
-                        <p className="text-sm text-muted-foreground">{subject.area}</p>
-                      </div>
-                      <Badge variant="outline">
-                        Progress: {subject.progress}%
-                      </Badge>
-                    </div>
-                  ))}
+    {/* “All Subjects” view */}
+    <TabsContent value="all">
+      <Card className="p-6">
+        <div className="space-y-4 text-sm sm:text-base">
+          <div className="grid gap-4">
+            {child?.allSubjects?.map((subject) => (
+              <div
+                key={`${subject.area}-${subject.name}`}
+                className="
+                  flex flex-col sm:flex-row 
+                  justify-between items-start sm:items-center 
+                  p-4 border rounded-lg 
+                  space-y-2 sm:space-y-0
+                "
+              >
+                <div>
+                  <h4 className="text-base sm:text-lg font-medium">
+                    {subject.name}
+                  </h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {subject.area}
+                  </p>
                 </div>
-              </Card>
-            </TabsContent>
+                <Badge variant="outline" className="text-xs sm:text-sm">
+                  Progress: {subject.progress}%
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    </TabsContent>
 
-            <TabsContent value="active">
-              <Card className="p-6">
-                <div className="grid gap-4">
-                  {child.activeCourses.length === 0 ? (
-                    <div className="text-center py-6 text-muted-foreground">
-                      No active courses available.
-                    </div>
-                  ): child?.activeCourses?.map(course => (
-                    <div
-                      key={`${course.area}-${course.name}`}
-                      className="space-y-3 p-4 border rounded-lg"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium">{course.name}</h4>
-                          <p className="text-sm text-muted-foreground">{course.area}</p>
-                        </div>
-                        <Badge variant="outline">
-                          Progress: {course.progress}%
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">{course.teacher.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {course.teacher.email}
-                            </p>
-                          </div>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => fetchTeacherDetails(course.teacher.id)}
-                        >
-                          View Teacher
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        <TabsContent value="documents">
-          <Card className="p-6">
-            <div className="space-y-8">
-              {/* General Documents */}
-              {documents.filter(doc => doc.subject.name === 'General').length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <h3 className="font-medium flex items-center gap-2">
-                      <FileIcon className="h-4 w-4" />
-                      General Documents
-                    </h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      {documents.find(d => d.subject.name === 'General')?.teacher}
-                    </p>
-                  </div>
-                  <div className="grid gap-3">
-                    {documents
-                      .filter(doc => doc.subject.name === 'General')
-                      .map(doc => (
-                        <DocumentCard key={doc.id} document={doc} />
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Subject Documents */}
-              {child?.activeCourses?.map(course => {
-                const subjectDocs = documents.filter(doc => 
-                  doc.subject.name.toLowerCase() === course.name.toLowerCase() &&
-                  doc.subject.area.toLowerCase() === course.area.toLowerCase()
-                )
-
-                if (subjectDocs.length === 0) return null
-
-                return (
-                  <div key={`${course.area}-${course.name}`} className="space-y-4">
-                    <div className="flex items-center justify-between border-b pb-2">
-                      <h3 className="font-medium flex items-center gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        {course.name} - {course.area}
-                      </h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        {course.teacher.name}
+    {/* “Active Courses” view */}
+    <TabsContent value="active">
+      <Card className="p-6">
+        <div className="space-y-4 text-sm sm:text-base">
+          {child.activeCourses.length === 0 ? (
+            <p className="text-center text-xs sm:text-sm text-muted-foreground py-6">
+              No active courses available.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {child.activeCourses.map((course) => (
+                <div
+                  key={`${course.area}-${course.name}`}
+                  className="space-y-3 p-4 border rounded-lg"
+                >
+                  <div className="
+                    flex flex-col sm:flex-row 
+                    justify-between items-start sm:items-center
+                  ">
+                    <div>
+                      <h4 className="text-base sm:text-lg font-medium">
+                        {course.name}
+                      </h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        {course.area}
                       </p>
                     </div>
-
-                    <div className="grid gap-3">
-                      {subjectDocs.map(doc => (
-                        <DocumentCard key={doc.id} document={doc} />
-                      ))}
-                    </div>
+                    <Badge variant="outline" className="text-xs sm:text-sm">
+                      Progress: {course.progress}%
+                    </Badge>
                   </div>
-                )
-              })}
 
-              {documents.length === 0 && (
-                <div className="text-center py-6 text-muted-foreground">
-                  No documents available yet.
+                  <div className="
+                    flex flex-col sm:flex-row 
+                    justify-between items-start sm:items-center 
+                    gap-2
+                  ">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm sm:text-base font-medium">
+                          {course.teacher.name}
+                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          {course.teacher.email}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs sm:text-sm"
+                      onClick={() => fetchTeacherDetails(course.teacher.id)}
+                    >
+                      View Teacher
+                    </Button>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          </Card>
-        </TabsContent>
+          )}
+        </div>
+      </Card>
+    </TabsContent>
+  </Tabs>
+</TabsContent>
 
-        <TabsContent value="assessment">
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold text-lg">Assessment Status</h3>
-                  {renderAssessmentStatus(assessment?.status)}
-                  {assessment?.status === 'assigned' && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Assessment is locked - Teacher has been assigned
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {renderAssessmentActions()}
-                </div>
-              </div>
 
-              {assessmentLoading ? (
-                <div className="flex justify-center items-center py-10">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-                </div>
-              ) : assessment?.responses ? (
-                <ScrollArea className="h-[600px] rounded-md border p-4">
-                  {renderAssessmentResponses(assessment.responses)}
-                </ScrollArea>
-              ) : null}
+       <TabsContent value="documents">
+  <Card className="p-4 sm:p-6">
+    <div className="space-y-8 text-sm sm:text-base">
+
+      {/* General Documents */}
+      {documents.filter(doc => doc.subject.name === 'General').length > 0 && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-2">
+            <h3 className="font-medium flex items-center gap-2 text-sm sm:text-base">
+              <FileIcon className="h-4 w-4" />
+              General Documents
+            </h3>
+            <p className="mt-1 sm:mt-0 text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              {documents.find(d => d.subject.name === 'General')?.teacher}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {documents
+              .filter(doc => doc.subject.name === 'General')
+              .map(doc => (
+                <DocumentCard key={doc.id} document={doc} />
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Subject Documents */}
+      {child?.activeCourses?.map(course => {
+        const subjectDocs = documents.filter(doc =>
+          doc.subject.name.toLowerCase() === course.name.toLowerCase() &&
+          doc.subject.area.toLowerCase() === course.area.toLowerCase()
+        )
+        if (subjectDocs.length === 0) return null
+
+        return (
+          <div key={`${course.area}-${course.name}`} className="space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-2">
+              <h3 className="font-medium flex items-center gap-2 text-sm sm:text-base">
+                <BookOpen className="h-4 w-4" />
+                {course.name} – {course.area}
+              </h3>
+              <p className="mt-1 sm:mt-0 text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                {course.teacher.name}
+              </p>
             </div>
-          </Card>
+            <div className="grid grid-cols-1 gap-3">
+              {subjectDocs.map(doc => (
+                <DocumentCard key={doc.id} document={doc} />
+              ))}
+            </div>
+          </div>
+        )
+      })}
 
-          <Dialog open={showEditAssessment} onOpenChange={setShowEditAssessment}>
-            <DialogContent className="max-w-4xl h-[90vh]">
-              <DialogHeader>
-                <DialogTitle>Edit Assessment - {child?.name}</DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="flex-1 px-4">
-                <ParentAssessmentForm
-                  childId={params.childId}
-                  initialData={assessment}
-                  mode="edit"
-                  onSuccess={async () => {
-                    setShowEditAssessment(false)
-                    await fetchAssessment()
-                  }}
-                />
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
-        </TabsContent>
+      {/* No Documents */}
+      {documents.length === 0 && (
+        <p className="text-center py-6 text-muted-foreground text-xs sm:text-sm">
+          No documents available yet.
+        </p>
+      )}
+
+    </div>
+  </Card>
+</TabsContent>
+
+
+       <TabsContent value="assessment">
+  <Card className="p-4 sm:p-6">
+    {/* body text small on xs, base on ≥640px */}
+    <div className="space-y-4 text-sm sm:text-base">
+      {/* Header: stack+center on xs, row on sm+ */}
+      <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+        <div className="text-center sm:text-left">
+          <h3 className="text-lg sm:text-xl font-semibold">
+            Assessment Status
+          </h3>
+          {renderAssessmentStatus(assessment?.status)}
+          {assessment?.status === "assigned" && (
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Assessment is locked – teacher has been assigned
+            </p>
+          )}
+        </div>
+        <div className="flex">
+          {renderAssessmentActions()}
+        </div>
+      </div>
+
+      {/* Loading spinner or responses */}
+      {assessmentLoading ? (
+        <div className="flex justify-center items-center py-10">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+        </div>
+      ) : assessment?.responses ? (
+        <ScrollArea className="h-[400px] sm:h-[600px] rounded-md border p-4">
+          {renderAssessmentResponses(assessment.responses)}
+        </ScrollArea>
+      ) : null}
+    </div>
+  </Card>
+
+  {/* Edit dialog */}
+  <Dialog open={showEditAssessment} onOpenChange={setShowEditAssessment}>
+    <DialogContent className="max-w-full sm:max-w-4xl h-[90vh] mx-2 sm:mx-auto">
+      <DialogHeader>
+        <DialogTitle className="text-lg sm:text-xl text-center sm:text-left">
+          Edit Assessment – {child?.name}
+        </DialogTitle>
+      </DialogHeader>
+      <ScrollArea className="flex-1 px-2 sm:px-4 text-sm sm:text-base">
+        <ParentAssessmentForm
+          childId={params.childId}
+          initialData={assessment}
+          mode="edit"
+          onSuccess={async () => {
+            setShowEditAssessment(false)
+            await fetchAssessment()
+          }}
+        />
+      </ScrollArea>
+    </DialogContent>
+  </Dialog>
+</TabsContent>
+
 
         <TabsContent value="availability">
-          <Card className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Availability</h2>
-              <Button asChild>
-                <Link href={`/dashboard/parent/children/${params.childId}/availability`}>
-                  View Availability
-                </Link>
-              </Button>
+  <Card className="p-4 sm:p-6">
+    <div className="space-y-4 text-sm sm:text-base">
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <h2 className="text-lg sm:text-xl font-semibold">Availability</h2>
+        <Button asChild size="sm" className="text-xs sm:text-sm">
+          <Link href={`/dashboard/parent/children/${params.childId}/availability`}>
+            View Availability
+          </Link>
+        </Button>
+      </div>
+
+      {/* Loading / Empty */}
+      {availabilityLoading ? (
+        <p className="text-muted-foreground">Loading…</p>
+      ) : !availability ? (
+        <p className="text-muted-foreground">
+          No availability set.{" "}
+          <Link
+            href={`/dashboard/parent/children/${params.childId}/availability`}
+            className="text-primary underline"
+          >
+            Set availability
+          </Link>
+        </p>
+      ) : (
+        <>
+          {/* Timezone & Valid Range */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm sm:text-base text-muted-foreground">
+            <div>
+              <span className="font-medium">Timezone:</span> {availability.timezone}
             </div>
-            {availabilityLoading ? (
-              <div className="text-muted-foreground">Loading...</div>
-            ) : !availability ? (
-              <div className="text-muted-foreground">
-                No availability set.{" "}
-                <Link
-                  href={`/dashboard/parent/children/${params.childId}/availability`}
-                  className="text-primary underline"
-                >
-                  Set availability
-                </Link>
+            <div>
+              <span className="font-medium">Valid:</span>{" "}
+              {new Date(availability.validFrom).toLocaleDateString()} –{" "}
+              {new Date(availability.validTo).toLocaleDateString()}
+            </div>
+          </div>
+
+          {/* Days: stacked cards on mobile, table on sm+ */}
+          <div className="sm:hidden space-y-4">
+            {availability.days.map((day) => (
+              <div
+                key={day.day}
+                className="border rounded-lg p-3 space-y-2"
+              >
+                <div className="font-medium">{day.day}</div>
+                {day.slots.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {day.slots.map((slot, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-block bg-primary/5 px-3 py-1 rounded text-xs"
+                      >
+                        {formatTimeAMPM(slot.start)} – {formatTimeAMPM(slot.end)}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No slots</p>
+                )}
               </div>
-            ) : (
-              <div>
-                <div className="mb-2 text-sm text-muted-foreground">
-                  <span className="font-medium">Timezone:</span> {availability.timezone}
-                </div>
-                <div className="mb-2 text-sm text-muted-foreground">
-                  <span className="font-medium">Valid:</span>{" "}
-                  {new Date(availability.validFrom).toLocaleDateString()} - {new Date(availability.validTo).toLocaleDateString()}
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border rounded-lg bg-background shadow-sm">
-                    <thead>
-                      <tr>
-                        <th className="py-2 px-4 text-left bg-primary/10 text-primary rounded-tl-lg">Day</th>
-                        <th className="py-2 px-4 text-left bg-primary/10 text-primary">Time Slots</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {availability.days.map(day => (
-                        <tr key={day.day} className="border-b last:border-b-0">
-                          <td className="py-2 px-4 font-semibold">{day.day}</td>
-                          <td className="py-2 px-4">
-                            {day.slots.length ? (
-                              <div className="flex flex-wrap gap-2">
-                                {day.slots.map((slot, idx) => (
-                                  <span key={idx} className="inline-block bg-primary/5 px-3 py-1 rounded text-sm">
-                                    {/* {(slot.startDisplay || slot.start) + " - " + (slot.endDisplay || slot.end)} */}
-                                     {formatTimeAMPM(slot.start)} – {formatTimeAMPM(slot.end)}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">No slots</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </Card>
-        </TabsContent>
+            ))}
+          </div>
+
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="min-w-full border rounded-lg bg-background shadow-sm text-sm">
+              <thead>
+                <tr>
+                  <th className="py-2 px-4 text-left bg-primary/10 text-primary rounded-tl-lg">
+                    Day
+                  </th>
+                  <th className="py-2 px-4 text-left bg-primary/10 text-primary">
+                    Time Slots
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {availability.days.map((day) => (
+                  <tr key={day.day} className="border-b last:border-b-0">
+                    <td className="py-2 px-4 font-semibold">{day.day}</td>
+                    <td className="py-2 px-4">
+                      {day.slots.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {day.slots.map((slot, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-block bg-primary/5 px-3 py-1 rounded text-sm"
+                            >
+                              {formatTimeAMPM(slot.start)} – {formatTimeAMPM(slot.end)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">No slots</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  </Card>
+</TabsContent>
+
 
         {/* <TabsContent value="schedule">
           <Card className="p-6">

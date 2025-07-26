@@ -12,7 +12,7 @@ export async function GET(
     await connectDB()
 
     const teacher = await User.findById(params.id)
-      .select('name bio teacherProfile.qualifications teacherProfile.subjects teacherProfile.rating')
+      .select('name bio teacherProfile.qualifications teacherProfile.subjects teacherProfile.ratings')
       .lean()
 
     if (!teacher) {
