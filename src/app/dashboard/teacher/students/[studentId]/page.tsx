@@ -416,7 +416,7 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
                 <div className="space-y-4">
                   <div>
                     <Label>Gender</Label>
-                    <p className="font-medium">{student.gender}</p>
+                    <p className="font-medium capitalize">{student.gender}</p>
                   </div>
                   <div>
                     <Label>Grade</Label>
@@ -435,8 +435,8 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
                       className="flex justify-between items-start p-4 border rounded-lg"
                     >
                       <div>
-                        <h4 className="font-medium">{subject.name}</h4>
-                        <p className="text-sm text-muted-foreground">{subject.area}</p>
+                        <h4 className="font-medium capitalize">{subject.name}</h4>
+                        <p className="text-sm text-muted-foreground capitalize">{subject.area}</p>
                       </div>
                       <Progress value={subject.progress} className="w-24" />
                     </div>
@@ -478,7 +478,7 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
                     <Card key={session._id}>
                       <CardContent className="p-6">
                         <div className="space-y-2">
-                          <h4 className="font-medium">{session.subject.name}</h4>
+                          <h4 className="font-medium capitalize">{session.subject.name}</h4>
                           <p className="text-sm">{format(new Date(session.startTime), 'PPP')}</p>
                           <p className="text-sm">
                             {format(new Date(session.startTime), 'p')} – {format(new Date(session.endTime), 'p')}
@@ -499,7 +499,7 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
                     <Card key={session._id}>
                       <CardContent className="p-6">
                         <div className="space-y-2">
-                          <h4 className="font-medium">{session.subject.name}</h4>
+                          <h4 className="font-medium capitalize">{session.subject.name}</h4>
                           <p className="text-sm">{format(new Date(session.startTime), 'PPP')}</p>
                           <p className="text-sm">
                             {format(new Date(session.startTime), 'p')} – {format(new Date(session.endTime), 'p')}
@@ -573,7 +573,7 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
           <Card key={subjectId} className="p-4 sm:p-6 text-xs sm:text-sm">
             {/* Title Row */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
-              <h3 className="text-base sm:text-lg font-semibold">{subject.name}</h3>
+              <h3 className="text-base sm:text-lg font-semibold capitalize">{subject.name}</h3>
               <p className="mt-1 sm:mt-0 text-muted-foreground">
                 Progress: {pct}%
               </p>

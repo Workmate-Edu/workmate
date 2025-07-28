@@ -240,6 +240,7 @@ export function StudentSignUpForm() {
     }
   };
 
+  
   const steps = [
     "Basic Information",
     "Education Details",

@@ -9,6 +9,7 @@ import { format, isPast } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { formatAssessmentDateTime } from "@/lib/timezone-utils"
+import { StartClassDialog } from "@/components/teacher/create-session-dialog"
 
 interface TeacherSession {
   _id: string
@@ -40,6 +41,8 @@ export default function TeacherSchedulePage() {
   const [sessions, setSessions] = useState<TeacherSession[]>([])
   const [loading, setLoading] = useState(true)
   const [marking, setMarking] = useState<string | null>(null)
+  const [editSession, setEditSession] = useState<TeacherSession | null>(null)
+  const [showEditDialog, setShowEditDialog] = useState(false)
 
   useEffect(() => {
     fetchSessions()
@@ -91,6 +94,19 @@ export default function TeacherSchedulePage() {
     return `${session.recurrence.pattern} sessions on ${selectedDays} until ${endDate}`
   }
 
+  // Handler to open edit dialog with session data
+  const handleEditSession = (session: TeacherSession) => {
+    setEditSession(session)
+    setShowEditDialog(true)
+  }
+
+  // Handler for updating session (after edit)
+  const handleEditSuccess = () => {
+    setShowEditDialog(false)
+    setEditSession(null)
+    fetchSessions()
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -127,6 +143,10 @@ export default function TeacherSchedulePage() {
               (session.status === "scheduled" || session.status === "active") &&
               isPast(new Date(session.endTime))
 
+            const canEdit =
+              (session.status === "scheduled" || session.status === "active") &&
+              !isPast(new Date(session.endTime))
+
             return (
               <Card key={session._id}>
                 <CardContent className="p-4 md:p-6">
@@ -135,9 +155,9 @@ export default function TeacherSchedulePage() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <BookOpen className="h-4 w-4 flex-shrink-0" />
-                        <span className="font-medium">
+                        <span className="font-medium capitalize">
                           {session.subject.name}
-                          <span className="text-sm text-muted-foreground ml-1">
+                          <span className="text-sm text-muted-foreground ml-1 capitalize">
                             ({session.subject.area})
                           </span>
                         </span>
@@ -158,6 +178,16 @@ export default function TeacherSchedulePage() {
                             <RefreshCw className="mr-1 h-3 w-3" />
                             Recurring
                           </Badge>
+                        )}
+                        {canEdit && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2"
+                            onClick={() => handleEditSession(session)}
+                          >
+                            Edit
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -183,7 +213,7 @@ export default function TeacherSchedulePage() {
 
                       {/* Recurrence Info */}
                       {session.recurrence?.isRecurring && (
-                        <div className="text-xs text-blue-600">
+                        <div className="text-xs text-blue-600 capitalize">
                           {formatRecurrenceInfo(session)}
                         </div>
                       )}
@@ -231,6 +261,44 @@ export default function TeacherSchedulePage() {
           })
         )}
       </div>
+      {/* Edit Session Dialog */}
+      {editSession && (
+        <StartClassDialog
+          open={showEditDialog}
+          onOpenChange={(open) => {
+            setShowEditDialog(open)
+            if (!open) setEditSession(null)
+          }}
+          courseId={`${editSession.subject.name}`}
+          courseName={editSession.subject.name}
+          students={[{ id: editSession.student.id, name: editSession.student.name }]}
+          onSuccess={handleEditSuccess}
+          initialData={{
+            _id: editSession._id, // <-- ensure this is passed for PATCH
+            dateTime: editSession.startTime.slice(0, 16),
+            duration: editSession.duration.toString(),
+            selectedStudents: [editSession.student.id],
+            externalLink: editSession.meetingLink,
+            useCustomLink: !!editSession.meetingLink,
+            timezone: editSession.timezone,
+            recurrence: editSession.recurrence
+              ? {
+                  type: editSession.recurrence.pattern || "none",
+                  daysOfWeek: editSession.recurrence.daysOfWeek || [],
+                  endsOn: editSession.recurrence.endDate
+                    ? new Date(editSession.recurrence.endDate).toISOString().slice(0, 10)
+                    : "",
+                  isRecurring: !!editSession.recurrence.isRecurring,
+                }
+              : {
+                  type: "none",
+                  daysOfWeek: [],
+                  endsOn: "",
+                  isRecurring: false,
+                },
+          }}
+        />
+      )}
     </div>
   )
 }

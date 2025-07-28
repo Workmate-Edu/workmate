@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AlertCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -27,6 +27,7 @@ interface StartClassDialogProps {
   courseName: string
   students: Array<{ id: string; name: string }>
   onSuccess?: () => void
+  initialData?: any // <-- add this prop for edit
 }
 
 const GOOGLE_MEET_MAX_DAYS = 90
@@ -60,7 +61,8 @@ export function StartClassDialog({
   courseId,
   courseName,
   students,
-  onSuccess
+  onSuccess,
+  initialData // <-- add this prop for edit
 }: StartClassDialogProps) {
   const [formData, setFormData] = useState({
     dateTime: "",
@@ -79,6 +81,26 @@ export function StartClassDialog({
   const [selectedTimezone, setSelectedTimezone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   )
+  const [editSessionId, setEditSessionId] = useState<string | null>(null)
+
+  // Populate form with initialData when editing
+  useEffect(() => {
+    if (initialData && open) {
+      setFormData({
+        ...formData,
+        ...initialData,
+        recurrence: {
+          ...formData.recurrence,
+          ...initialData.recurrence
+        }
+      })
+      setSelectedTimezone(initialData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone)
+      setEditSessionId(initialData._id || initialData.id || null)
+    } else if (!open) {
+      setEditSessionId(null)
+    }
+    // eslint-disable-next-line
+  }, [initialData, open])
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
@@ -110,11 +132,18 @@ export function StartClassDialog({
       }
 
       // Validate selected days for weekly/twice-weekly
-      if (['weekly', 'twice-weekly'].includes(formData.recurrence.type) && 
+      // if (['weekly', 'twice-weekly'].includes(formData.recurrence.type) && 
+      //     formData.recurrence.daysOfWeek.length === 0) {
+      //   newErrors.recurrence = "Please select at least one day"
+      // }
+
+      if (formData.recurrence.type === 'multiple-days' &&
           formData.recurrence.daysOfWeek.length === 0) {
         newErrors.recurrence = "Please select at least one day"
       }
+      
     }
+    
 
     if (formData.selectedStudents.length === 0) {
       newErrors.students = "Please select at least one student"
@@ -280,48 +309,61 @@ export function StartClassDialog({
     const recurrenceInfo = formatRecurrenceInfo(formData)
     console.log('Session schedule:', recurrenceInfo)
 
-    const submissionData = {
+
+    const recurrencePayload = {
+        pattern: formData.recurrence.type,
+        isRecurring: formData.recurrence.type !== 'none',
+        daysOfWeek:
+          formData.recurrence.type === 'weekly'
+            ? [new Date(formData.dateTime).getDay()]
+            : formData.recurrence.daysOfWeek,
+        endsOn: formData.recurrence.endsOn,
+      }
+
+     const submissionData = {
       courseId,
       startTime: formData.dateTime,
-      duration: parseInt(formData.duration),
+      duration: parseInt(formData.duration, 10),
       students: formData.selectedStudents,
-      timezone: selectedTimezone, // Add timezone
+      timezone: selectedTimezone,
       externalLink: formData.useCustomLink ? formData.externalLink : undefined,
-      recurrence: {
-        pattern: formData.recurrence.type,
-        daysOfWeek: formData.recurrence.daysOfWeek,
-        endsOn: formData.recurrence.endsOn,
-        isRecurring: formData.recurrence.type !== 'none',
-        schedule: recurrenceInfo // Add formatted schedule info
-      }
+      recurrence: recurrencePayload,
     }
-
-    // console.log('Final submission data:', submissionData)
 
     try {
       setLoading(true)
-      const response = await fetch("/api/teacher/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submissionData),
-      })
+      let response
+      if (editSessionId) {
+        // PUT for update
+        response = await fetch(`/api/teacher/sessions/${editSessionId}/update`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(submissionData),
+        })
+      } else {
+        // POST for create
+        response = await fetch("/api/teacher/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(submissionData),
+        })
+      }
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('Session creation failed:', errorData)
-        throw new Error(errorData.error || "Failed to create session")
+        throw new Error(errorData.error || "Failed to create/update session")
       }
       
       const data = await response.json()
       console.log('Session created successfully:', data)
       
-      toast.success("Session created successfully")
+      toast.success(editSessionId ? "Session updated successfully" : "Session created successfully")
       onOpenChange(false)
       onSuccess?.()
 
     } catch (error) {
       console.error('Session creation error:', error)
-      toast.error("Failed to create class session")
+      toast.error(editSessionId ? "Failed to update session" : "Failed to create class session")
     } finally {
       setLoading(false)
     }
@@ -475,7 +517,7 @@ export function StartClassDialog({
 
               {formData.recurrence.type !== 'none' && (
                 <div className="space-y-4">
-                  {(formData.recurrence.type === 'weekly' || formData.recurrence.type === 'multiple-days') && (
+                  {(formData.recurrence.type === 'multiple-days') && (
                     <div className="space-y-2">
                       <Label>Select Days</Label>
                       <div className="flex gap-2">
@@ -577,7 +619,9 @@ export function StartClassDialog({
             onClick={handleSubmit}
             disabled={loading}
           >
-            {loading ? "Creating..." : "Create Session"}
+            {loading
+              ? (editSessionId ? "Updating..." : "Creating...")
+              : (editSessionId ? "Update Session" : "Create Session")}
           </Button>
         </DialogFooter>
       </DialogContent>

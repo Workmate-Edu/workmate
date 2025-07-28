@@ -14,6 +14,7 @@ export default async function SignInPage() {
       : `/dashboard/${session.user.role}`
     redirect(dashboardPath)
   }
+  
 
   return (
     <div className="flex min-h-screen">

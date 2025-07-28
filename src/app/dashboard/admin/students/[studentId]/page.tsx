@@ -110,7 +110,7 @@ const ProgressTab = ({ subject }: { subject: Subject }) => {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-semibold">{subject.name}</h3>
+          <h3 className="font-semibold capitalize">{subject.name}</h3>
           <p className="text-sm text-muted-foreground">{subject.area}</p>
         </div>
         <Badge variant={subject.teacher ? "default" : "secondary"}>
@@ -489,7 +489,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
 
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{student?.name}</h1>
+          <h1 className="text-2xl font-bold capitalize">{student?.name}</h1>
           <p className="text-muted-foreground">{student?.email}</p>
           <div className="flex items-center gap-2 mt-2">
             <Badge>{student?.type}</Badge>
@@ -534,7 +534,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
                 </div>
                 <div>
                   <Label>Gender</Label>
-                  <p className="font-medium">{student?.gender}</p>
+                  <p className="font-medium capitalize">{student?.gender}</p>
                 </div>
                 <div>
                   <Label>Joined</Label>
@@ -545,7 +545,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
                 {student?.parent && (
                   <div>
                     <Label>Parent</Label>
-                    <p className="font-medium">{student.parent.name}</p>
+                    <p className="font-medium capitalize">{student.parent.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {student.parent.email}
                     </p>
@@ -587,7 +587,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
                   className="flex justify-between items-start p-4 border rounded-lg"
                 >
                   <div>
-                    <h4 className="font-medium">{subject.name}</h4>
+                    <h4 className="font-medium capitalize">{subject.name}</h4>
                     <p className="text-sm text-muted-foreground">{subject.area}</p>
                     {subject.startDate && (
                       <p className="text-sm text-muted-foreground">
@@ -631,11 +631,11 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
                       <div key={index} className="py-4 first:pt-0 last:pb-0">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h4 className="font-medium">{subject.name}</h4>
+                            <h4 className="font-medium capitalize">{subject.name}</h4>
                             <p className="text-sm text-muted-foreground">{subject.area}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">{subject.teacher?.name}</p>
+                            <p className="font-medium capitalize">{subject.teacher?.name}</p>
                             <p className="text-sm text-muted-foreground">{subject.teacher?.email}</p>
                             {subject.teacher?.rating !== undefined && (
                               <div className="flex items-center gap-1 mt-1 justify-end">
@@ -658,7 +658,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
                         .map((subject, index) => (
                           <div key={index} className="flex justify-between items-center">
                             <div>
-                              <p className="font-medium">{subject.name}</p>
+                              <p className="font-medium capitalize">{subject.name}</p>
                               <p className="text-sm text-muted-foreground">{subject.area}</p>
                             </div>
                             <AssignTeacherButton
@@ -693,7 +693,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 capitalize">
             {student?.subjects?.map((subject: any) => (
               <ProgressTab key={subject.name} subject={subject} />
             ))}

@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   GraduationCap, 
   Clock,
-  Video,
   RefreshCw,
   BarChart2
 } from "lucide-react"
@@ -34,83 +33,77 @@ interface CourseDetail {
   }>
 }
 
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-}
-
 interface Session {
-  _id: string;
-  status: string;
-  startTime: string;
-  endTime: string;
-  meetingLink: string;
-  studentId: {  // This is the actual structure from the database
-    _id: string;
-    name: string;
-    email: string;
-  };
+  _id: string
+  status: string
+  startTime: string
+  endTime: string
+  meetingLink: string
+  timezone?: string
+  studentId: {
+    _id: string
+    name: string
+    email: string
+  }
   recurrence?: {
-    isRecurring: boolean;
-    pattern: string;
-    daysOfWeek: number[];
-    startDate: string;
-    endDate: string;
-    totalSessions?: number;
-  };
-}
-
-interface PageProps {
-  params: {
-    courseId: string
+    isRecurring: boolean
+    pattern: string
+    daysOfWeek: number[]
+    startDate: string
+    endDate: string
+    totalSessions?: number
+    groupId?: string
   }
 }
 
-// Add status color utility
-const getStatusColor = (status: string, startTime: string) => {
-  const isPastSession = isPast(new Date(startTime))
-  
-  if (isPastSession && status === 'scheduled') {
-    return 'bg-red-500' // Past due sessions
+export default function CoursePage({ params }: { params: { courseId: string } }) {
+  const [course, setCourse] = useState<CourseDetail | null>(null)
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showStartClass, setShowStartClass] = useState(false)
+  const [showUpdateProgress, setShowUpdateProgress] = useState(false)
+
+  // EDIT FLOW:
+  const [editSession, setEditSession] = useState<Session | null>(null)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+
+  const [subjectName] = useState(() => params.courseId.split('-')[1])
+
+  const canEdit = (s: Session) =>
+    (s.status === 'scheduled' || s.status === 'active') &&
+    !isPast(new Date(s.startTime))
+
+  const getStatusColor = (status: string, startTime: string) => {
+    const past = isPast(new Date(startTime))
+    if (past && status === 'scheduled') return 'bg-red-500'
+    switch (status.toLowerCase()) {
+      case 'scheduled': return 'bg-blue-500'
+      case 'active':    return 'bg-green-500'
+      case 'completed': return 'bg-gray-500'
+      case 'cancelled': return 'bg-red-500'
+      default:          return 'bg-gray-500'
+    }
   }
 
-  switch (status.toLowerCase()) {
-    case 'scheduled':
-      return 'bg-blue-500'
-    case 'active':
-      return 'bg-green-500'
-    case 'completed':
-      return 'bg-gray-500'
-    case 'cancelled':
-      return 'bg-red-500'
-    default:
-      return 'bg-gray-500'
-  }
-}
-
-const getSessionStatus = (session: Session) => {
-  const isPastSession = isPast(new Date(session.startTime))
-  
-  if (isPastSession && session.status === 'scheduled') {
-    return 'Past Due'
+  const getSessionStatus = (s: Session) => {
+    const past = isPast(new Date(s.startTime))
+    if (past && s.status === 'scheduled') return 'Past Due'
+    return s.status.charAt(0).toUpperCase() + s.status.slice(1)
   }
 
-  return session.status.charAt(0).toUpperCase() + session.status.slice(1)
-}
+ // in app/course/[courseId]/page.tsx
 
 const formatRecurrenceInfo = (session: Session) => {
   if (!session.recurrence?.isRecurring) return null
 
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
   const selectedDays = session.recurrence.daysOfWeek.map(d => days[d]).join(', ')
   const startDate = format(new Date(session.recurrence.startDate), 'PPP')
-  const endDate = format(new Date(session.recurrence.endDate), 'PPP')
+  const endDate   = format(new Date(session.recurrence.endDate),   'PPP')
 
-  // Calculate total sessions based on pattern
   const start = new Date(session.recurrence.startDate)
-  const end = new Date(session.recurrence.endDate)
-  const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  const end   = new Date(session.recurrence.endDate)
+  const totalDays  = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
   const totalWeeks = Math.ceil(totalDays / 7)
 
   let totalSessions
@@ -121,6 +114,10 @@ const formatRecurrenceInfo = (session: Session) => {
     case 'weekly':
       totalSessions = totalWeeks
       break
+    case 'multiple-days':
+      // new! multiply weeks × number of selected weekdays
+      totalSessions = totalWeeks * session.recurrence.daysOfWeek.length
+      break
     case 'twice-weekly':
       totalSessions = totalWeeks * session.recurrence.daysOfWeek.length
       break
@@ -128,52 +125,36 @@ const formatRecurrenceInfo = (session: Session) => {
       totalSessions = Math.ceil(totalWeeks / 2)
       break
     default:
-      totalSessions = session.recurrence.totalSessions || "undefined"
+      totalSessions = session.recurrence.totalSessions ?? 0
   }
 
-  return `${session.recurrence.pattern} sessions on ${selectedDays}\nStarts ${startDate} until ${endDate}\nTotal ${totalSessions} sessions`
+  return `${session.recurrence.pattern} sessions on ${selectedDays}
+Starts ${startDate} → ${endDate}
+Total ${totalSessions} sessions`
 }
 
-export default function CoursePage({ params }: { params: { courseId: string } }) {
-  const [course, setCourse] = useState<CourseDetail | null>(null)
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showStartClass, setShowStartClass] = useState(false)
-  const [showUpdateProgress, setShowUpdateProgress] = useState(false)
-  const [subjectId] = useState(() => params.courseId.split('-')[0])
-  const [subjectName] = useState(() => params.courseId.split('-')[1]) // Extract subject name
 
   const fetchSessions = async () => {
     try {
-      console.log('Fetching sessions for courseId:', params.courseId); // Add debug log
-      const response = await fetch(`/api/teacher/courses/${params.courseId}/sessions`);
-      if (!response.ok) {
-        console.error('Sessions fetch error:', await response.text()); // Add error logging
-        throw new Error('Failed to fetch sessions');
-      }
-      const data = await response.json();
-      console.log('Fetched sessions:', data); // Add debug log
-      setSessions(data);
-    } catch (error) {
-      console.error('Failed to fetch sessions:', error);
-      toast.error("Failed to load sessions");
+      const res = await fetch(`/api/teacher/courses/${params.courseId}/sessions`)
+      if (!res.ok) throw new Error(await res.text())
+      setSessions(await res.json())
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to load sessions")
     }
   }
 
   const fetchCourseData = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      // Fetch course details
-      const courseRes = await fetch(`/api/teacher/courses/${params.courseId}`)
-      if (!courseRes.ok) throw new Error('Failed to fetch course')
-      const courseData = await courseRes.json()
-      setCourse(courseData)
-      
-      // Fetch sessions
+      const res = await fetch(`/api/teacher/courses/${params.courseId}`)
+      if (!res.ok) throw new Error('Course fetch failed')
+      setCourse(await res.json())
       await fetchSessions()
-    } catch (error) {
-      console.error(error)
-      toast.error("Failed to load course data")
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to load course")
     } finally {
       setLoading(false)
     }
@@ -183,13 +164,12 @@ export default function CoursePage({ params }: { params: { courseId: string } })
     fetchCourseData()
   }, [params.courseId])
 
-  const handleSessionCreated = () => {
-    fetchSessions() // Refresh sessions
-  }
+  const handleSessionCreated = () => fetchSessions()
+  const handleProgressUpdate  = () => fetchCourseData()
 
-  // Add progress update handler
-  const handleProgressUpdate = async () => {
-    await fetchCourseData() // Now this will be defined
+  const handleEdit = (s: Session) => {
+    setEditSession(s)
+    setShowEditDialog(true)
   }
 
   if (loading) {
@@ -216,6 +196,7 @@ export default function CoursePage({ params }: { params: { courseId: string } })
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <Button variant="ghost" asChild className="mb-2">
@@ -230,24 +211,16 @@ export default function CoursePage({ params }: { params: { courseId: string } })
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={() => setShowStartClass(true)}
-            className="transition-all duration-300 hover:scale-105 hover:shadow-lg bg-primary text-primary-foreground hover:bg-secondary active:scale-95"
-          >
-            <Calendar className="mr-2 h-4 w-4 transition-transform group-hover:rotate-[-12deg]" />
-            Create Session  
+          <Button onClick={() => setShowStartClass(true)} className="bg-primary text-primary-foreground">
+            <Calendar className="mr-2 h-4 w-4" /> Create Session
           </Button>
-          <Button 
-            variant="outline"
-            onClick={() => setShowUpdateProgress(true)}
-            className="transition-all duration-300 hover:scale-105 hover:shadow-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground active:scale-95"
-          >
-            <BarChart2 className="mr-2 h-4 w-4 transition-transform group-hover:translate-y-[-2px]" />
-            Update Progress
+          <Button variant="outline" onClick={() => setShowUpdateProgress(true)}>
+            <BarChart2 className="mr-2 h-4 w-4" /> Update Progress
           </Button>
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6">
@@ -256,57 +229,44 @@ export default function CoursePage({ params }: { params: { courseId: string } })
             <p className="text-sm text-muted-foreground">Enrolled Students</p>
           </CardContent>
         </Card>
-
-        {/* Add more stats cards as needed */}
       </div>
 
+      {/* Students */}
       <Card>
-        <CardHeader>
-          <CardTitle>Enrolled Students</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {course.students.map(student => (
-              <div 
-                key={student.id} 
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <GraduationCap className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{student.name}</p>
-                    {student.grade && (
-                      <p className="text-sm text-muted-foreground">
-                        Grade {student.grade}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="w-48">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span>{student.progress || 0}%</span>
-                  </div>
-                  <Progress 
-                    value={student.progress || 0}
-                    className={cn(
-                      "h-2",
-                      (student.progress || 0) >= 70 ? "bg-green-200" :
-                      (student.progress || 0) >= 50 ? "bg-blue-200" :
-                      "bg-yellow-200"
-                    )}
-                  />
+        <CardHeader><CardTitle>Enrolled Students</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          {course.students.map(s => (
+            <div key={s.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center space-x-4">
+                <GraduationCap className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">{s.name}</p>
+                  {s.grade && <p className="text-sm text-muted-foreground">Grade {s.grade}</p>}
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="w-48">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span>{s.progress ?? 0}%</span>
+                </div>
+                <Progress 
+                  value={s.progress ?? 0}
+                  className={cn(
+                    "h-2",
+                    (s.progress ?? 0) >= 70 ? "bg-green-200" :
+                    (s.progress ?? 0) >= 50 ? "bg-blue-200" :
+                    "bg-yellow-200"
+                  )}
+                />
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
 
+      {/* Sessions */}
       <Card>
-        <CardHeader>
-          <CardTitle>Scheduled Sessions</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Scheduled Sessions</CardTitle></CardHeader>
         <CardContent>
           {sessions.length === 0 ? (
             <div className="text-center py-6">
@@ -315,90 +275,45 @@ export default function CoursePage({ params }: { params: { courseId: string } })
             </div>
           ) : (
             <div className="space-y-4">
-              {sessions.slice().reverse().map((session) => (
-                <Card key={session._id}>
+              {sessions.slice().reverse().map(s => (
+                <Card key={s._id}>
                   <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <Badge className={getStatusColor(session.status, session.startTime)}>
-                            {getSessionStatus(session)}
+                          <Badge className={getStatusColor(s.status, s.startTime)}>
+                            {getSessionStatus(s)}
                           </Badge>
-                          {session.recurrence?.isRecurring && (
+                          {s.recurrence?.isRecurring && (
                             <Badge variant="outline" className="flex items-center">
-                              <RefreshCw className="mr-1 h-3 w-3" />
-                              Recurring
+                              <RefreshCw className="mr-1 h-3 w-3" /> Recurring
                             </Badge>
                           )}
                         </div>
-
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <div className="flex items-center">
-                            <Calendar className="mr-1 h-4 w-4" />
-                            {format(new Date(session.startTime), 'PPP')}
-                          </div>
-                          <div className="flex items-center">
-                            <Clock className="mr-1 h-4 w-4" />
-                            {format(new Date(session.startTime), 'p')}
-                          </div>
+                          <Calendar className="mr-1 h-4 w-4" /> {format(new Date(s.startTime), 'PPP')}
+                          <Clock    className="mr-1 h-4 w-4" /> {format(new Date(s.startTime), 'p')}
                         </div>
-
-                        {session.recurrence?.isRecurring && (
-                          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <RefreshCw className="h-4 w-4" />
-                              <span className="font-medium">Recurring Session</span>
-                            </div>
-                            <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                              <p>Pattern: {session.recurrence.pattern}</p>
-                              <p>Days: {session.recurrence.daysOfWeek.map(d => 
-                                ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]
-                              ).join(', ')}</p>
-                              <p>Until: {format(new Date(session.recurrence.endDate), 'PPP')}</p>
-                              <p>Using same meeting link for all sessions</p>
-                            </div>
+                        {s.recurrence?.isRecurring && (
+                          <div className="mt-2 p-2 bg-muted/50 rounded text-sm">
+                            {formatRecurrenceInfo(s)}
                           </div>
                         )}
-
-                        <div className="flex items-start space-x-2 mt-4">
-                          <Users className="h-4 w-4 mt-1 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">
-                              Participant
-                            </p>
-                            <div className="space-y-1 mt-1">
-                              <p className="text-sm text-muted-foreground">
-                                {session.studentId?.name}
-                              </p>
-                            </div>
-                          </div>
+                        <div className="mt-2 flex items-center gap-2 text-sm">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          {s.studentId.name}
                         </div>
-
-                        {session.recurrence?.isRecurring && (
-                          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                            <div className="flex items-center gap-2 text-sm">
-                              <RefreshCw className="h-3 w-3" />
-                              <span className="font-medium">Recurring Session</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {formatRecurrenceInfo(session)}
-                            </p>
-                            {session.recurrence.groupId && (
-                              <p className="text-xs text-muted-foreground mt-2">
-                                Part of recurring sessions series
-                              </p>
-                            )}
-                          </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button variant="outline" size="sm" onClick={() => window.open(s.meetingLink, '_blank')}>
+                          Join Session
+                        </Button>
+                        {canEdit(s) && (
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(s)}>
+                            Edit
+                          </Button>
                         )}
                       </div>
-
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(session.meetingLink, '_blank')}
-                      >
-                        Join Session
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -408,6 +323,7 @@ export default function CoursePage({ params }: { params: { courseId: string } })
         </CardContent>
       </Card>
 
+      {/* Dialogs */}
       {course && (
         <>
           <StartClassDialog
@@ -423,9 +339,40 @@ export default function CoursePage({ params }: { params: { courseId: string } })
             open={showUpdateProgress}
             onOpenChange={setShowUpdateProgress}
             students={course.students}
-            subjectId={subjectName} // Just pass the subject name
+            subjectId={subjectName}
             onSuccess={handleProgressUpdate}
           />
+
+          {editSession && (
+            <StartClassDialog
+              open={showEditDialog}
+              onOpenChange={(open) => {
+                setShowEditDialog(open)
+                if (!open) setEditSession(null)
+              }}
+              courseId={params.courseId}
+              courseName={course.name}
+              students={course.students}
+              initialData={{
+                _id: editSession._id,
+                dateTime: editSession.startTime.slice(0,16),
+                duration: Math.round((new Date(editSession.endTime).getTime() - new Date(editSession.startTime).getTime())/60000).toString(),
+                selectedStudents: [editSession.studentId._id],
+                useCustomLink: !!editSession.meetingLink,
+                externalLink: editSession.meetingLink,
+                timezone: editSession.timezone,
+                recurrence: editSession.recurrence
+                  ? {
+                      type: editSession.recurrence.pattern,
+                      daysOfWeek: editSession.recurrence.daysOfWeek,
+                      endsOn: editSession.recurrence.endDate.slice(0,10),
+                      isRecurring: editSession.recurrence.isRecurring,
+                    }
+                  : { type: "none", daysOfWeek: [], endsOn: "", isRecurring: false }
+              }}
+              onSuccess={handleSessionCreated}
+            />
+          )}
         </>
       )}
     </div>

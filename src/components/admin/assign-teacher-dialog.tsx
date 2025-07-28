@@ -301,7 +301,7 @@ export function AssignTeacherDialog({
                     <div className="mb-4 p-3 bg-muted/50 rounded-md">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium">{assignedTeacher.teacherName}</p>
+                          <p className="font-medium capitalize">{assignedTeacher.teacherName}</p>
                           <p className="text-sm text-muted-foreground">{assignedTeacher.email}</p>
                           <div className="flex items-center gap-1 mt-1">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -333,7 +333,7 @@ export function AssignTeacherDialog({
                           <div className="flex-1">
                             <div className="flex justify-between">
                               <div>
-                                <p className="font-medium">{teacher.name}</p>
+                                <p className="font-medium capitalize">{teacher.name}</p>
                                 <p className="text-sm">{teacher.email}</p>
                                 {teacher.bio && <p className="text-sm mt-1">{teacher.bio}</p>}
                               </div>

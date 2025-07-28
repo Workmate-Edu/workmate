@@ -176,7 +176,7 @@ export default function AdminDashboard() {
             {subscriptions.map(sub => (
               <Card key={sub._id} className="p-4 flex flex-col gap-2">
                 <div className="flex flex-wrap gap-4 items-center">
-                  <span className="font-semibold">{sub.userId?.name || "Unknown User"}</span>
+                  <span className="font-semibold capitalize">{sub.userId?.name || "Unknown User"}</span>
                   <span className="text-xs text-muted-foreground">{sub.userId?.email}</span>
                   <Badge variant={sub.status === "active" ? "default" : "secondary"}>
                     {sub.status}

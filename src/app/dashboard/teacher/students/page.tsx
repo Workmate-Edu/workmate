@@ -107,7 +107,7 @@ export default function TeacherStudentsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 className="text-xl font-semibold truncate">{student.name}</h2>
-                        <div className="flex gap-2 mt-1 flex-wrap">
+                        <div className="flex gap-2 mt-1 flex-wrap capitalize">
                           <Badge className={gradeColor}>
                             {grade}
                           </Badge>

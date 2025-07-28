@@ -547,7 +547,7 @@ function formatTimeAMPM(time: string): string {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <p className="text-xs sm:text-sm text-muted-foreground">Gender</p>
-          <p className="text-sm sm:text-base font-medium">{child?.gender}</p>
+          <p className="text-sm sm:text-base font-medium capitalize">{child?.gender}</p>
         </div>
         <div>
           <p className="text-xs sm:text-sm text-muted-foreground">Grade</p>
@@ -601,10 +601,10 @@ function formatTimeAMPM(time: string): string {
                 "
               >
                 <div>
-                  <h4 className="text-base sm:text-lg font-medium">
+                  <h4 className="text-base sm:text-lg font-medium capitalize">
                     {subject.name}
                   </h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground capitalize">
                     {subject.area}
                   </p>
                 </div>
@@ -638,10 +638,10 @@ function formatTimeAMPM(time: string): string {
                     justify-between items-start sm:items-center
                   ">
                     <div>
-                      <h4 className="text-base sm:text-lg font-medium">
+                      <h4 className="text-base sm:text-lg font-medium capitalize">
                         {course.name}
                       </h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground capitalize">
                         {course.area}
                       </p>
                     </div>
@@ -658,7 +658,7 @@ function formatTimeAMPM(time: string): string {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-sm sm:text-base font-medium">
+                        <p className="text-sm sm:text-base font-medium capitalize">
                           {course.teacher.name}
                         </p>
                         <p className="text-xs sm:text-sm text-muted-foreground">
@@ -724,7 +724,7 @@ function formatTimeAMPM(time: string): string {
         return (
           <div key={`${course.area}-${course.name}`} className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-2">
-              <h3 className="font-medium flex items-center gap-2 text-sm sm:text-base">
+              <h3 className="font-medium flex items-center gap-2 text-sm sm:text-base capitalize">
                 <BookOpen className="h-4 w-4" />
                 {course.name} – {course.area}
               </h3>

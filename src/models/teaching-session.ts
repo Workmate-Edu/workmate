@@ -41,3 +41,4 @@ const teachingSessionSchema = new Schema({
 
 export const TeachingSession = mongoose.models.TeachingSession || 
   mongoose.model('TeachingSession', teachingSessionSchema);
+  

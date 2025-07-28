@@ -153,6 +153,22 @@ export default function ChildAvailabilityPage({
   }, [validFrom])
 
   // 3) Fetch all booked sessions (one‑offs + recurrences) in our window
+  // useEffect(() => {
+  //   async function loadSessions() {
+  //     if (!validFrom || !validTo) return
+  //     try {
+  //       const res = await fetch(
+  //         `/api/parent/children/${params.childId}/sessions?from=${validFrom}&to=${validTo}`
+  //       )
+  //       setSessions(res.ok ? await res.json() : [])
+  //     } catch {
+  //       setSessions([])
+  //     }
+  //   }
+  //   loadSessions()
+  // }, [params.childId, validFrom, validTo])
+
+    // 3) Fetch only future sessions (one‑offs + recurrences still active) in our window
   useEffect(() => {
     async function loadSessions() {
       if (!validFrom || !validTo) return
@@ -160,7 +176,18 @@ export default function ChildAvailabilityPage({
         const res = await fetch(
           `/api/parent/children/${params.childId}/sessions?from=${validFrom}&to=${validTo}`
         )
-        setSessions(res.ok ? await res.json() : [])
+        if (!res.ok) throw new Error()
+        const all = await res.json()
+        const now = new Date()
+        // filter out past one‑offs and ended recurrences
+        const upcoming = all.filter((s: any) => {
+          if (s.recurrence?.isRecurring) {
+            return new Date(s.recurrence.endDate) > now
+          } else {
+            return new Date(s.startTime) > now
+          }
+        })
+        setSessions(upcoming)
       } catch {
         setSessions([])
       }
@@ -168,52 +195,77 @@ export default function ChildAvailabilityPage({
     loadSessions()
   }, [params.childId, validFrom, validTo])
 
+
   // Return locked slots for a given weekday, including recurrences
-  function getBookedSlots(day: string) {
-    const dayIdx = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ].indexOf(day)
+  // function getBookedSlots(day: string) {
+  //   const dayIdx = [
+  //     "Sunday",
+  //     "Monday",
+  //     "Tuesday",
+  //     "Wednesday",
+  //     "Thursday",
+  //     "Friday",
+  //     "Saturday",
+  //   ].indexOf(day)
+  //   const windowStart = new Date(validFrom)
+  //   const windowEnd = new Date(validTo)
+
+  //   return sessions.flatMap((s) => {
+  //     // Recurring
+  //     if (s.recurrence?.isRecurring && Array.isArray(s.recurrence.daysOfWeek)) {
+  //       const recStart = new Date(s.recurrence.startDate)
+  //       const recEnd = new Date(s.recurrence.endDate)
+  //       if (
+  //         s.recurrence.daysOfWeek.includes(dayIdx) &&
+  //         recEnd >= windowStart &&
+  //         recStart <= windowEnd
+  //       ) {
+  //         return [
+  //           {
+  //             start: new Date(s.startTime).toTimeString().slice(0, 5),
+  //             end: new Date(s.endTime).toTimeString().slice(0, 5),
+  //           },
+  //         ]
+  //       }
+  //       return []
+  //     }
+  //     // One‑off
+  //     const d = new Date(s.startTime)
+  //     if (d.getDay() === dayIdx) {
+  //       return [
+  //         {
+  //           start: d.toTimeString().slice(0, 5),
+  //           end: new Date(s.endTime).toTimeString().slice(0, 5),
+  //         },
+  //       ]
+  //     }
+  //     return []
+  //   })
+  // }
+
+   function getBookedSlots(day: string) {
+    const dayIdx = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].indexOf(day)
     const windowStart = new Date(validFrom)
     const windowEnd = new Date(validTo)
-
-    return sessions.flatMap((s) => {
+    return sessions.flatMap(s => {
       // Recurring
       if (s.recurrence?.isRecurring && Array.isArray(s.recurrence.daysOfWeek)) {
         const recStart = new Date(s.recurrence.startDate)
         const recEnd = new Date(s.recurrence.endDate)
-        if (
-          s.recurrence.daysOfWeek.includes(dayIdx) &&
-          recEnd >= windowStart &&
-          recStart <= windowEnd
-        ) {
-          return [
-            {
-              start: new Date(s.startTime).toTimeString().slice(0, 5),
-              end: new Date(s.endTime).toTimeString().slice(0, 5),
-            },
-          ]
+        if (s.recurrence.daysOfWeek.includes(dayIdx) && recEnd >= windowStart && recStart <= windowEnd) {
+          return [{ start: new Date(s.startTime).toTimeString().slice(0,5), end: new Date(s.endTime).toTimeString().slice(0,5) }]
         }
         return []
       }
       // One‑off
       const d = new Date(s.startTime)
-      if (d.getDay() === dayIdx) {
-        return [
-          {
-            start: d.toTimeString().slice(0, 5),
-            end: new Date(s.endTime).toTimeString().slice(0, 5),
-          },
-        ]
+      if (d.getDay() === dayIdx && d >= windowStart && d <= windowEnd) {
+        return [{ start: d.toTimeString().slice(0,5), end: new Date(s.endTime).toTimeString().slice(0,5) }]
       }
       return []
     })
   }
+  
 
   // Check if a slot overlaps any booked slot
   function isSlotBooked(day: string, slot: { start: string; end: string }) {
@@ -479,10 +531,10 @@ export default function ChildAvailabilityPage({
                                           onClick={() =>
                                             handleRemoveSlot(day, i)
                                           }
-                                          disabled={pastLock}
+                                          disabled={booked}
                                           title={
-                                            pastLock
-                                              ? "Cannot remove past slots"
+                                            booked
+                                              ? "Cannot remove booked slots"
                                               : "Remove slot"
                                           }
                                         >
