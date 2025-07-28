@@ -40,8 +40,11 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
-  // Format data if formatter provided
-  const formattedData = formatData ? data.map(formatData) : data
+
+// Format data if formatter provided, then reverse to show newest first
+const formattedData = (formatData ? data.map(formatData) : data)
+  .slice()      // copy so we don’t mutate the original
+  .reverse()
 
   const table = useReactTable({
     data: formattedData,

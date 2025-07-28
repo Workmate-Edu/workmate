@@ -30,6 +30,7 @@ export async function GET(req: Request) {
     subject: s.subject?.name || "",
     startTime: s.startTime,
     endTime: s.endTime,
+    timezone: s.timezone,
     status: s.status
   }))
 

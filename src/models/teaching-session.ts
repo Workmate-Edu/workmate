@@ -7,22 +7,24 @@ const recurrenceSchema = new Schema({
     enum: ['none', 'daily', 'weekly', 'multiple-days', 'bi-weekly'],
     default: 'none'
   },
-  daysOfWeek: [Number], // Store days as numbers (0-6)
+  daysOfWeek: [Number],
   startDate: Date,
   endDate: Date,
   totalSessions: Number
-}, { _id: false });  // Prevent MongoDB from creating _id for subdocuments
+}, { _id: false });
 
 const teachingSessionSchema = new Schema({
-  teacherId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  studentId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  teacherId:   { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  studentId:   { type: Schema.Types.ObjectId, ref: 'User', required: true },
   subject: {
     name: { type: String, required: true },
     area: { type: String, required: true }
   },
-  startTime: { type: Date, required: true },
-  endTime: { type: Date, required: true },
-  duration: { type: Number, required: true },
+  timezone:    { type: String, required: true },
+
+  startTime:   { type: Date, required: true },
+  endTime:     { type: Date, required: true },
+  duration:    { type: Number, required: true },
   meetingLink: { type: String, required: true },
   status: {
     type: String,
@@ -30,8 +32,8 @@ const teachingSessionSchema = new Schema({
     default: 'scheduled'
   },
   teacherCompletedAt: { type: Date },
-  adminCompletedAt: { type: Date },
-  recurrence: { 
+  adminCompletedAt:   { type: Date },
+  recurrence: {
     type: recurrenceSchema,
     required: false
   }
@@ -39,6 +41,8 @@ const teachingSessionSchema = new Schema({
   timestamps: true
 });
 
-export const TeachingSession = mongoose.models.TeachingSession || 
+export const TeachingSession =
+  mongoose.models.TeachingSession ||
   mongoose.model('TeachingSession', teachingSessionSchema);
-  
+
+// No changes needed, schema already supports timezone and Date fields

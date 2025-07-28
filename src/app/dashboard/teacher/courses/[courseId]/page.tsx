@@ -275,7 +275,7 @@ Total ${totalSessions} sessions`
             </div>
           ) : (
             <div className="space-y-4">
-              {sessions.slice().reverse().map(s => (
+              {sessions?.map(s => (
                 <Card key={s._id}>
                   <CardContent className="p-6">
                     <div className="flex justify-between">
@@ -293,6 +293,9 @@ Total ${totalSessions} sessions`
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <Calendar className="mr-1 h-4 w-4" /> {format(new Date(s.startTime), 'PPP')}
                           <Clock    className="mr-1 h-4 w-4" /> {format(new Date(s.startTime), 'p')}
+                          {s.timezone && (
+                            <span className="ml-2 text-muted-foreground">({s.timezone})</span>
+                          )}
                         </div>
                         {s.recurrence?.isRecurring && (
                           <div className="mt-2 p-2 bg-muted/50 rounded text-sm">

@@ -13,6 +13,7 @@ interface Session {
   subject: string
   startTime: string
   endTime: string
+  timezone: string
   status: string
 }
 
@@ -136,17 +137,23 @@ export default function AdminSessionsPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <BookOpen className="h-4 w-4 text-violet-500" />
                     <span className="font-medium">Subject:</span>
-                    <span>{s.subject}</span>
+                    <span className="capitalize">{s.subject}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-orange-500" />
                     <span className="font-medium">Start:</span>
                     <span>{formatDateTime(s.startTime)}</span>
+                     {s.timezone && (
+                        <span className="ml-2 text-muted-foreground">({s.timezone})</span>
+                      )}
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-orange-500" />
                     <span className="font-medium">End:</span>
                     <span>{formatDateTime(s.endTime)}</span>
+                    {s.timezone && (
+                        <span className="ml-2 text-muted-foreground">({s.timezone})</span>
+                      )}
                   </div>
                 </div>
                 <div className="flex justify-end mt-4">

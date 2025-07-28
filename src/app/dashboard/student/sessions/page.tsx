@@ -37,6 +37,7 @@ interface Session {
     endDate: string
     time: string
   }
+  timezone?: string // <-- add timezone field
 }
 
 const getStatusColor = (status: string, startTime: string) => {
@@ -244,7 +245,12 @@ export default function StudentSessionsPage() {
               </div>
               <div className="flex items-center">
                 <Clock className="mr-1 h-4 w-4 flex-shrink-0" />
-                <span>{format(new Date(session.startTime), "p")}</span>
+                <span>
+                  {format(new Date(session.startTime), "p")}
+                  {session.timezone && (
+                    <span className="ml-2 text-muted-foreground">({session.timezone})</span>
+                  )}
+                </span>
               </div>
             </div>
 

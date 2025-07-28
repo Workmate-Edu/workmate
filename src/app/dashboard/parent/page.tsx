@@ -49,6 +49,7 @@ interface Session {
   endTime: string
   status: string
   meetingLink?: string
+  timezone?: string 
 }
 
 export default function ParentDashboardPage() {
@@ -361,6 +362,9 @@ export default function ParentDashboardPage() {
                     {new Date(sess.startTime).toLocaleDateString()}{" "}
                     {new Date(sess.startTime).toLocaleTimeString()} –{" "}
                     {new Date(sess.endTime).toLocaleTimeString()}
+                     {sess.timezone && (
+                        <span className="ml-2 text-muted-foreground">({sess.timezone})</span>
+                      )}
                   </span>
                 </div>
                 {sess.meetingLink && (

@@ -18,6 +18,7 @@ interface Session {
   endTime: string
   meetingLink?: string
   status: string
+  timezone?: string // <-- add timezone field
 }
 
 export default function ParentSchedulePage() {
@@ -197,6 +198,9 @@ export default function ParentSchedulePage() {
                     <p className="text-muted-foreground">
                       {new Date(session.startTime).toLocaleTimeString()} –{" "}
                       {new Date(session.endTime).toLocaleTimeString()}
+                      {session.timezone && (
+                        <span className="ml-2 text-muted-foreground">({session.timezone})</span>
+                      )}
                     </p>
                   </div>
 

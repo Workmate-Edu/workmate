@@ -60,6 +60,7 @@ interface Session {
   status: 'scheduled' | 'completed' | 'cancelled'
   meetingLink: string
   duration: number
+  timezone?: string // <-- add timezone field
 }
 
 interface Progress {
@@ -482,6 +483,9 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
                           <p className="text-sm">{format(new Date(session.startTime), 'PPP')}</p>
                           <p className="text-sm">
                             {format(new Date(session.startTime), 'p')} – {format(new Date(session.endTime), 'p')}
+                            {session.timezone && (
+                              <span className="ml-2 text-muted-foreground">({session.timezone})</span>
+                            )}
                           </p>
                           <Button asChild variant="outline" size="sm">
                             <a href={session.meetingLink} target="_blank" rel="noopener noreferrer">Join Class</a>
@@ -503,6 +507,9 @@ export default function TeacherStudentDetailPage({ params }: { params: { student
                           <p className="text-sm">{format(new Date(session.startTime), 'PPP')}</p>
                           <p className="text-sm">
                             {format(new Date(session.startTime), 'p')} – {format(new Date(session.endTime), 'p')}
+                            {session.timezone && (
+                              <span className="ml-2 text-muted-foreground">({session.timezone})</span>
+                            )}
                           </p>
                         </div>
                       </CardContent>

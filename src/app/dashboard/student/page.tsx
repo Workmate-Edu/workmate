@@ -522,12 +522,12 @@ useEffect(() => {
       {
         label: "Dashboard Stats",
         data: [
-          displayStats.teachers.total || 0,
-          displayStats.assessments.total || 0,
-          displayStats.assessments.completed || 0,
-          displayStats.sessions.totalHours || 0,
-          displayStats.sessions.upcoming || 0,
-          displayStats.sessions.completed || 0
+          displayStats?.teachers?.total || 0,
+          displayStats?.assessments?.total || 0,
+          displayStats.assessments?.completed || 0,
+          displayStats?.sessions?.totalHours || 0,
+          displayStats?.sessions?.upcoming || 0,
+          displayStats?.sessions?.completed || 0
         ],
         backgroundColor: [
           "#2563eb", // Teachers
@@ -587,7 +587,7 @@ useEffect(() => {
             <Users className="h-4 w-4 text-blue-500" />
             <h3 className="font-medium">My Teachers</h3>
           </div>
-          <p className="text-2xl font-bold mt-2">{displayStats.teachers.total}</p>
+          <p className="text-2xl font-bold mt-2">{displayStats?.teachers?.total}</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -595,9 +595,9 @@ useEffect(() => {
             <GraduationCap className="h-4 w-4 text-violet-500" />
             <h3 className="font-medium">Assessments</h3>
           </div>
-          <p className="text-2xl font-bold mt-2">{displayStats.assessments.total}</p>
+          <p className="text-2xl font-bold mt-2">{displayStats?.assessments?.total}</p>
           <p className="text-sm text-muted-foreground">
-            {displayStats.assessments.completed} completed
+            {displayStats.assessments?.completed} completed
           </p>
         </Card>
 
@@ -617,7 +617,7 @@ useEffect(() => {
             <Calendar className="h-4 w-4 text-orange-500" />
             <h3 className="font-medium">Upcoming</h3>
           </div>
-          <p className="text-2xl font-bold mt-2">{displayStats.sessions.upcoming}</p>
+          <p className="text-2xl font-bold mt-2">{displayStats?.sessions?.upcoming}</p>
           <p className="text-sm text-muted-foreground">scheduled lessons</p>
         </Card>
         
@@ -629,25 +629,25 @@ useEffect(() => {
           <div>
             <Label className="text-sm">Subject Progress</Label>
             <div className="text-2xl font-bold mt-1">
-              {overallProgress.percentage.toFixed(1)}%
+              {overallProgress?.percentage?.toFixed(1)}%
             </div>
           </div>
           <div>
             <Label className="text-sm">Assessment Score</Label>
             <div className="text-2xl font-bold mt-1">
-              {overallProgress.averageScore.toFixed(1)}/10
+              {overallProgress?.averageScore?.toFixed(1)}/10
             </div>
           </div>
           <div>
             <Label className="text-sm">Subjects Completed</Label>
             <div className="text-2xl font-bold mt-1">
-              {overallProgress.completedSubjects}/{overallProgress.totalSubjects}
+              {overallProgress?.completedSubjects}/{overallProgress?.totalSubjects}
             </div>
           </div>
           <div>
             <Label className="text-sm">Progress</Label>
             <Progress 
-              value={overallProgress.percentage} 
+              value={overallProgress?.percentage} 
               className="mt-3"
             />
           </div>
@@ -667,7 +667,7 @@ useEffect(() => {
             </Button>
           </div>
 
-          { !isChildStudent && assessments.length === 0 ? (
+          { !isChildStudent && assessments?.length === 0 ? (
             <div className="text-center space-y-4">
               <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto" />
               <h3 className="text-lg font-medium">Start Your Learning Journey</h3>
@@ -681,29 +681,29 @@ useEffect(() => {
                 <div key={index} className="py-4 first:pt-0 last:pb-0">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">{assessment.subject.name}</h3>
+                      <h3 className="font-medium">{assessment?.subject?.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {assessment.subject.area} • Completed {formatDate(assessment.completedAt)}
+                        {assessment?.subject?.area} • Completed {formatDate(assessment.completedAt)}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
                       {assessment.status === 'pending' ? (
                         <Badge variant="outline">Under Review</Badge>
-                      ) : assessment.status === 'assigned' ? (
+                      ) : assessment?.status === 'assigned' ? (
                         <div className="text-right">
                           <Badge variant="default">Teacher Assigned</Badge>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {assessment.assignedTeacher?.name}
+                            {assessment?.assignedTeacher?.name}
                           </p>
                         </div>
                       ) : (
                         <Badge>Being Reviewed</Badge>
                       )}
-                      {assessment.status === 'assigned' && (
+                      {assessment?.status === 'assigned' && (
                         <Button 
                           variant="outline"
                           size="sm"
-                          onClick={() => router.push(`/dashboard/student/learn/${assessment.subject.name.toLowerCase()}`)}
+                          onClick={() => router.push(`/dashboard/student/learn/${assessment?.subject?.name.toLowerCase()}`)}
                         >
                           Start Learning
                         </Button>
@@ -717,14 +717,14 @@ useEffect(() => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => 
-                              router.push(`/dashboard/student/assessments/edit/${assessment._id}`)
+                              router.push(`/dashboard/student/assessments/edit/${assessment?._id}`)
                             }>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit Assessment
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => setAssessmentToDelete(assessment._id)}
+                              onClick={() => setAssessmentToDelete(assessment?._id)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete Assessment

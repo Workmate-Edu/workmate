@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
+// import { zonedTimeToUtc } from 'date-fns-tz'
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { addWeeks, addDays, format, differenceInDays } from "date-fns"
 import { TIMEZONE_OPTIONS, formatSessionDateTime, formatAssessmentDateTime } from '@/lib/timezone-utils'
@@ -320,9 +321,14 @@ export function StartClassDialog({
         endsOn: formData.recurrence.endsOn,
       }
 
+    //  const startUtcIso = zonedTimeToUtc(formData.dateTime, selectedTimezone).toISOString()
+     // Remove UTC conversion, just use local time as provided
+     const startTime = formData.dateTime
+     const endTime   = new Date(new Date(formData.dateTime).getTime() + parseInt(formData.duration,10)*60000).toISOString()
+
      const submissionData = {
       courseId,
-      startTime: formData.dateTime,
+      startTime: startTime, // <-- send as provided
       duration: parseInt(formData.duration, 10),
       students: formData.selectedStudents,
       timezone: selectedTimezone,
@@ -592,7 +598,7 @@ export function StartClassDialog({
             )}
 
             {/* Show formatted time preview */}
-            {formData.dateTime && (
+            {/* {formData.dateTime && (
               <div className="text-sm text-muted-foreground">
                 {(() => {
                   const { teacherTime, studentTime } = formatAssessmentDateTime({
@@ -607,7 +613,7 @@ export function StartClassDialog({
                   )
                 })()}
               </div>
-            )}
+            )} */}
           </div>
         </div>
 

@@ -36,78 +36,6 @@ interface TeachingSessionInput {
   recurrence?: RecurrenceInfo;
 }
 
-// Helper for date formatting
-const formatDateTime = (date: Date) => ({
-  date: format(date, 'PPP'),
-  time: format(date, 'p'),
-  iso: date.toISOString(),
-  formatForCalendar: format(date, "yyyyMMdd'T'HHmmss'Z'")
-})
-
-function validateDates(startTime: string, duration: number, recurrence?: any) {
-  const startDate = new Date(startTime)
-  if (isNaN(startDate.getTime())) {
-    throw new Error('Invalid start time')
-  }
-
-  const endDate = new Date(startDate.getTime() + (duration * 60 * 1000))
-  if (isNaN(endDate.getTime())) {
-    throw new Error('Invalid duration')
-  }
-
-  if (recurrence?.endsOn) {
-    const recurrenceEnd = new Date(recurrence.endsOn)
-    if (isNaN(recurrenceEnd.getTime())) {
-      throw new Error('Invalid recurrence end date')
-    }
-    if (recurrenceEnd < startDate) {
-      throw new Error('Recurrence end date must be after start date')
-    }
-  }
-
-  return { startDate, endDate }
-}
-
-// Helper functions
-function formatEmailData(teacher, subjectName, startDate, duration, meetingLink, students, recurrence, GOOGLE_MEET_MAX_DAYS) {
-  return {
-    teacherName: teacher.name,
-    subject: subjectName,
-    area: teacher.teacherProfile.subjects[0].area,
-    sessionDate: startDate.toLocaleString('en-US', { dateStyle: 'full' }),
-    sessionTime: startDate.toLocaleString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    }),
-    duration: duration.toString(),
-    meetingLink,
-    studentsCount: students.length.toString(),
-    students: students.map(s => s.name).join(", "),
-    
-    // Recurrence info
-    scheduleType: recurrence?.pattern !== 'none' 
-      ? `${recurrence.pattern.charAt(0).toUpperCase()}${recurrence.pattern.slice(1)}` 
-      : 'One-time Session',
-    scheduleDays: recurrence?.daysOfWeek?.length 
-      ? recurrence.daysOfWeek.map(d => ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d]).join(', ')
-      : 'N/A',
-    scheduleEndDate: recurrence?.endsOn 
-      ? new Date(recurrence.endsOn).toLocaleDateString('en-US', { dateStyle: 'full' })
-      : 'N/A',
-    
-    // Styles
-    recurringInfoStyle: recurrence?.pattern !== 'none' 
-      ? 'margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;'
-      : 'display: none;',
-    warningStyle: recurrence?.pattern !== 'none'
-      ? 'margin: 20px 0; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;'
-      : 'display: none;',
-    meetingWarning: recurrence?.pattern !== 'none'
-      ? `Note: Google Meet links expire after ${GOOGLE_MEET_MAX_DAYS} days. You will receive new meeting links as needed.`
-      : ''
-  }
-}
 
 // Route Handlers
 export async function GET() {
@@ -131,7 +59,7 @@ export async function GET() {
     console.log('Found sessions:', sessions.length)
 
     const formattedSessions = sessions.map(s => ({
-      _id: s._id, // <-- ensure this is _id, not id
+      id: s._id,
       student: {
         id: s.studentId?._id,
         name: s.studentId?.name,
@@ -145,6 +73,7 @@ export async function GET() {
       meetingLink: s.meetingLink,
       status: s.status,
       recurrence: s.recurrence,
+      timezone: s.timezone,
       isPastDue: new Date(s.startTime) < new Date()
     }))
 
@@ -197,6 +126,7 @@ export async function POST(req: Request) {
       duration, 
       students: studentIds,
       externalLink,
+      timezone,
       recurrence
     } = await req.json()
 
@@ -257,6 +187,7 @@ export async function POST(req: Request) {
         startTime: sessionStartTime,
         endTime: sessionEndTime,
         duration,
+        timezone, // <-- store timezone as provided
         meetingLink,
         status: 'scheduled'
       };
@@ -281,7 +212,6 @@ export async function POST(req: Request) {
           )
         };
 
-        
         sessionData.recurrence = recurrenceData;
 
         console.log('Creating recurring session with data:', {

@@ -107,6 +107,7 @@ interface SessionInfo {
   endTime: string
   duration: number
   meetingLink: string
+  timezone?: string 
   status: string
 }
 

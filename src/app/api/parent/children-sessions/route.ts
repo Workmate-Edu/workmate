@@ -67,6 +67,8 @@ export async function GET() {
       subject:     s.subject,
       startTime:   s.startTime,
       endTime:     s.endTime,
+      timezone:    s.timezone,
+      recurrence:  s.recurrence,
       duration:    s.duration,
       meetingLink: s.meetingLink,
       status:      s.status,
