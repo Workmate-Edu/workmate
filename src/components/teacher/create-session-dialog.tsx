@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-// import { zonedTimeToUtc } from 'date-fns-tz'
+import TimezoneSelect, { ITimezone } from "react-timezone-select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { addWeeks, addDays, format, differenceInDays } from "date-fns"
 import { TIMEZONE_OPTIONS, formatSessionDateTime, formatAssessmentDateTime } from '@/lib/timezone-utils'
@@ -63,7 +63,7 @@ export function StartClassDialog({
   courseName,
   students,
   onSuccess,
-  initialData // <-- add this prop for edit
+  initialData
 }: StartClassDialogProps) {
   const [formData, setFormData] = useState({
     dateTime: "",
@@ -79,12 +79,12 @@ export function StartClassDialog({
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const [selectedTimezone, setSelectedTimezone] = useState(
-    Intl.DateTimeFormat().resolvedOptions().timeZone
-  )
+  const [timezone, setTimezone] = useState<ITimezone>({
+    value: initialData?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+  })
   const [editSessionId, setEditSessionId] = useState<string | null>(null)
-
-  // Populate form with initialData when editing
+  
+  // Populate form with initialData when editing or when a default timezone is provided
   useEffect(() => {
     if (initialData && open) {
       setFormData({
@@ -95,7 +95,9 @@ export function StartClassDialog({
           ...initialData.recurrence
         }
       })
-      setSelectedTimezone(initialData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone)
+      setTimezone({
+        value: initialData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+      })
       setEditSessionId(initialData._id || initialData.id || null)
     } else if (!open) {
       setEditSessionId(null)
@@ -105,9 +107,8 @@ export function StartClassDialog({
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
-    
-    // Add timezone validation
-    if (!selectedTimezone) {
+    // Validate timezone
+    if (!timezone.value) {
       newErrors.timezone = "Please select a timezone"
     }
 
@@ -328,10 +329,10 @@ export function StartClassDialog({
 
      const submissionData = {
       courseId,
-      startTime: startTime, // <-- send as provided
+      startTime: startTime,
       duration: parseInt(formData.duration, 10),
       students: formData.selectedStudents,
-      timezone: selectedTimezone,
+      timezone: timezone.value, // <-- use the selected timezone value
       externalLink: formData.useCustomLink ? formData.externalLink : undefined,
       recurrence: recurrencePayload,
     }
@@ -389,23 +390,11 @@ export function StartClassDialog({
           <div className="grid gap-6 py-4">
             <div className="space-y-2">
               <Label>Timezone</Label>
-              <Select
-                value={selectedTimezone}
-                onValueChange={setSelectedTimezone}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <ScrollArea className="h-[200px]">
-                    {TIMEZONE_OPTIONS.map(tz => (
-                      <SelectItem key={tz.value} value={tz.value}>
-                        {tz.label}
-                      </SelectItem>
-                    ))}
-                  </ScrollArea>
-                </SelectContent>
-              </Select>
+              <TimezoneSelect
+                value={timezone}
+                onChange={setTimezone}
+                isDisabled={!!initialData?.timezone} // lock if coming from availability
+              />
               <p className="text-sm text-muted-foreground">
                 Sessions will be scheduled in this timezone
               </p>

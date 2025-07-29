@@ -367,9 +367,11 @@ Total ${totalSessions} sessions`
                 recurrence: editSession.recurrence
                   ? {
                       type: editSession.recurrence.pattern,
-                      daysOfWeek: editSession.recurrence.daysOfWeek,
-                      endsOn: editSession.recurrence.endDate.slice(0,10),
-                      isRecurring: editSession.recurrence.isRecurring,
+                      daysOfWeek: editSession.recurrence.daysOfWeek ?? [],
+                      endsOn: editSession.recurrence.endDate
+                        ? editSession.recurrence.endDate.slice(0,10)
+                        : "",
+                      isRecurring: !!editSession.recurrence.isRecurring,
                     }
                   : { type: "none", daysOfWeek: [], endsOn: "", isRecurring: false }
               }}

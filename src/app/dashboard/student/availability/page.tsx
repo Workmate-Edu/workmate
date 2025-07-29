@@ -167,11 +167,12 @@ export default function StudentAvailabilityPage() {
       return []
     })
   }
-  function isSlotBooked(day:string, slot:{start:string,end:string}) {
-    const booked = getBookedSlots(day)
-    if (booked.length>0) return true
-    return booked.some(b=> isTimeOverlap(slot.start,slot.end,b.start,b.end) )
-  }
+ 
+  function isSlotBooked(day: string, slot: { start: string; end: string }) {
+  const booked = getBookedSlots(day)
+  // only lock if this exact slot overlaps one of the booked ranges
+  return booked.some(b => isTimeOverlap(slot.start, slot.end, b.start, b.end))
+}
 
   // independent handlers
   const handleAddSlot = (day:string) => {
@@ -270,7 +271,7 @@ export default function StudentAvailabilityPage() {
               <Calendar className="w-6 h-6 text-primary"/> My Availability
             </h1>
             <p className="mb-4 text-muted-foreground">
-               Slots marked 🔒 are already booked and can’t be changed until your current one‑month period ends.
+               Slots marked 🔒 are already booked and can’t be changed until your current one‑month period ends.
             </p>
             {error && <p className="text-destructive">{error}</p>}
 
@@ -356,9 +357,9 @@ export default function StudentAvailabilityPage() {
                               <td className="py-2 px-2 sm:px-4">
                                 {row?.slots.length ? (
                                   <div className="flex flex-wrap gap-2">
-                                    {row.slots.map((slot,i)=> {
-                                      const booked = isSlotBooked(day,slot)
-                                      const pastLock = validFrom < new Date().toISOString().slice(0,10)
+                                    {row.slots.map((slot, i) => {
+                                      const booked = isSlotBooked(day, slot)
+                                      // Remove the pastLock check from the delete button
                                       return (
                                         <div
                                           key={i}
@@ -390,20 +391,17 @@ export default function StudentAvailabilityPage() {
                                             {" – "}
                                             {slot.endDisplay  ||formatTimeDisplay(slot.end,timezone.value)}
                                           </span>
-                                          {booked ? (
-                                            <Lock className="w-4 h-4 text-gray-500"/>
-                                          ) : (
-                                            <Button
-                                              type="button"
-                                              size="icon"
-                                              variant="ghost"
-                                              onClick={()=>handleRemoveSlot(day,i)}
-                                              disabled={pastLock}
-                                              title={pastLock?"Cannot remove past":"Remove slot"}
-                                            >
-                                              <Trash2 className="w-4 h-4 text-destructive"/>
-                                            </Button>
-                                          )}
+                                          {/* Always render the delete button, only disable if booked */}
+                                          <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            onClick={() => handleRemoveSlot(day, i)}
+                                            disabled={booked}
+                                            title={booked ? "Cannot remove booked slots" : "Remove slot"}
+                                          >
+                                            <Trash2 className="w-4 h-4 text-destructive"/>
+                                          </Button>
                                         </div>
                                       )
                                     })}

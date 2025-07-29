@@ -14,9 +14,13 @@ import { toast } from "@/components/ui/use-toast"
 import Link from "next/link"
 import type { AuthError, UserRole } from "@/types/auth"
 
+
 const formSchema = z.object({
-  emailOrUsername: z.string().min(1, "Email or username is required"),
-  password:        z.string().min(8, { message: "Password must be at least 8 characters long" }),
+  emailOrUsername: z
+    .string()
+    .min(1, "Email or username is required")
+    .transform((s) => s.trim().toLowerCase()),
+  password: z.string().min(8, { message: "Password must be at least 8 characters long" }),
 })
 
 type FormData = z.infer<typeof formSchema>
