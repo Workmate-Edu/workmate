@@ -14,7 +14,8 @@ const CATEGORY_OPTIONS = [
   "Language",
   "Africa",
   "Global",
-  "Company Update"
+  "Company Update",
+  "Child Safety"
 ]
 
 export default function BlogCreatePage() {
