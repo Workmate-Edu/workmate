@@ -1,22 +1,27 @@
 import { NextResponse } from "next/server";
 import sendEmail from "@/lib/email";
+import { getAuthSession } from '@/lib/auth';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function POST() {
   try {
+    const session = await getAuthSession();
+    if (!session?.user || session.user.role !== 'admin' || !session.user.email) return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     // Test sending signup email
     await sendEmail({
-      to: "ibrahim.saliman.zainab@gmail.com",
+      to: session.user.email,
       subject: "Welcome to Workmate - Complete Your Registration",
       template: "signup",
       replacements: {
         name: "Test User",
-        email: "ibrahim.saliman.zainab@gmail.com",
+        email: session.user.email,
         verificationLink: `${process.env.NEXTAUTH_URL}/verify-email?token=test-token`,
         supportEmail: process.env.SUPPORT_EMAIL || "support@workmate.com",
         loginUrl: `${process.env.NEXTAUTH_URL}/sign-in`,
         websiteUrl: process.env.NEXTAUTH_URL || "https://workmate.com",
         companyName: "Workmate",
-        companyAddress: "123 Education Street, Learning City"
+        companyAddress: ""
       }
     });
 

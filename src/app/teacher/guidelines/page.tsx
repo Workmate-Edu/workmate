@@ -1,7 +1,19 @@
 import { Card } from "@/components/ui/card"
 import { LuBook, LuClock, LuMessageSquare, LuShield, LuStar, LuUsers } from "react-icons/lu"
+import { ConductAcknowledgement } from '@/components/teacher/conduct-acknowledgement';
+import { TEACHER_CONDUCT_VERSION } from '@/lib/legal-consent';
 
 const guidelines = [
+  {
+    icon: <LuShield className="h-6 w-6" />,
+    title: "Safeguarding and confidentiality",
+    description: "Use learner information only to deliver authorised Workmate lessons.",
+    points: [
+      "Keep communication on approved Workmate channels and never request unnecessary personal details",
+      "Do not record, photograph or redistribute lessons, messages or learner information",
+      "Report safeguarding concerns through the support and safeguarding route; do not investigate them yourself"
+    ]
+  },
   {
     icon: <LuShield className="h-6 w-6" />,
     title: "Professional Standards",
@@ -42,6 +54,16 @@ const guidelines = [
       "Adapt to different learning styles"
     ]
   }
+  ,{
+    icon: <LuMessageSquare className="h-6 w-6" />,
+    title: "Online meeting rules",
+    description: "Teachers create meetings in their own Google Meet or Zoom account; Workmate stores and limits access to the link but does not configure that external account.",
+    points: [
+      "Use only HTTPS Google Meet or Zoom links and do not publish reusable personal meeting-room links",
+      "Use provider waiting-room, passcode and host controls where available and admit only the expected learner or guardian",
+      "Never move a child to an unapproved private channel or invite an unauthorised participant"
+    ]
+  }
 ]
 
 export default function TeacherGuidelinesPage() {
@@ -53,6 +75,7 @@ export default function TeacherGuidelinesPage() {
           <p className="text-muted-foreground mt-2">
             Follow these guidelines to provide the best learning experience for your students
           </p>
+          <p className="mt-2 text-sm text-muted-foreground">Rules version: {TEACHER_CONDUCT_VERSION}</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -78,6 +101,7 @@ export default function TeacherGuidelinesPage() {
             </Card>
           ))}
         </div>
+        <ConductAcknowledgement />
       </div>
     </div>
   )

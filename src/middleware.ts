@@ -6,6 +6,7 @@ import { getToken } from 'next-auth/jwt'
 const roleRoutes = {
   student: [
     '/dashboard/student',
+    '/dashboard/learning-plan',
     '/dashboard/student/assessments',
     '/dashboard/student/classes',
     '/dashboard/student/materials',
@@ -21,6 +22,7 @@ const roleRoutes = {
   ],
   parent: [
     '/dashboard/parent',
+    '/dashboard/learning-plan',
     '/dashboard/parent/children',
     '/dashboard/parent/reports',
     '/dashboard/parent/schedule',

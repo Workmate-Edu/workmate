@@ -176,7 +176,9 @@ export function MessagesView({ conversationId }: { conversationId: string }) {
       if (!res.ok) throw new Error("Failed to send message");
 
       // Emit through socket for other users
-      socket?.emit("send_message", newMessage);
+      const savedMessage = await res.json();
+      setMessages(prev => prev.map(msg => msg._id === newMessage._id ? savedMessage : msg));
+      socket?.emit("send_message", { conversationId: conversation._id, messageId: savedMessage._id });
     } catch (error) {
       console.error("Error sending message:", error);
       // Remove optimistically added message on error

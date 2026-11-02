@@ -1,164 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Workmate</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #F9FAFB;
-            margin: 0;
-            padding: 0;
-            color: #1E293B;
-        }
-
-        .email-container {
-            max-width: 600px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .logo-container {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
-            background-color: #F4A300;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #1E293B;
-            font-size: 32px;
-            font-weight: bold;
-        }
-
-        .content-card {
-            background-color: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .card-header {
-            background-color: #F4A300;
-            padding: 24px;
-            text-align: center;
-        }
-
-        .card-content {
-            padding: 32px 24px;
-        }
-
-        .button-primary {
-            display: inline-block;
-            padding: 12px 32px;
-            background-color: #F4A300;
-            color: #1E293B;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-
-        .button-primary:hover {
-            background-color: #E69500;
-        }
-
-        .link-card {
-            background-color: #F8FAFC;
-            border: 1px solid #E2E8F0;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 16px 0;
-            word-break: break-all;
-            font-family: ui-monospace, monospace;
-            font-size: 14px;
-            color: #7C3AED;
-        }
-
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin-top: 24px;
-        }
-
-        .social-icon {
-            width: 32px;
-            height: 32px;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-        }
-
-        .social-icon:hover {
-            opacity: 1;
-        }
-
-        @media only screen and (max-width: 600px) {
-            .email-container {
-                margin: 0;
-            }
-            .content-card {
-                border-radius: 0;
-            }
-            .card-content {
-                padding: 24px 16px;
-            }
-        }
-
-        .logo {
-            width: 120px;
-            height: auto;
-            margin: 0 auto;
-            display: block;
-        }
-        .email-header {
-            text-align: center;
-            padding: 32px 24px;
-            background-color: white;
-            border-bottom: 1px solid #E2E8F0;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="email-container">
-        <div class="email-header">
-            <img src="{{baseUrl}}/workmate_logo.png" alt="Workmate" class="logo" />
-            <h1 style="margin: 16px 0 0 0; font-size: 24px;">Welcome to Workmate!</h1>
-        </div>
-
-        <div class="email-content">
-            <p style="font-size: 16px; margin-bottom: 24px;">
-                Hi {{name}}, welcome to Workmate! We're excited to help you start your learning journey.
-            </p>
-
-            <div style="text-align: center; margin: 32px 0;">
-                <a href="{{verificationLink}}" class="button-primary">
-                    Verify Email Address
-                </a>
-            </div>
-
-            <div class="info-card">
-                <h3 style="margin-top: 0; color: var(--primary); font-size: 18px;">Account Details</h3>
-                <p style="margin: 8px 0;"><strong>Email:</strong> {{email}}</p>
-                <p style="margin: 8px 0;"><strong>Role:</strong> {{role}}</p>
-            </div>
-
-            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
-                <p style="color: var(--text-muted); font-size: 14px;">
-                    This verification link will expire in 24 hours. If you did not create this account, please ignore this email.
-                </p>
-            </div>
-        </div>
-
-        <div class="email-footer">
-            <p>&copy; 2024 Workmate. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
+<h1 style="margin:0 0 24px;color:{{brandText}};font-size:26px;font-weight:700;line-height:1.3;">Welcome to Workmate!</h1>
+<p style="font-size:16px;margin-bottom:24px;margin:0 0 16px;line-height:1.6;">
+Hi {{name}}, welcome to Workmate! We're excited to help you start your learning journey.
+</p>
+<div style="text-align:center;margin:32px 0;">
+<a href="{{verificationLink}}" class="button-primary" style="display:inline-block;padding:12px 24px;margin:8px 0;border-radius:6px;background-color:{{brandPrimary}};color:{{brandText}};font-family:Inter,Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;line-height:1.5;text-align:center;text-decoration:none;mso-padding-alt:12px 24px;">
+Verify Email Address
+</a>
+</div>
+<div style="margin:16px 0 20px;">
+<p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:{{brandTextMuted}};">If the button does not work, copy and paste this link into your browser:</p>
+<p style="margin:0;font-size:13px;line-height:1.6;word-break:break-all;overflow-wrap:anywhere;">
+<a href="{{verificationLink}}" style="color:{{brandPrimary}};text-decoration:underline;word-break:break-all;overflow-wrap:anywhere;">{{verificationLink}}</a>
+</p>
+</div>
+<div class="info-card" style="background-color:{{brandBackgroundAccent}};border:1px solid {{brandBorder}};border-radius:8px;padding:20px;margin:20px 0;">
+<h3 style="margin-top:0;color:{{brandText}};font-size:18px;font-weight:700;line-height:1.4;margin:0 0 12px;">Account Details</h3>
+<p style="margin:0 0 16px;line-height:1.6;"><strong>Email:</strong> {{email}}</p>
+<p style="margin:0 0 16px;line-height:1.6;"><strong>Role:</strong> {{role}}</p>
+</div>
+<div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border);">
+<p style="color:{{brandText}};font-size:14px;margin:0 0 16px;line-height:1.6;">
+This verification link will expire in 24 hours. If you did not create this account, please ignore this email.
+</p>
+</div>

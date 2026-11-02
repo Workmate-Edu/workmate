@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/models/user";
 import { ChildAssessment } from "@/models/child-assessment";
+import { parentOnboardingSchema } from '@/lib/parent-onboarding';
 import bcrypt from "bcryptjs";
 
 // 👉 GET handler to fetch parent's children
@@ -17,10 +18,11 @@ export async function GET(req: Request) {
     }
 
     const parent = await User.findById(session.user.id)
+      .select('parentProfile.children parentProfile.onboarding')
       .populate({
         path: "parentProfile.children",
         model: "User",
-        select: "name username email studentProfile gender role"
+        select: "name username email image studentProfile gender role"
       })
       .lean() as { parentProfile: { children: any[] } | undefined };
 
@@ -29,6 +31,7 @@ export async function GET(req: Request) {
       name: child.name,
       username: child.username,
       email: child.email,
+      image: child.image,
       gender: child.gender,
       grade: child.studentProfile?.grade,
       subjects: child.studentProfile?.subjects || [],
@@ -54,7 +57,23 @@ export async function GET(req: Request) {
       })
     );
 
-    return NextResponse.json({ children: childrenWithAssessments });
+    // Learners added during parent signup belong to the learning plan; they are
+    // not child login accounts. Surface them here without fabricating or linking
+    // a student User document by name.
+    const onboarding = parentOnboardingSchema.safeParse(parent?.parentProfile?.onboarding);
+    const learningPlanLearners = onboarding.success ? onboarding.data.learners
+      .filter(learner => Boolean(learner.learnerId))
+      .map(learner => ({
+        id: learner.learnerId!,
+        name: learner.name,
+        grade: learner.level,
+        ageGroup: learner.ageGroup,
+        subjects: learner.subjects.map(name => ({ name, progress: 0 })),
+        source: 'learning-plan' as const,
+        assessmentStatus: { exists: false, status: 'none', canCreate: false, canEdit: false },
+      })) : [];
+
+    return NextResponse.json({ children: [...childrenWithAssessments, ...learningPlanLearners] });
   } catch (error) {
     console.error("[CHILDREN_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -80,11 +99,15 @@ export async function POST(req: Request) {
       educationLevel,
       grade,
       ageGroup,
-      subjects
+      subjects,
+      image
     } = await req.json();
 
     if (!name || !username || !password || !phone || !gender || !educationLevel || !grade || !ageGroup || !subjects?.length) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+    if (image !== undefined && image !== '' && (typeof image !== 'string' || !image.startsWith('https://'))) {
+      return NextResponse.json({ error: 'Choose a valid profile image' }, { status: 400 });
     }
 
     // Validate phone number
@@ -108,6 +131,7 @@ export async function POST(req: Request) {
       email: generatedEmail,
       password: hashedPassword,
       phone, // Add phone number
+      ...(image ? { image } : {}),
       role: "student",
       gender,
       emailVerified: true,
@@ -137,7 +161,8 @@ export async function POST(req: Request) {
         email: childUser.email,
         grade,
         gender,
-        educationLevel
+        educationLevel,
+        ...(image ? { image } : {})
       }
     });
 

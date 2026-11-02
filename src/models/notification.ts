@@ -18,6 +18,8 @@ const notificationSchema = new Schema({
       'teacher_assigned',
       'teacher_unassigned',
       'subject_assigned',
+      'teacher_review',
+      'introduction_request',
     ],
     required: true
   },
@@ -32,7 +34,9 @@ const notificationSchema = new Schema({
     sessionId: { type: Schema.Types.ObjectId, ref: 'Session' },
     courseId: { type: Schema.Types.ObjectId, ref: 'Course' },
     assessmentId: { type: Schema.Types.ObjectId, ref: 'Assessment' },
-    paymentId: { type: Schema.Types.ObjectId, ref: 'Payment' }
+    paymentId: { type: Schema.Types.ObjectId, ref: 'Payment' },
+    teacherId: { type: Schema.Types.ObjectId, ref: 'User' },
+    actionUrl: String,
   },
   status: {
     read: { type: Boolean, default: false },

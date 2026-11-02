@@ -143,6 +143,11 @@ export interface ParentFormData {
   subjectAreas?: string[];
   subjects?: string[];
   children: ChildInfo[];
+  residenceCountry: string;
+  termsAccepted: boolean;
+  privacyAcknowledged: boolean;
+  parentalAuthority: boolean;
+  marketingOptIn: boolean;
 }
 
 // ---------- ⬇️ ADMIN / SYSTEM LEVEL ----------

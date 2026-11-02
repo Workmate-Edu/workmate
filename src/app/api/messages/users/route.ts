@@ -49,7 +49,6 @@ export async function GET(req: Request) {
         };
       });
 
-      console.log('Transformed users:', transformedUsers); // Debug log
       return NextResponse.json(transformedUsers);
     } else if (session.user.role === 'student') {
       // Get teachers for student's subjects

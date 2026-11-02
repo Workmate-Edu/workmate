@@ -8,6 +8,14 @@ import { Button } from '@/components/ui/button'
 
 const stemTopics: StemTopic[] = [
 	{
+		title: 'Artificial Intelligence',
+		description: 'Explore AI with age-appropriate projects and responsible use',
+		icon: Brain,
+		gradient: 'from-violet-500/10 via-purple-500/10 to-amber-500/10',
+		subjects: ['AI Fundamentals', 'Machine Learning', 'Responsible AI', 'Future AI & Superintelligence'],
+		modules: ['Creative AI Projects', 'Critical Thinking', 'Exploring Possible AI Futures'],
+	},
+	{
 		title: 'Math',
 		description: 'Build strong foundations in mathematics with interactive learning',
 		icon: Calculator,
@@ -99,6 +107,10 @@ export default function STEMPage() {
 	const { data: session } = useSession()
 
 	const handleStartLearning = (topicTitle: string) => {
+		if (topicTitle === 'Artificial Intelligence') {
+			router.push('/pricing')
+			return
+		}
 		if (!session) {
 			router.push(
 				`/sign-in?callbackUrl=/dashboard/learn/stem/${topicTitle.toLowerCase()}`
@@ -114,7 +126,7 @@ export default function STEMPage() {
 				<div className="text-center mb-12">
 					<h1 className="text-4xl font-bold mb-4">Science & Technology</h1>
 					<p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-						Comprehensive STEM education with engaging, interactive learning
+						Explore STEM and AI through engaging, interactive learning
 						experiences
 					</p>
 				</div>

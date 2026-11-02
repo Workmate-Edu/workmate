@@ -8,8 +8,11 @@ export async function GET(req: Request) {
   try {
     // Add auth check
     const session = await getServerSession(authOptions)
-    if (!session?.user?.role === 'admin') {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    if (session.user.role !== 'admin') {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)

@@ -10,7 +10,7 @@ const userTypes = [
 	{
 		role: "student" as UserRole,
 		title: "I'm a Student",
-		description: "Find expert teachers and start your learning journey",
+		description: "Learn for yourself: languages, STEM and AI, including adult learners",
 		icon: GraduationCap,
 		gradient:
 			"bg-gradient-to-br from-blue-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-indigo-500/30",

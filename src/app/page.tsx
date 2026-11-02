@@ -4,8 +4,6 @@ import { motion } from 'framer-motion'
 import { HeroSection } from '@/components/home/hero-section'
 import { LanguageStemSection } from '@/components/home/language-stem-section'
 import { FeaturesSection } from '@/components/home/features-section'
-import { NewsStoriesSection } from '@/components/home/news-stories-section'
-import { TestimonialsSection } from '@/components/home/testimonials-section'
 import { CTASection } from '@/components/home/cta-section'
 
 export default function Home() {
@@ -29,7 +27,7 @@ export default function Home() {
       className="flex flex-col"
     >
       <HeroSection />
-      {[LanguageStemSection, FeaturesSection, NewsStoriesSection, TestimonialsSection, CTASection].map((Section, index) => (
+      {[LanguageStemSection, FeaturesSection, CTASection].map((Section, index) => (
         <motion.div
           key={index}
           variants={sectionVariants}

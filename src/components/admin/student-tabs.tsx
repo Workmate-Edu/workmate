@@ -3,9 +3,9 @@
 import { columns } from "./student-columns"
 import { DataTable } from "@/components/ui/data-table"
 import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
+import { ListSearch } from "@/components/ui/list-search"
 
 interface Student {
   id: string
@@ -36,11 +36,15 @@ export function StudentTabs({
   const filterStudents = (students: any[]) => {
     if (!search) return students
     
-    return students.filter(student => 
-      student.name.toLowerCase().includes(search.toLowerCase()) ||
-      student.email?.toLowerCase().includes(search.toLowerCase()) ||
-      student.parentName?.toLowerCase().includes(search.toLowerCase())
-    )
+    const query = search.trim().toLowerCase()
+    return students.filter(student => [
+      student.name,
+      student.email,
+      student.parentName,
+      student.parentEmail,
+      student.grade,
+      ...(student.subjects || []).flatMap((subject: any) => [subject.name, subject.area]),
+    ].some(value => String(value || '').toLowerCase().includes(query)))
   }
 
   if (isLoading) {
@@ -65,13 +69,7 @@ export function StudentTabs({
           </TabsList>
 
           {showFilters && (
-            <div className="max-w-xs">
-              <Input
-                placeholder="Search..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+            <ListSearch value={search} onValueChange={setSearch} placeholder="Search students and children..." />
           )}
         </div>
 

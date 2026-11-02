@@ -50,7 +50,7 @@ export function LanguageStemSection() {
                 <Rocket className="w-12 h-12 text-white" />
                 <div>
                   <div className="text-sm text-white/90 font-medium">Science & Technology</div>
-                  <h3 className="text-xl font-semibold">STEM Education</h3>
+                  <h3 className="text-xl font-semibold">STEM & AI Education</h3>
                 </div>
               </div>
               <div className="flex-grow">
@@ -64,10 +64,10 @@ export function LanguageStemSection() {
                     <span>Featured Areas:</span>
                   </li>
                   <li className="ml-6 text-sm grid grid-cols-2 gap-2">
+                    <span>• Artificial Intelligence (AI)</span>
                     <span>• Mathematics</span>
                     <span>• Physical Sciences</span>
                     <span>• Life Sciences</span>
-                    <span>• Innovation Studies</span>
                   </li>
                 </ul>
               </div>

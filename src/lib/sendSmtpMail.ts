@@ -1,12 +1,7 @@
 // utils/sendEmail.ts
-import fs from 'fs';
-import path from 'path';
+import { renderEmail } from './render-email';
 import transporter from './smtp';  // Import your SMTP configuration
 
-const loadTemplate = (templateName: string): string => {
-  const filePath = path.join(process.cwd(), 'email-templates', `${templateName}.html`);
-  return fs.readFileSync(filePath, 'utf-8');
-};
 
 interface EmailPayload {
   to: string;
@@ -26,13 +21,7 @@ const sendEmail = async ({ to, subject, template, replacements }: EmailPayload) 
     }
 
     // Load the email template
-    let htmlContent = loadTemplate(template);
-
-    // Replace placeholders with actual data
-    Object.keys(replacements).forEach((key) => {
-      const regex = new RegExp(`{{${key}}}`, 'g');  // Look for {{key}} in the HTML
-      htmlContent = htmlContent.replace(regex, replacements[key]);
-    });
+    const htmlContent = renderEmail(template, replacements);
 
     // Define email options
     const mailOptions = {

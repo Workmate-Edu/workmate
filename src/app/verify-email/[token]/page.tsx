@@ -34,7 +34,7 @@ export default function VerifyEmailPage({ params }: { params: { token: string }}
         setEmail(data.email)
         // Redirect after 3 seconds
         setTimeout(() => {
-          router.push('/signin')
+          router.push('/sign-in')
         }, 3000)
       } else {
         if (data.error === 'Token expired') {
@@ -92,7 +92,7 @@ export default function VerifyEmailPage({ params }: { params: { token: string }}
                 Your email has been verified. Redirecting to login...
               </p>
               <Button asChild className="mt-4">
-                <Link href="/signin">
+                <Link href="/sign-in">
                   Continue to Login
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -139,7 +139,7 @@ export default function VerifyEmailPage({ params }: { params: { token: string }}
                 Unable to verify your email. Please try again or contact support.
               </p>
               <Button asChild variant="outline" className="mt-4">
-                <Link href="/signin">
+                <Link href="/sign-in">
                   Return to Login
                 </Link>
               </Button>

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "sonner"
 import Nav from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { AuthProvider } from "@/providers/auth-provider";
@@ -43,6 +44,7 @@ export default function RootLayout({
             </NotificationProvider>
           </PaymentProvider>
           <Toaster />
+          <SonnerToaster position="top-center" richColors />
         </Providers>
       </body>
     </html>

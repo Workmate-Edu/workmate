@@ -215,10 +215,6 @@ export function StudentMessagesView({ conversation }: StudentMessagesViewProps) 
       setMessage("");
 
       // Send via socket
-      socket.emit('send_message', {
-        conversationId: conversation._id,
-        message: tempMessage
-      });
 
       // Save to database
       const res = await fetch(`/api/conversations/${conversation._id}/messages`, {
@@ -233,6 +229,7 @@ export function StudentMessagesView({ conversation }: StudentMessagesViewProps) 
       if (!res.ok) throw new Error('Failed to send message');
 
       const savedMessage = await res.json();
+      socket.emit('send_message', { conversationId: conversation._id, messageId: savedMessage._id });
       
       // Replace temp message with saved one
       setMessages(prev => 

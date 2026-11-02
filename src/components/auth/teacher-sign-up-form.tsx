@@ -14,31 +14,34 @@ import { genderOptions } from "@/lib/constants/general"
 import { X } from "lucide-react"
 import { BasicInfoStep, SubjectsStep, QualificationsStep } from "./teacher-sign-up-steps"
 import { Stepper } from "@/components/ui/stepper"
-import { TermsAgreement } from "./terms-agreement"
+import { LegalConsentFields } from './legal-consent-fields';
+import { residenceCountrySchema } from '@/lib/legal-consent';
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import { phoneNumberSchema } from '@/lib/phone-number';
+import { firstSignupErrorMessage } from '@/lib/signup-validation';
 
 // CTO Recommendation: Do NOT accept email as username. Only allow usernames with 3-20 chars, letters, numbers, underscores, hyphens.
-const usernameSchema = z.string().min(3).max(20).regex(
+const usernameSchema = z.string().min(1, 'Username is required').min(3, 'Username must be at least 3 characters').max(20, 'Username must be no more than 20 characters').regex(
   /^[a-zA-Z0-9_-]{3,20}$/,
   "Username must be 3-20 chars and only letters, numbers, underscores, hyphens"
 )
 
 const teacherFormSchema = z.object({
-  name: z.string().min(2),
+  name: z.string().min(2, 'Full Name is required'),
   username: usernameSchema,
-  email: z.string().email(),
-  password: z.string().min(8),
-  gender: z.string().min(1, "Please select your gender"),
-  phone: z.string().min(10, "Phone number is required").regex(/^\+/, "Phone number must include country code"),
-  subjectAreas: z.array(z.string()).min(1, "Select at least one subject area"),
+  email: z.string().min(1, 'Email is required').email('Email must be a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  gender: z.string().min(1, "Gender is required"),
+  phone: phoneNumberSchema,
+  subjectAreas: z.array(z.string()).min(1, "Subject Areas: select at least one"),
   subjects: z.array(z.object({
     area: z.string(),
-    subjects: z.array(z.string()).min(1)
-  })).min(1, "Select subjects for each area"),
-  experience: z.string().min(1, "Years of experience required"),
-  education: z.string().min(1, "Education qualification required"),
-  bio: z.string().min(20, "Bio should be at least 20 characters"),
+    subjects: z.array(z.string()).min(1, "Subject Areas: select at least one subject")
+  })).min(1, "Subject Areas: select at least one subject"),
+  experience: z.string().min(1, "Years of Experience is required"),
+  education: z.string().min(1, "Educational Background is required"),
+  bio: z.string().min(20, "Professional Bio must be at least 20 characters"),
   teacherProfile: z.object({
     subjects: z.array(z.object({
       area: z.string(),
@@ -50,7 +53,12 @@ const teacherFormSchema = z.object({
       year: z.number()
     })),
     bio: z.string()
-  })
+  }),
+  residenceCountry: residenceCountrySchema.or(z.literal('')).refine(Boolean, 'Country of residence is required'),
+  termsAccepted: z.boolean().refine(Boolean, 'Terms of Service must be accepted'),
+  privacyAcknowledged: z.boolean().refine(Boolean, 'Privacy Policy must be acknowledged'),
+  teacherConductAccepted: z.boolean().refine(Boolean, 'Teacher confidentiality, conduct and online-meeting rules must be accepted'),
+  marketingOptIn: z.boolean(),
 })
 
 const subjectAreas = [
@@ -58,6 +66,7 @@ const subjectAreas = [
     label: "STEM", 
     value: "stem",
     subjects: [
+      { label: "Artificial Intelligence", value: "ai" },
       { label: "Math", value: "math" },
       { label: "Physics", value: "physics" },
       { label: "Chemistry", value: "chemistry" },
@@ -109,6 +118,11 @@ export function TeacherSignUpForm() {
       experience: "",
       education: "",
       bio: "",
+      residenceCountry: '',
+      termsAccepted: false,
+      privacyAcknowledged: false,
+      teacherConductAccepted: false,
+      marketingOptIn: false,
       teacherProfile: {
         subjects: [],
         qualifications: [],
@@ -125,14 +139,6 @@ export function TeacherSignUpForm() {
     watch,
     formState: { errors, touchedFields },
   } = form
-
-  // Watch all form fields
-  const formValues = watch()
-
-  // Log form values on every change
-  React.useEffect(() => {
-    console.log('Form values:', formValues)
-  }, [formValues])
 
   const availableSubjects = React.useMemo(() => {
     const area = subjectAreas.find(a => a.value === selectedAreas[0])
@@ -186,8 +192,6 @@ export function TeacherSignUpForm() {
   const onSubmit = async (data: z.infer<typeof teacherFormSchema>) => {
     try {
       setIsSubmitting(true);
-      console.log('Submitting data:', data); // Log final form data
-
       const teacherData = {
         name: data.name,
         username: data.username,
@@ -196,6 +200,11 @@ export function TeacherSignUpForm() {
         role: "teacher",
         gender: data.gender,
         phone: data.phone,
+        residenceCountry: data.residenceCountry,
+        termsAccepted: data.termsAccepted,
+        privacyAcknowledged: data.privacyAcknowledged,
+        teacherConductAccepted: data.teacherConductAccepted,
+        marketingOptIn: data.marketingOptIn,
         teacherProfile: {
           subjects: data.subjects.map(subject => ({
             area: subject.area,
@@ -215,20 +224,13 @@ export function TeacherSignUpForm() {
         }
       };
 
-      console.log('Processed teacher data:', teacherData);
-      // Debug logs
-      console.log('Form Data:', data);
-      console.log('Processed Teacher Data:', teacherData);
-
       const response = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(teacherData),
       });
 
-      // Debug response
       const responseData = await response.json();
-      console.log('API Response:', responseData);
 
       if (!response.ok) {
         throw new Error(responseData.error || "Failed to create account");
@@ -265,7 +267,9 @@ export function TeacherSignUpForm() {
         // Extra check: do not allow email as username
         const usernameVal = form.getValues("username")
         if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(usernameVal)) {
-          setBackendError("Please choose a username that is NOT an email address. Usernames must be 3-20 chars and only letters, numbers, underscores, hyphens.")
+          const message = "Username cannot be an email address. Use 3-20 letters, numbers, underscores or hyphens."
+          setBackendError(message)
+          toast.error(message)
           return
         }
         break
@@ -273,14 +277,24 @@ export function TeacherSignUpForm() {
         isValid = await trigger(["subjectAreas", "subjects"])
         break
       case 2:
-        isValid = await trigger(["experience", "education", "bio"])
+        isValid = await trigger(["experience", "education", "bio", "residenceCountry", "termsAccepted", "privacyAcknowledged", "teacherConductAccepted"])
         if (isValid) {
-          await handleSubmit(onSubmit)()
+          await handleSubmit(onSubmit, () => {
+            toast.error(firstSignupErrorMessage(form.getFieldState, ['experience', 'education', 'bio', 'residenceCountry', 'termsAccepted', 'privacyAcknowledged', 'teacherConductAccepted'], 'Review the highlighted fields'))
+          })()
           return
         }
         break
     }
     if (isValid) setCurrentStep((prev) => prev + 1)
+    else {
+      const fields = currentStep === 0
+        ? ['name', 'email', 'username', 'password', 'gender', 'phone']
+        : currentStep === 1
+          ? ['subjectAreas', 'subjects']
+          : ['experience', 'education', 'bio', 'residenceCountry', 'termsAccepted', 'privacyAcknowledged', 'teacherConductAccepted']
+      toast.error(firstSignupErrorMessage(form.getFieldState, fields, 'Review the highlighted fields'))
+    }
   }
 
   const handleBack = () => setCurrentStep((prev) => prev - 1)
@@ -351,7 +365,7 @@ export function TeacherSignUpForm() {
           />
         )}
 
-        <TermsAgreement />
+        <LegalConsentFields register={register} errors={errors} role="teacher" residenceCountry={watch('residenceCountry')} onResidenceCountryChange={value => setValue('residenceCountry', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true })} />
 
         <div className="flex justify-center gap-8 pt-4">
           {currentStep > 0 && (

@@ -1,24 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Bell, 
   MailOpen, 
-  Trash2, 
-  Users, 
-  Settings, 
-  AlertTriangle, 
-  Shield,
-  LineChart
 } from "lucide-react"
 import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { EmptyState } from "@/components/notifications/empty-state"
-import { formatDistanceToNow } from "date-fns"
+import { NotificationItem } from "@/components/notifications/notification-item"
 
 interface Notification {
   _id: string;
@@ -38,25 +31,6 @@ export default function AdminNotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('all')
 
-  // Admin-specific notification icon handler
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'user_registered':
-      case 'user_deleted':
-        return <Users className="h-5 w-5 text-blue-500" />
-      case 'system_alert':
-        return <AlertTriangle className="h-5 w-5 text-red-500" />
-      case 'security_alert':
-        return <Shield className="h-5 w-5 text-orange-500" />
-      case 'system_update':
-        return <Settings className="h-5 w-5 text-purple-500" />
-      case 'analytics_report':
-        return <LineChart className="h-5 w-5 text-green-500" />
-      default:
-        return <Bell className="h-5 w-5 text-gray-500" />
-    }
-  }
-
   useEffect(() => {
     fetchNotifications()
   }, [])
@@ -64,7 +38,7 @@ export default function AdminNotificationsPage() {
   const fetchNotifications = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/admin/notifications')
+      const res = await fetch('/api/notifications?limit=100')
       if (!res.ok) throw new Error('Failed to fetch notifications')
       const data = await res.json()
       setNotifications(data.notifications || [])
@@ -78,7 +52,7 @@ export default function AdminNotificationsPage() {
 
   const handleMarkAllRead = async () => {
     try {
-      await fetch('/api/admin/notifications/mark-all-read', { method: 'POST' })
+      await fetch('/api/notifications/mark-all-read', { method: 'POST' })
       setNotifications(prev => prev.map(n => ({
         ...n,
         status: { ...n.status, read: true, readAt: new Date().toISOString() }
@@ -89,19 +63,9 @@ export default function AdminNotificationsPage() {
     }
   }
 
-  const handleClearAll = async () => {
-    try {
-      await fetch('/api/admin/notifications/clear-all', { method: 'DELETE' })
-      setNotifications([])
-      toast.success("All notifications cleared")
-    } catch (error) {
-      toast.error("Failed to clear notifications")
-    }
-  }
-
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      const res = await fetch(`/api/admin/notifications/${notificationId}/read`, {
+      const res = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST'
       })
       if (!res.ok) throw new Error('Failed to mark notification as read')
@@ -159,18 +123,10 @@ export default function AdminNotificationsPage() {
               <MailOpen className="h-4 w-4" />
               Mark all read
             </Button>
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={handleClearAll}
-            >
-              <Trash2 className="h-4 w-4" />
-              Clear all
-            </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="all" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="unread">
@@ -200,7 +156,6 @@ export default function AdminNotificationsPage() {
                       key={notification._id}
                       notification={notification}
                       onMarkAsRead={handleMarkAsRead}
-                      getIcon={getNotificationIcon}
                     />
                   ))
                 ) : (

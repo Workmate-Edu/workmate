@@ -21,6 +21,7 @@ export async function GET(req: Request) {
       'teacherProfile.verificationStatus': status
     })
     .select('name email teacherProfile.qualifications teacherProfile.subjects')
+    .sort({ updatedAt: -1, createdAt: -1 })
     .lean()
 
     return NextResponse.json({ verifications })

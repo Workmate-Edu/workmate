@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
 import { ChildAssessment } from "@/models/child-assessment"
@@ -8,6 +10,13 @@ import { sendSessionNotification } from "@/lib/notification-service"
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    if (session.user.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
     const body = await req.json()
     const { studentId, studentType, assignments } = body
 

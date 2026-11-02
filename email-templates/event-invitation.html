@@ -1,74 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Event Invitation</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #4a90e2;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px 5px 0 0;
-        }
-        .content {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 0 0 5px 5px;
-        }
-        .event-details {
-            margin: 20px 0;
-        }
-        .event-time {
-            color: #666;
-            margin: 10px 0;
-        }
-        .meet-link {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            display: inline-block;
-            margin: 20px 0;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Event Invitation</h1>
-    </div>
-    <div class="content">
-        <p>You have been invited to:</p>
-        <div class="event-details">
-            <h2>{{eventTitle}}</h2>
-            <div class="event-time">
-                <p><strong>Start:</strong> {{startTime}}</p>
-                <p><strong>End:</strong> {{endTime}}</p>
-            </div>
-            {{#if meetLink}}
-            <a href="{{meetLink}}" class="meet-link">Join Meeting</a>
-            {{/if}}
-        </div>
-        <p>Please click the link above to join the meeting at the scheduled time.</p>
-    </div>
-    <div class="footer">
-        <p>This is an automated message from Workmate Learning. Please do not reply to this email.</p>
-    </div>
-</body>
-</html>
+<h1 style="margin:0 0 24px;color:{{brandText}};font-size:26px;font-weight:700;line-height:1.3;">Event Invitation</h1>
+<p style="margin:0 0 16px;line-height:1.6;">You have been invited to:</p>
+<div class="event-details" style="background-color:{{brandBackgroundAccent}};border:1px solid {{brandBorder}};border-radius:8px;padding:20px;margin:20px 0;">
+<h2 style="font-size:18px;font-weight:700;line-height:1.4;margin:0 0 12px;color:{{brandText}};">{{eventTitle}}</h2>
+<div class="event-time">
+<p style="margin:0 0 16px;line-height:1.6;"><strong>Start:</strong> {{startTime}}</p>
+<p style="margin:0 0 16px;line-height:1.6;"><strong>End:</strong> {{endTime}}</p>
+</div>
+{{#if meetLink}}
+<a href="{{meetLink}}" class="button-primary" style="display:inline-block;padding:12px 24px;margin:8px 0;border-radius:6px;background-color:{{brandPrimary}};color:{{brandText}};font-family:Inter,Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;line-height:1.5;text-align:center;text-decoration:none;mso-padding-alt:12px 24px;">Join Meeting</a>
+{{/if}}
+</div>
+<p style="margin:0 0 16px;line-height:1.6;">Please click the link above to join the meeting at the scheduled time.</p>

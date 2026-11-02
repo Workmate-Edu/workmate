@@ -61,7 +61,7 @@ export default function AdminSubscriptionsPage() {
                   <span className="text-xs">
                     {new Date(sub.startDate).toLocaleDateString()} - {new Date(sub.endDate).toLocaleDateString()}
                   </span>
-                  <span className="text-xs">Children: {sub.children?.length || 0}</span>
+                  <span className="text-xs">{sub.children?.length || 0} {(sub.children?.length || 0) === 1 ? 'child' : 'children'}</span>
                   <span className="text-xs">
                     {daysLeft >= 0 ? `${daysLeft} day(s) left` : "Expired"}
                   </span>

@@ -7,6 +7,7 @@ import { pusherServer } from "@/lib/pusher";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { v2 as cloudinary } from 'cloudinary';
 import mongoose from "mongoose";
+import { isConversationParticipant } from '@/lib/conversation-access';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,8 +26,17 @@ export async function PATCH(
 
     await connectDB();
 
+    if (!await isConversationParticipant(params.conversationId, session.user.id)) {
+      return new NextResponse("Conversation not found", { status: 404 });
+    }
+
     // Get the original message
-    const originalMessage = await NewMessage.findById(params.messageId);
+    const originalMessage = await NewMessage.findOne({
+      _id: params.messageId,
+      conversationId: params.conversationId,
+      senderId: session.user.id,
+      isDeleted: { $ne: true },
+    });
     if (!originalMessage) {
       return new NextResponse("Message not found", { status: 404 });
     }
@@ -37,6 +47,8 @@ export async function PATCH(
     const message = await NewMessage.findOneAndUpdate(
       { 
         _id: params.messageId,
+        conversationId: params.conversationId,
+        isDeleted: { $ne: true },
         senderId: session.user.id 
       },
       { 
@@ -99,6 +111,10 @@ export async function DELETE(
     await connectDB();
 
     // Validate ObjectId
+    if (!await isConversationParticipant(params.conversationId, session.user.id)) {
+      return new NextResponse("Conversation not found", { status: 404 });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(params.messageId)) {
       return new NextResponse("Invalid message ID", { status: 400 });
     }

@@ -115,7 +115,7 @@ export function ParentMessagesView({
     try {
       setSending(true);
       
-      // Emit to socket first for immediate feedback
+      // Optimistic local feedback; broadcast only after persistence.
       const tempMessage = {
         _id: Date.now().toString(),
         content: message,
@@ -127,13 +127,7 @@ export function ParentMessagesView({
       setMessages(prev => [...prev, tempMessage]);
       setMessage(""); // Clear input right away
 
-      // Emit through socket
-      socket.emit('send_message', {
-        conversationId: conversation._id,
-        message: tempMessage
-      });
-
-      // Then save to database
+      // Save to database before broadcasting
       const res = await fetch(`/api/conversations/${conversation._id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,6 +135,9 @@ export function ParentMessagesView({
       });
 
       if (!res.ok) throw new Error('Failed to send message');
+      const savedMessage = await res.json();
+      setMessages(prev => prev.map(msg => msg._id === tempMessage._id ? savedMessage : msg));
+      socket.emit('send_message', { conversationId: conversation._id, messageId: savedMessage._id });
       
     } catch (error) {
       console.error('Failed to send message:', error);

@@ -1,3 +1,5 @@
+import { publishIntroductionSchema } from '@/lib/introduction-booking';
+import { scheduleTransaction, assertScheduleAvailable, sessionOccurrences, recurrenceEnd, SchedulingError } from '@/lib/scheduling';
 // /app/api/teacher/sessions/[id]/update.ts
 
 import { NextResponse } from "next/server"
@@ -41,7 +43,10 @@ export async function PUT(
   // Simple fields
   if (body.startTime)      updates.startTime   = new Date(body.startTime)
   if (body.duration != null) updates.duration    = Number(body.duration)
-  if (body.externalLink)    updates.meetingLink = body.externalLink
+  if (body.externalLink) {
+    if (!publishIntroductionSchema.shape.meetingLink.safeParse(body.externalLink).success) return NextResponse.json({ error: "Provide a valid HTTPS meeting link" }, { status: 400 });
+    updates.meetingLink = body.externalLink;
+  }
 
   // If the front‑end sent recurrence, map endsOn → endDate
   if (body.recurrence) {
@@ -56,7 +61,7 @@ export async function PUT(
 
     // Map endsOn string → Date
     if (r.endsOn) {
-      const d = new Date(r.endsOn)
+      const d = recurrenceEnd(r.endsOn, sessionDoc.timezone || 'UTC')
       if (isNaN(d.getTime())) {
         return NextResponse.json(
           { error: "Invalid recurrence end date" },
@@ -79,10 +84,19 @@ export async function PUT(
     updates.endTime = new Date(start.getTime() + dur * 60_000)
   }
 
-  // 6) Apply & save
-  Object.assign(sessionDoc, updates)
-  await sessionDoc.save()
-
-  // 7) Respond
-  return NextResponse.json({ success: true, session: sessionDoc })
+  try {
+    const updated = await scheduleTransaction(auth.user.id, async transaction => {
+      const current = await TeachingSession.findOne({ _id: id, teacherId: auth.user.id }).session(transaction);
+      if (!current) throw new SchedulingError('Session not found');
+      Object.assign(current, updates);
+      if (updates.startTime || updates.duration || updates.recurrence) {
+        current.endTime = new Date(new Date(current.startTime).getTime() + Number(current.duration) * 60000);
+        await assertScheduleAvailable(auth.user.id, sessionOccurrences(current), transaction, { teachingId: id });
+      }
+      return current.save({ session: transaction });
+    });
+    return NextResponse.json({ success: true, session: updated });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof SchedulingError ? error.message : 'Unable to update session' }, { status: error instanceof SchedulingError ? 409 : 500 });
+  }
 }

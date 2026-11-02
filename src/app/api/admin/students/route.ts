@@ -18,10 +18,8 @@ export async function GET() {
       role: 'student',
       'studentProfile.registeredAs': { $ne: 'child' } // Changed condition
     })
-    .select('name email studentProfile username status')
+    .select('name email studentProfile username isActive')
     .lean();
-
-    console.log('Raw independent students:', independentStudents);
 
     // Format independent students with proper field mapping
     const formattedIndependent = independentStudents.map(student => ({
@@ -32,23 +30,19 @@ export async function GET() {
       type: 'independent',
       subjects: student.studentProfile?.subjects || [],
       grade: student.studentProfile?.grade,
-      status: student.status || 'active',
+      status: student.isActive ? 'active' : 'inactive',
       assignedTeacher: student.studentProfile?.assignedTeacher,
       assessmentStatus: student.studentProfile?.assessmentStatus || 'none'
     }));
-
-    console.log('Formatted independent:', formattedIndependent);
 
     // Get children students
     const childStudents = await User.find({
       role: 'student',
       'studentProfile.registeredAs': 'child'
     })
-    .select('name email studentProfile status')
+    .select('name email studentProfile isActive')
     .populate('studentProfile.parent', 'name email')
     .lean();
-
-    console.log('Raw child students:', childStudents);
 
     // Format children
     const formattedChildren = childStudents.map(child => ({
@@ -58,17 +52,12 @@ export async function GET() {
       type: 'child',
       grade: child.studentProfile?.grade,
       subjects: child.studentProfile?.subjects || [],
-      status: child.status || 'active',
+      status: child.isActive ? 'active' : 'inactive',
       parentName: child.studentProfile?.parent?.name,
       parentEmail: child.studentProfile?.parent?.email,
       assignedTeacher: child.studentProfile?.assignedTeacher,
       assessmentStatus: child.studentProfile?.assessmentStatus || 'none'
     }));
-
-    console.log('Response data:', {
-      independent: formattedIndependent,
-      children: formattedChildren
-    });
 
     return NextResponse.json({
       independent: formattedIndependent,

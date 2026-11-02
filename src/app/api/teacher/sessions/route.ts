@@ -1,3 +1,5 @@
+import { publishIntroductionSchema } from '@/lib/introduction-booking';
+import { scheduleTransaction, assertScheduleAvailable, sessionOccurrences, recurrenceEnd, SchedulingError } from '@/lib/scheduling';
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -6,7 +8,7 @@ import { User } from "@/models/user"
 import { TeachingSession } from "@/models/teaching-session"
 import sendEmail from "@/lib/sendSmtpMail"
 import mongoose from 'mongoose'
-import { format, addDays, addWeeks, differenceInDays } from 'date-fns'
+import { format } from 'date-fns/format'
 import { generateICS, generateGoogleCalendarLink, generateOutlookCalendarLink } from "@/lib/calendar-utils"
 import { TeacherSchedule } from "@/models/schedule"
 import { sendSessionNotification } from "@/lib/notification-service";
@@ -47,23 +49,18 @@ export async function GET() {
 
     await connectDB()
 
-    console.log('Fetching sessions for teacher:', session.user.id)
-
     const sessions = await TeachingSession.find({
       teacherId: session.user.id
     })
-    .populate('studentId', 'name email studentProfile')
+    .populate('studentId', 'name studentProfile.grade')
     .sort({ startTime: 1 })
     .lean()
-
-    console.log('Found sessions:', sessions.length)
 
     const formattedSessions = sessions.map(s => ({
       id: s._id,
       student: {
         id: s.studentId?._id,
         name: s.studentId?.name,
-        email: s.studentId?.email,
         grade: s.studentId?.studentProfile?.grade
       },
       subject: s.subject,
@@ -136,12 +133,14 @@ export async function POST(req: Request) {
     await connectDB()
 
     // Get teacher profile - only need subject areas to determine area
-    const teacher = await User.findById(authSession.user.id)
+    const teacher: any = await User.findById(authSession.user.id)
       .select('name email teacherProfile.subjects')
       .lean()
 
+    if (!teacher?.teacherProfile) return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 });
+
     // Find subject area
-    const subjectArea = teacher.teacherProfile.subjects.find(area => 
+    const subjectArea = teacher.teacherProfile.subjects.find((area: any) =>
       area.subjects.includes(subjectName.toLowerCase())
     )
 
@@ -154,7 +153,8 @@ export async function POST(req: Request) {
     const sessionEndTime = new Date(sessionStartTime.getTime() + duration * 60000)
 
     // Generate or use provided meeting link
-    const meetingLink = externalLink || `https://meet.google.com/${Math.random().toString(36).substring(7)}`
+    const meetingLink = externalLink;
+    if (!publishIntroductionSchema.shape.meetingLink.safeParse(meetingLink).success) return NextResponse.json({ error: 'Provide a real HTTPS meeting link' }, { status: 400 });
 
     // Calculate total sessions with improved logging
     const totalSessions = calculateTotalSessions(
@@ -176,8 +176,8 @@ export async function POST(req: Request) {
     })
 
     // Process recurring sessions
-    const sessions = await Promise.all(studentIds.map(async (studentId: string) => {
-      const sessionData = {
+    const prepared = studentIds.map((studentId: string) => {
+      const sessionData: any = {
         teacherId: authSession.user.id,
         studentId,
         subject: {
@@ -197,17 +197,17 @@ export async function POST(req: Request) {
           isRecurring: true,
           pattern: recurrence.pattern,
           daysOfWeek: recurrence.pattern === 'multiple-days' || recurrence.pattern === 'weekly'
-            ? recurrence.daysOfWeek.sort((a, b) => a - b)
+            ? (recurrence.daysOfWeek || []).slice().sort((a: number, b: number) => a - b)
             : [],
           startDate: sessionStartTime,
-          endDate: new Date(recurrence.endsOn),
+          endDate: recurrenceEnd(recurrence.endsOn, timezone),
           totalSessions: calculateTotalSessions(
             sessionStartTime,
             {
               isRecurring: true,
               pattern: recurrence.pattern,
               daysOfWeek: recurrence.daysOfWeek,
-              endDate: new Date(recurrence.endsOn)
+              endDate: recurrenceEnd(recurrence.endsOn, timezone)
             }
           )
         };
@@ -223,7 +223,15 @@ export async function POST(req: Request) {
         });
       }
 
-      const createdSession = await TeachingSession.create(sessionData);
+      return sessionData;
+    });
+    if (!prepared.length) return NextResponse.json({ error: 'Select at least one student' }, { status: 400 });
+    const createdSessions = await scheduleTransaction(authSession.user.id, async transaction => {
+      await assertScheduleAvailable(authSession.user.id, sessionOccurrences(prepared[0]), transaction);
+      return TeachingSession.create(prepared, { session: transaction });
+    });
+    const sessions = await Promise.all(createdSessions.map(async (createdSession: any) => {
+      const studentId = String(createdSession.studentId);
 
       // Log created session for verification
       console.log('Session created with recurrence:', {
@@ -231,7 +239,7 @@ export async function POST(req: Request) {
         recurrence: createdSession.recurrence
       });
 
-      const student = await User.findById(studentId)
+      const student: any = await User.findById(studentId)
         .select('name email studentProfile.registeredAs studentProfile.parent')
         .populate({
           path: 'studentProfile.parent',

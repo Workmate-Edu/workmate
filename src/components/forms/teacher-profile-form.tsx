@@ -13,6 +13,8 @@ import { X } from "lucide-react"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { subjectAreas, type SubjectArea, type Subject } from "@/lib/constants/subjects"
+import { ProfileImageUpload } from '@/components/profile-image-upload'
+import { publicHttpsUrl } from '@/lib/safe-url'
 
 // const profileSchema = z.object({
 //   bio: z.string().min(10, "Bio must be at least 10 characters"),
@@ -106,10 +108,12 @@ interface TeacherProfile {
   email: string
   bio: string
   phone: string
+  image?: string
   teacherProfile: {
     subjects: Array<{ area: string; subjects: string[] }>
     qualifications: Array<{ degree: string; institution: string; year: number }>
     availability: any[]
+    introductionVideoUrl?: string
     verificationStatus: string
     verificationHistory?: Array<{
       status: string
@@ -137,6 +141,8 @@ export function TeacherProfileForm() {
     feedback: string;
     canReapplyAfter: Date;
   } | null>(null)
+  const [profileImage, setProfileImage] = useState('')
+  const [introductionVideoUrl, setIntroductionVideoUrl] = useState('')
 
  const form = useForm<FormValues>({
   resolver: zodResolver(profileSchema),
@@ -172,6 +178,8 @@ export function TeacherProfileForm() {
       if (!response.ok) throw new Error(data.error)
 
       setTeacher(data)
+      setProfileImage(data.image || '')
+      setIntroductionVideoUrl(data.teacherProfile?.introductionVideoUrl || '')
 
       // Update form with existing data
       // form.reset({
@@ -248,6 +256,11 @@ export function TeacherProfileForm() {
   }
 
   const onSubmit = async (data: z.infer<typeof profileSchema>) => {
+    const normalizedVideoUrl = introductionVideoUrl.trim() ? publicHttpsUrl(introductionVideoUrl) : ''
+    if (introductionVideoUrl.trim() && !normalizedVideoUrl) {
+      toast.error('Use a public HTTPS introduction video link without embedded credentials')
+      return
+    }
     try {
       setIsSaving(true)
       
@@ -255,6 +268,7 @@ export function TeacherProfileForm() {
       const formData = {
         bio: data.bio,
         phone: data.phone,
+        image: profileImage,
         teacherProfile: {
           subjects: selectedSubjects.map(subject => ({
             area: subject.area,
@@ -264,7 +278,8 @@ export function TeacherProfileForm() {
             degree: qual.degree,
             institution: qual.institution,
             year: qual.year
-          }))
+          })),
+          introductionVideoUrl: normalizedVideoUrl,
         }
       }
 
@@ -308,6 +323,14 @@ export function TeacherProfileForm() {
           <div>
             <Label>Email</Label>
             <Input value={teacher?.email} disabled />
+          </div>
+
+          <ProfileImageUpload value={profileImage} name={teacher?.name || 'Teacher'} onChange={setProfileImage} disabled={isSaving} />
+
+          <div>
+            <Label htmlFor="introduction-video">Introduction video <span className="font-normal text-muted-foreground">(optional)</span></Label>
+            <Input id="introduction-video" type="url" value={introductionVideoUrl} onChange={event => setIntroductionVideoUrl(event.target.value)} placeholder="https://www.youtube.com/watch?v=…" />
+            <p className="mt-1 text-xs text-muted-foreground">Share a public HTTPS link. Parents will only see it on your Learning Plan card.</p>
           </div>
 
           <div>

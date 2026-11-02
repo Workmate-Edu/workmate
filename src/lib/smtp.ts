@@ -2,11 +2,7 @@
 
 import nodemailer from 'nodemailer';
 
-const passKey = process.env.NEXT_PUBLIC_ZEPTOMAIL_API_KEY
-
-if (!passKey) {
-  console.error('NEXT_PUBLIC_ZEPTOMAIL_API_KEY is not set in environment variables');
-}
+const passKey = process.env.ZEPTOMAIL_API_KEY || process.env.NEXT_PUBLIC_ZEPTOMAIL_API_KEY
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.zeptomail.com',
@@ -16,17 +12,7 @@ const transporter = nodemailer.createTransport({
     user: 'emailapikey',
     pass: passKey,
   },
-  debug: true,
-});
-
-
-// Verify SMTP connection configuration
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error('SMTP connection error:', error);
-  } else {
-    console.log('SMTP server is ready to send emails');
-  }
+  debug: false,
 });
 
 export default transporter;

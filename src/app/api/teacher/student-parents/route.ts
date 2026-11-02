@@ -15,7 +15,6 @@ export async function GET() {
 
     // Get teacher with assigned students
     const teacher = await User.findById(session.user.id).lean();
-    console.log('Teacher:', teacher); // Debug log
 
     // Find all student users who are registered as children
     const childStudents = await User.find({
@@ -25,7 +24,6 @@ export async function GET() {
       'studentProfile.parent': { $exists: true }
     }).lean();
 
-    console.log('Child students:', childStudents); // Debug log
 
     // Get unique parent IDs
     const parentIds = [...new Set(
@@ -34,7 +32,6 @@ export async function GET() {
         .filter(Boolean)
     )];
 
-    console.log('Parent IDs:', parentIds); // Debug log
 
     // Get parent details
     const parents = await User.find({
@@ -58,7 +55,6 @@ export async function GET() {
         }))
     }));
 
-    console.log('Parents with children:', parentsWithChildren); // Debug log
     return NextResponse.json(parentsWithChildren);
 
   } catch (error) {

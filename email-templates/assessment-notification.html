@@ -1,152 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Assessment Assigned</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #F9FAFB;
-            margin: 0;
-            padding: 0;
-        }
-
-        .email-container {
-            max-width: 600px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .email-header {
-            text-align: center;
-            padding: 32px 24px;
-            background-color: white;
-            border-bottom: 1px solid #E2E8F0;
-        }
-
-        .logo {
-            width: 120px;
-            height: auto;
-            margin: 0 auto;
-            display: block;
-        }
-
-        .email-content {
-            padding: 32px 24px;
-            color: #1E293B;
-        }
-
-        .button-primary {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #F4A300;
-            color: #1E293B;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            margin: 16px 0;
-        }
-
-        .info-card {
-            background-color: #F5F7FA;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 16px 0;
-        }
-
-        .details-list {
-            padding-left: 0;
-            list-style-type: none;
-        }
-
-        .details-list li {
-            margin-bottom: 12px;
-            padding: 8px 0;
-            border-bottom: 1px solid #E2E8F0;
-        }
-
-        .details-list li:last-child {
-            border-bottom: none;
-        }
-
-        .label {
-            color: #64748B;
-            font-size: 14px;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .value {
-            color: #1E293B;
-            font-weight: 500;
-        }
-
-        .email-footer {
-            background-color: #F5F7FA;
-            padding: 24px;
-            text-align: center;
-            color: #64748B;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-    <div class="email-container">
-        <div class="email-header">
-            <img src="{{baseUrl}}/workmate_logo.png" alt="Workmate" class="logo" />
-            <h2 style="margin: 16px 0 0 0; color: #1E293B;">{{notificationType}}</h2>
-        </div>
-
-        <div class="email-content">
-            <p>Hello {{recipientName}},</p>
-            
-            <p>{{mainMessage}}</p>
-            
-            <div class="info-card">
-                <h3 style="margin-top: 0;">Assessment Details</h3>
-                <ul class="details-list">
-                    <li>
-                        <span class="label">Title</span>
-                        <span class="value">{{title}}</span>
-                    </li>
-                    <li>
-                        <span class="label">Subject</span>
-                        <span class="value">{{subject}}</span>
-                    </li>
-                    <li>
-                        <span class="label">Due Date</span>
-                        <span class="value">{{dueDate}}</span>
-                    </li>
-                    <li>
-                        <span class="label">Total Points</span>
-                        <span class="value">{{totalPoints}} points</span>
-                    </li>
-                    <li>
-                        <span class="label">Type</span>
-                        <span class="value">{{type}}</span>
-                    </li>
-                    <li>
-                        <span class="label">Description</span>
-                        <span class="value">{{description}}</span>
-                    </li>
-                </ul>
-            </div>
-
-            <div style="text-align: center;">
-                <a href="{{assessmentUrl}}" class="button-primary">
-                    View Assessment
-                </a>
-            </div>
-        </div>
-
-        <div class="email-footer">
-            <p>© 2024 Workmate. All rights reserved.</p>
-            <p>This is an automated message, please do not reply to this email.</p>
-        </div>
-    </div>
-</body>
-</html>
+<h1 style="margin:0 0 24px;color:{{brandText}};font-size:26px;font-weight:700;line-height:1.3;">{{notificationType}}</h1>
+<p style="margin:0 0 16px;line-height:1.6;">Hello {{recipientName}},</p>
+<p style="margin:0 0 16px;line-height:1.6;">{{mainMessage}}</p>
+<div class="info-card" style="background-color:{{brandBackgroundAccent}};border:1px solid {{brandBorder}};border-radius:8px;padding:20px;margin:20px 0;">
+<h3 style="margin-top:0;font-size:18px;font-weight:700;line-height:1.4;margin:0 0 12px;color:{{brandText}};">Assessment Details</h3>
+<ul class="details-list">
+<li>
+<span class="label">Title</span>
+<span class="value">{{title}}</span>
+</li>
+<li>
+<span class="label">Subject</span>
+<span class="value">{{subject}}</span>
+</li>
+<li>
+<span class="label">Due Date</span>
+<span class="value">{{dueDate}}</span>
+</li>
+<li>
+<span class="label">Total Points</span>
+<span class="value">{{totalPoints}} points</span>
+</li>
+<li>
+<span class="label">Type</span>
+<span class="value">{{type}}</span>
+</li>
+<li>
+<span class="label">Description</span>
+<span class="value">{{description}}</span>
+</li>
+</ul>
+</div>
+<div style="text-align:center;">
+<a href="{{assessmentUrl}}" class="button-primary" style="display:inline-block;padding:12px 24px;margin:8px 0;border-radius:6px;background-color:{{brandPrimary}};color:{{brandText}};font-family:Inter,Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;line-height:1.5;text-align:center;text-decoration:none;mso-padding-alt:12px 24px;">
+View Assessment
+</a>
+</div>

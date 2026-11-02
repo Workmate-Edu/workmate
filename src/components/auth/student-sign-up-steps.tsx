@@ -8,6 +8,7 @@ import { genderOptions, ageGroups } from "@/lib/constants/general"
 import type { StepProps } from "@/types/form"
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import { cn } from '@/lib/utils'
 
 export function BasicInfoStep({ register, errors, isSubmitting, setValue }: StepProps) {
   return (
@@ -18,19 +19,20 @@ export function BasicInfoStep({ register, errors, isSubmitting, setValue }: Step
         isSubmitting={isSubmitting}
       />
 
-      <div>
-        <Label>Phone Number</Label>
+      <div className={cn("rounded-lg border border-transparent p-3", errors.phone && "border-destructive bg-destructive/5")}>
+        <Label className={cn(errors.phone && "text-destructive")}>Phone Number</Label>
         <div className="relative">
           <PhoneInput
             country={'ng'}
             inputProps={{
               name: 'phone',
               required: true,
+              'aria-invalid': Boolean(errors.phone),
             }}
             onChange={(value) => setValue('phone', `+${value}`)}
             disabled={isSubmitting}
             containerClass="w-full"
-            inputClass="!pl-14 !w-full !h-10 !text-sm !rounded-md !border !border-input !bg-background !text-foreground"
+            inputClass={cn("!pl-14 !w-full !h-10 !text-sm !rounded-md !border !border-input !bg-background !text-foreground", errors.phone && "!border-destructive")}
             buttonClass="!border-0 !bg-transparent !absolute !left-3 !top-1/2 !-translate-y-1/2 z-10"
             dropdownClass="!bg-white !text-black !z-[1000]"
           />
@@ -40,13 +42,13 @@ export function BasicInfoStep({ register, errors, isSubmitting, setValue }: Step
         </div>
       </div>
 
-      <div>
-        <Label>Gender</Label>
+      <div className={cn("rounded-lg border border-transparent p-3", errors.gender && "border-destructive bg-destructive/5")}>
+        <Label className={cn(errors.gender && "text-destructive")}>Gender</Label>
         <Select
           onValueChange={(value) => setValue("gender", value)}
           disabled={isSubmitting}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger aria-invalid={Boolean(errors.gender)} className={cn("w-full", errors.gender && "border-destructive")}>
             <SelectValue placeholder="Select your gender..." />
           </SelectTrigger>
           <SelectContent>
@@ -62,13 +64,13 @@ export function BasicInfoStep({ register, errors, isSubmitting, setValue }: Step
         )}
       </div>
 
-      <div>
-        <Label>Age Group</Label>
+      <div className={cn("rounded-lg border border-transparent p-3", errors.ageGroup && "border-destructive bg-destructive/5")}>
+        <Label className={cn(errors.ageGroup && "text-destructive")}>Age Group</Label>
         <Select
           onValueChange={(value) => setValue("ageGroup", value)}
           disabled={isSubmitting}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger aria-invalid={Boolean(errors.ageGroup)} className={cn("w-full", errors.ageGroup && "border-destructive")}>
             <SelectValue placeholder="Select your age group..." />
           </SelectTrigger>
           <SelectContent>
@@ -101,8 +103,8 @@ export function EducationStep({
 }) {
   return (
     <div className="space-y-4">
-      <div>
-        <Label>Education Level</Label>
+      <div className={cn("rounded-lg border border-transparent p-3", errors.educationLevel && "border-destructive bg-destructive/5")}>
+        <Label className={cn(errors.educationLevel && "text-destructive")}>Education Level</Label>
         <Select
           onValueChange={(value) => {
             setSelectedLevel(value)
@@ -111,7 +113,7 @@ export function EducationStep({
           }}
           disabled={isSubmitting}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger aria-invalid={Boolean(errors.educationLevel)} className={cn("w-full", errors.educationLevel && "border-destructive")}>
             <SelectValue placeholder="Select education level..." />
           </SelectTrigger>
           <SelectContent>
@@ -128,13 +130,13 @@ export function EducationStep({
       </div>
 
       {selectedLevel && (
-        <div>
-          <Label>Grade/Year Level</Label>
+        <div className={cn("rounded-lg border border-transparent p-3", errors.grade && "border-destructive bg-destructive/5")}>
+          <Label className={cn(errors.grade && "text-destructive")}>Grade/Year Level</Label>
           <Select
             onValueChange={(value) => setValue("grade", value)}
             disabled={isSubmitting}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger aria-invalid={Boolean(errors.grade)} className={cn("w-full", errors.grade && "border-destructive")}>
               <SelectValue placeholder="Select grade/year level..." />
             </SelectTrigger>
             <SelectContent>
@@ -178,8 +180,8 @@ export function SubjectsStep({
 }) {
   return (
     <div className="space-y-4">
-      <div>
-        <Label>Subject Areas</Label>
+      <div className={cn("rounded-lg border border-transparent p-3", errors.subjectAreas && "border-destructive bg-destructive/5")}>
+        <Label className={cn(errors.subjectAreas && "text-destructive")}>Subject Areas</Label>
         <div className="flex flex-wrap gap-2 mb-2">
           {selectedAreas.map(area => {
             const areaData = subjectAreas.find(a => a.value === area)
@@ -201,7 +203,7 @@ export function SubjectsStep({
           onValueChange={handleAreaToggle}
           disabled={isSubmitting}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger aria-invalid={Boolean(errors.subjectAreas)} className={cn("w-full", errors.subjectAreas && "border-destructive")}>
             <SelectValue placeholder="Select subject areas..." />
           </SelectTrigger>
           <SelectContent>
@@ -221,8 +223,8 @@ export function SubjectsStep({
       </div>
 
       {selectedAreas.length > 0 && (
-        <div>
-          <Label>Subjects of Interest</Label>
+        <div className={cn("rounded-lg border border-transparent p-3", errors.subjects && "border-destructive bg-destructive/5")}>
+          <Label className={cn(errors.subjects && "text-destructive")}>Subjects of Interest</Label>
           <div className="flex flex-wrap gap-2 mb-2">
             {selectedSubjects.map(subject => {
               const subjectData = availableSubjects.find(s => s.value === subject)
@@ -244,7 +246,7 @@ export function SubjectsStep({
             onValueChange={handleSubjectToggle}
             disabled={isSubmitting}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger aria-invalid={Boolean(errors.subjects)} className={cn("w-full", errors.subjects && "border-destructive")}>
               <SelectValue placeholder="Select subjects..." />
             </SelectTrigger>
             <SelectContent>

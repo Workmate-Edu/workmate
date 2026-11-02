@@ -13,8 +13,9 @@ import { UserNav } from "./user-nav"
 
 const navItems = [
 	{ href: "/languages", label: "African Languages" },
-	{ href: "/stem", label: "STEM" },
+	{ href: "/stem", label: "STEM & AI" },
 	{ href: "/about", label: "Our Story" },
+	{ href: "/pricing", label: "Pricing" },
 ]
 
 export default function Nav() {
@@ -31,7 +32,7 @@ export default function Nav() {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (!menuRef.current || !buttonRef.current) return
 			const isNotificationClick = (event.target as Element)?.closest(
-				'[data-notification-menu="true"]'
+					'[data-notification-menu="true"], [data-user-menu="true"]'
 			)
 			if (
 				isMenuOpen &&
@@ -46,10 +47,6 @@ export default function Nav() {
 		document.addEventListener("mousedown", handleClickOutside)
 		return () => document.removeEventListener("mousedown", handleClickOutside)
 	}, [isMenuOpen])
-
-	if (status === "loading") {
-		return <div className="h-16 border-b bg-background/95" />
-	}
 
 	const isAuthenticated = !!session?.user
 
@@ -97,7 +94,9 @@ export default function Nav() {
 
 				{/* Desktop Auth */}
 				<div className="hidden md:flex items-center gap-4">
-					{isAuthenticated ? (
+					{status === "loading" ? (
+						<span role="status" className="text-sm text-muted-foreground">Loading account…</span>
+					) : isAuthenticated ? (
 						<>
 							<UserNav session={session} />
 						</>
@@ -116,6 +115,8 @@ export default function Nav() {
 				{/* Mobile Menu Toggle */}
 				<button
 					ref={buttonRef}
+					aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+					aria-expanded={isMenuOpen}
 					onClick={() => setIsMenuOpen(!isMenuOpen)}
 					className="p-2 -mr-2 md:hidden hover:bg-accent rounded-md transition-colors"
 				>
@@ -156,7 +157,9 @@ export default function Nav() {
 								)}
 							</div>
 							<div className="flex flex-col gap-2 pt-4 border-t">
-								{isAuthenticated ? (
+								{status === "loading" ? (
+									<span role="status" className="px-4 text-sm text-muted-foreground">Loading account…</span>
+								) : isAuthenticated ? (
 									<>
 										<div className="px-4">
 											<UserNav

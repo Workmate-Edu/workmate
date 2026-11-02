@@ -1,162 +1,62 @@
-'use client'
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { BrandDropdown } from '@/components/ui/brand-dropdown';
 
-import { useState } from 'react'
-import { Mail, Phone, MapPin, MessageSquare, Send } from 'lucide-react'
+const categories = [
+  ['support', 'General support'],
+  ['safeguarding', 'Safeguarding concern'],
+  ['safeguarding-escalation', 'Safeguarding escalation involving the usual contact'],
+  ['privacy-access', 'Access my information'],
+  ['privacy-correction', 'Correct my information'],
+  ['privacy-deletion', 'Delete my information'],
+] as const;
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission here
-    console.log('Form submitted:', formData)
+  const [form, setForm] = useState({ name: '', email: '', category: 'support', message: '', website: '' });
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function submit(event: React.FormEvent) {
+    event.preventDefault(); setBusy(true); setStatus('');
+    try {
+      const response = await fetch('/api/support-requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Your request could not be recorded');
+      setStatus(`${result.message} Reference: ${result.reference}`);
+      setForm(current => ({ ...current, message: '' }));
+    } catch (error) { setStatus(error instanceof Error ? error.message : 'Your request could not be recorded'); }
+    finally { setBusy(false); }
   }
-
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="py-16 bg-primary/5">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl font-bold mb-6">Get in Touch</h1>
-            <p className="text-xl text-muted-foreground">
-              We're here to help! Reach out to us with any questions or concerns.
-            </p>
-          </div>
-        </div>
+  return <main className="container mx-auto max-w-4xl px-4 py-16">
+    <h1 className="text-4xl font-bold">Support, safeguarding and data requests</h1>
+    <p className="mt-4 text-muted-foreground">Use this route for service help, safeguarding concerns, or requests to access, correct or delete personal information. Do not include passwords, payment-card details, identity documents or unnecessary information about a child.</p>
+    <div className="mt-8 grid gap-8 md:grid-cols-2">
+      <section className="space-y-4 rounded-xl border p-6">
+        <h2 className="text-2xl font-semibold">Before you submit</h2>
+        <p>Submissions are stored in Workmate’s restricted support queue and are available to authorised administrators. Submission confirms receipt by Workmate, not that an investigation or deletion has been completed.</p>
+        <p>If the concern involves the person who would usually receive it, choose the safeguarding-escalation option. Do not send the concern to the tutor involved.</p>
+        <p>For immediate danger or suspected crime, contact local emergency services or the appropriate child-protection authority first; this form is not an emergency service.</p>
+        <p className="text-sm">Read the <Link className="text-primary underline" href="/privacy">Privacy Policy</Link> and <Link className="text-primary underline" href="/safety">Safety guidance</Link>.</p>
       </section>
-
-      {/* Contact Information */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="bg-card p-6 rounded-lg shadow-sm text-center">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <Mail className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Email Us</h3>
-              <p className="text-muted-foreground">support@workmate.edu</p>
-            </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm text-center">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <Phone className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Call Us</h3>
-              <p className="text-muted-foreground">+234 (803) 815-6896</p>
-            </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm text-center">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <MapPin className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Visit Us</h3>
-              <p className="text-muted-foreground">Suite 4, SUG Secretariat<br />Bayero University, Kano, Nigeria</p>
-            </div>
-          </div>
-
-          {/* Contact Form */}
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-card p-8 rounded-lg shadow-sm">
-              <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium mb-2">
-                      Your Name
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full p-3 rounded-md border bg-background"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium mb-2">
-                      Your Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full p-3 rounded-md border bg-background"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium mb-2">
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    id="subject"
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full p-3 rounded-md border bg-background"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    id="message"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    rows={6}
-                    className="w-full p-3 rounded-md border bg-background"
-                    required
-                  ></textarea>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors"
-                >
-                  <Send className="w-4 h-4" />
-                  Send Message
-                </button>
-              </form>
-            </div>
-          </div>
+      <form onSubmit={submit} className="space-y-4 rounded-xl border p-6" aria-describedby="submission-status">
+        <label className="block text-sm">Name<input className="mt-1 w-full rounded-md border bg-background p-3" required maxLength={100} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></label>
+        <label className="block text-sm">Email<input className="mt-1 w-full rounded-md border bg-background p-3" required type="email" maxLength={254} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></label>
+        <div className="space-y-1">
+          <label htmlFor="request-type" className="block text-sm">Request type</label>
+          <BrandDropdown
+            id="request-type"
+            label="Request type"
+            value={form.category}
+            onChange={category => setForm({ ...form, category })}
+            options={categories.map(([value, label]) => ({ value, label }))}
+          />
         </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-16 bg-primary/5">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-          <div className="max-w-3xl mx-auto space-y-6">
-            {[
-              {
-                q: 'How quickly can I expect a response?',
-                a: 'We typically respond to all inquiries within 24 hours during business days.'
-              },
-              {
-                q: 'Do you offer technical support?',
-                a: 'Yes, our technical support team is available 24/7 to help you with any platform-related issues.'
-              },
-              {
-                q: 'Can I schedule a demo?',
-                a: 'Absolutely! You can schedule a demo through our contact form or by calling us directly.'
-              }
-            ].map((faq, index) => (
-              <div key={index} className="bg-card p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold mb-2">{faq.q}</h3>
-                <p className="text-muted-foreground">{faq.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        <label className="hidden" aria-hidden="true">Website<input tabIndex={-1} autoComplete="off" value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} /></label>
+        <label className="block text-sm">Message<textarea className="mt-1 min-h-40 w-full rounded-md border bg-background p-3" required minLength={10} maxLength={5000} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} /></label>
+        <Button disabled={busy} type="submit">{busy ? 'Recording…' : 'Submit securely'}</Button>
+        {status && <p id="submission-status" role="status" className="text-sm">{status}</p>}
+      </form>
     </div>
-  )
+  </main>;
 }

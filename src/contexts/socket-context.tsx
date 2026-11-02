@@ -1,5 +1,6 @@
 "use client";
 
+import { socketAuth, restoreConversationRooms } from '@/lib/socket/client-auth';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
@@ -33,10 +34,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     });
 
     const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
-      auth: {
-        userId: session.user.id,
-        role: session.user.role
-      },
+      auth: socketAuth,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -46,6 +44,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       withCredentials: true
     });
 
+    restoreConversationRooms(socketInstance);
     socketInstance.on('connect', () => {
       console.log('🟢 Socket: Connected!', {
         id: socketInstance.id,
@@ -57,6 +56,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socketInstance.on('disconnect', (reason) => {
       console.log('🔴 Socket: Disconnected!', { reason });
       setIsConnected(false);
+      if (reason === 'io server disconnect') socketInstance.connect();
     });
 
     socketInstance.on('connect_error', (error) => {
@@ -89,7 +89,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       socketInstance.disconnect();
       setConnectionAttempts(0);
     };
-  }, [session?.user?.id, status, connectionAttempts]);
+  }, [session?.user?.id, status]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

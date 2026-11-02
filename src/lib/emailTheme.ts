@@ -1,151 +1,44 @@
+﻿// Email-safe equivalents of the light theme in src/app/globals.css.
+// Inter matches src/app/layout.tsx; fallback fonts work without web-font support.
 export const emailTheme = {
   colors: {
-    // Primary Colors
-    primary: "#0066FF", // Main brand color
-    primaryLight: "#4D94FF",
-    primaryDark: "#0047B3",
-
-    // Secondary Colors 
-    secondary: "#7C3AED", // Vibrant purple
-    secondaryLight: "#9D6DF3",
-    secondaryDark: "#5B21B6",
-
-    // Background Colors
-    background: "#F9FAFB",
-    backgroundDark: "#1E293B",
-    backgroundAccent: "#F0F7FF",
-
-    // Text Colors
-    text: "#1E293B",
-    textMuted: "#64748B",
-    textLight: "#FFFFFF",
-
-    // Supporting Colors
-    success: "#10B981",
-    warning: "#F59E0B",
-    error: "#EF4444",
-    info: "#3B82F6",
-
-    // Border Colors
-    border: "#E2E8F0",
-    borderLight: "#F1F5F9"
+    primary: '#F4A300',
+    primaryLight: '#FFF4D6',
+    primaryDark: '#A66F00',
+    secondary: '#7C3AED',
+    secondaryLight: '#EDE9FE',
+    secondaryDark: '#5B21B6',
+    background: '#F9FAFB',
+    backgroundDark: '#1E293B',
+    backgroundAccent: '#F5F7FA',
+    text: '#1E293B',
+    textMuted: '#64748B',
+    textLight: '#FFFFFF',
+    success: '#10B981',
+    warning: '#F59E0B',
+    error: '#EF4444',
+    info: '#7C3AED',
+    border: '#E2E8F0',
+    borderLight: '#F1F5F9',
   },
+  typography: { fontFamily: 'Inter, Arial, Helvetica, sans-serif' },
+};
 
-  spacing: {
-    padding: {
-      container: "40px 20px",
-      content: "24px",
-      button: "12px 24px"
-    },
-    borderRadius: {
-      container: "12px",
-      button: "6px",
-      card: "8px"
-    }
-  },
-
-  typography: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-    fontSize: {
-      xs: "12px",
-      sm: "14px",
-      base: "16px",
-      lg: "18px",
-      xl: "20px",
-      "2xl": "24px",
-      "3xl": "30px"
-    },
-    lineHeight: {
-      tight: "1.2",
-      base: "1.6",
-      relaxed: "1.8"
-    }
-  }
-}
-
+// Essential styles are also inline in the shell/content for mail clients that
+// strip head styles. No external fonts, CSS variables or flex layout required.
 export const baseEmailStyles = `
-  body {
-    font-family: ${emailTheme.typography.fontFamily};
-    line-height: ${emailTheme.typography.lineHeight.base};
-    background-color: ${emailTheme.colors.background};
-    margin: 0;
-    padding: 0;
-  }
-
-  .email-wrapper {
-    max-width: 600px;
-    margin: 0 auto;
-    background-color: #ffffff;
-    border-radius: ${emailTheme.spacing.borderRadius.container};
-    overflow: hidden;
-    margin: 20px auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  }
-
-  .email-header {
-    background-color: ${emailTheme.colors.primary};
-    padding: ${emailTheme.spacing.padding.content};
-    text-align: center;
-    color: ${emailTheme.colors.textLight};
-  }
-
-  .email-content {
-    padding: ${emailTheme.spacing.padding.content};
-    color: ${emailTheme.colors.text};
-  }
-
-  .email-footer {
-    padding: ${emailTheme.spacing.padding.content};
-    background-color: ${emailTheme.colors.backgroundAccent};
-    text-align: center;
-    font-size: ${emailTheme.typography.fontSize.sm};
-    color: ${emailTheme.colors.textMuted};
-  }
-
-  .button-primary {
-    display: inline-block;
-    padding: ${emailTheme.spacing.padding.button};
-    background-color: ${emailTheme.colors.primary};
-    color: ${emailTheme.colors.textLight} !important;
-    text-decoration: none;
-    border-radius: ${emailTheme.spacing.borderRadius.button};
-    font-weight: 500;
-    text-align: center;
-  }
-
-  .button-secondary {
-    display: inline-block;
-    padding: ${emailTheme.spacing.padding.button};
-    background-color: ${emailTheme.colors.secondary};
-    color: ${emailTheme.colors.textLight} !important;
-    text-decoration: none;
-    border-radius: ${emailTheme.spacing.borderRadius.button};
-    font-weight: 500;
-    text-align: center;
-  }
-
-  .info-card {
-    background-color: ${emailTheme.colors.backgroundAccent};
-    border-radius: ${emailTheme.spacing.borderRadius.card};
-    padding: ${emailTheme.spacing.padding.content};
-    margin: 16px 0;
-  }
-
+  body, table, td { font-family: ${emailTheme.typography.fontFamily}; }
+  table { border-spacing: 0; }
+  img { border: 0; outline: none; text-decoration: none; }
+  p, li { line-height: 1.6; }
+  a { color: ${emailTheme.colors.secondary}; }
+  .info-card, .credentials-card { background-color: ${emailTheme.colors.backgroundAccent}; border: 1px solid ${emailTheme.colors.border}; border-radius: 8px; padding: 20px; margin: 20px 0; }
+  .button-primary { background-color: ${emailTheme.colors.primary}; color: ${emailTheme.colors.text} !important; }
+  .button-secondary { background-color: ${emailTheme.colors.secondary}; color: #FFFFFF !important; }
   @media only screen and (max-width: 600px) {
-    .email-wrapper {
-      width: 100% !important;
-      margin: 0 !important;
-    }
-
-    .email-content {
-      padding: 20px 16px !important;
-    }
-
-    .button-primary,
-    .button-secondary {
-      display: block !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-    }
+    .email-outer { padding: 12px 8px !important; }
+    .email-padding { padding: 24px 20px !important; }
+    .email-content h1 { font-size: 23px !important; }
+    .button-primary, .button-secondary { box-sizing: border-box; max-width: 100%; }
   }
-`
+`;

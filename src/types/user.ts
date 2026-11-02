@@ -44,6 +44,9 @@ export interface DatabaseUser {
 
 // Extended interface for Mongoose Document
 export interface IUser extends Omit<DatabaseUser, '_id'>, Document {
+  schedulingRevision?: number;
+  freeLessonClaims?: Record<string, any>;
+  freeLessonEligible?: boolean;
   role: UserRole; // Explicitly required
   verificationTokenExpiry?: Date;
   lastVerificationSent?: Date;

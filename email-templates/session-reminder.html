@@ -1,52 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Session Reminder</title>
-</head>
-<body>
-  <table cellspacing="0" cellpadding="0" style="background-color: #f3f3fc; width: 100%; font-family: Arial, sans-serif;">
-    <tbody>
-      <tr>
-        <td align="center">
-          <div style="max-width: 670px; background-color: rgba(14, 252, 213, 0.329); padding: 5%; margin: 0 auto;">
-            <div style="background-color: white; border-radius: 12px; overflow: hidden; margin: 30px 0;">
-              <div style="background-color: #10b981; padding: 20px; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">Session Starting Soon</h1>
-              </div>
-
-              <div style="padding: 5%; text-align: left;">
-                <p style="color: #121212; line-height: 1.6;">Dear {{recipientName}},</p>
-
-                <p style="color: #121212; line-height: 1.6;">
-                  Your session starts in 30 minutes.
-                </p>
-
-                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <h3 style="margin-top: 0; color: #121212;">Session Details:</h3>
-                  <p><strong>Session:</strong> {{sessionInfo}}</p>
-                  <p><strong>Start Time:</strong> {{startTime}}</p>
-                  <p><strong>Meeting Link:</strong> <a href="{{meetingLink}}">{{meetingLink}}</a></p>
-                </div>
-
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="{{meetingLink}}" 
-                     style="background-color: #10b981; color: white; padding: 12px 24px; 
-                            text-decoration: none; border-radius: 6px; display: inline-block;">
-                    Join Session
-                  </a>
-                </div>
-
-                <p style="color: #121212; line-height: 1.6;">
-                  Please join a few minutes early to test your audio and video.
-                </p>
-              </div>
-            </div>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</body>
-</html>
+<h1 style="margin:0 0 24px;color:{{brandText}};font-size:26px;font-weight:700;line-height:1.3;">Session Starting Soon</h1>
+<p style="color:{{brandText}};line-height:1.6;margin:0 0 16px;">Dear {{recipientName}},</p>
+<p style="color:{{brandText}};line-height:1.6;margin:0 0 16px;">
+Your session starts in 30 minutes.
+</p>
+<div style="background-color:{{brandBackgroundAccent}};padding:20px;border-radius:8px;margin:20px 0;">
+<h3 style="margin-top:0;color:{{brandText}};font-size:18px;font-weight:700;line-height:1.4;margin:0 0 12px;">Session Details:</h3>
+<p style="margin:0 0 16px;line-height:1.6;"><strong>Session:</strong> {{sessionInfo}}</p>
+<p style="margin:0 0 16px;line-height:1.6;"><strong>Start Time:</strong> {{startTime}}</p>
+<p style="margin:0 0 16px;line-height:1.6;"><strong>Meeting Link:</strong> <a href="{{meetingLink}}" style="color:{{brandSecondary}};overflow-wrap:anywhere;word-break:break-word;">{{meetingLink}}</a></p>
+</div>
+<div style="text-align:center;margin:30px 0;">
+<a href="{{meetingLink}}" style="display:inline-block;padding:12px 24px;margin:8px 0;border-radius:6px;background-color:{{brandPrimary}};color:{{brandText}};font-family:Inter,Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;line-height:1.5;text-align:center;text-decoration:none;mso-padding-alt:12px 24px;" class="button-primary">
+Join Session
+</a>
+</div>
+<p style="color:{{brandText}};line-height:1.6;margin:0 0 16px;">
+Please join a few minutes early to test your audio and video.
+</p>

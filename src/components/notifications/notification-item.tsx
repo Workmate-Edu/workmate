@@ -29,6 +29,8 @@ const NotificationIcon = {
   class_updated: Calendar,
   session_created: Calendar,
   teacher_assigned: GraduationCap,
+  teacher_review: GraduationCap,
+  introduction_request: Calendar,
   subject_assigned: BookOpen,
   teacher_unassigned: Users,
   new_message: MessageSquare,

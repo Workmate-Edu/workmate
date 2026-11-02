@@ -175,7 +175,7 @@ export function TeacherMessagesView({ conversation }: TeacherMessagesViewProps) 
     try {
       setSending(true);
       
-      // First emit through socket for instant delivery
+      // Optimistic local feedback; broadcast only after persistence.
       const tempId = Date.now().toString();
       const messageData = {
         _id: tempId,
@@ -187,13 +187,7 @@ export function TeacherMessagesView({ conversation }: TeacherMessagesViewProps) 
       // Add message to state immediately
       addMessageToState(messageData);
 
-      // Emit to socket
-      socket.emit('send_message', {
-        conversationId: conversation._id,
-        message: messageData
-      });
-
-      // Then save to database
+      // Save to database before broadcasting
       const res = await fetch(`/api/conversations/${conversation._id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,6 +195,9 @@ export function TeacherMessagesView({ conversation }: TeacherMessagesViewProps) 
       });
 
       if (!res.ok) throw new Error('Failed to send message');
+      const savedMessage = await res.json();
+      setMessages(prev => prev.map(msg => msg._id === tempId ? savedMessage : msg));
+      socket.emit('send_message', { conversationId: conversation._id, messageId: savedMessage._id });
       
       setMessage("");
     } catch (error) {

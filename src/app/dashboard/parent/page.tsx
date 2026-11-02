@@ -16,6 +16,7 @@ import {
   Video,
   AlertTriangle,
   Star as StarIcon,
+  ArrowRight,
 } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
@@ -52,6 +53,15 @@ interface Session {
   timezone?: string 
 }
 
+interface LearningPlanSummary {
+  title: string
+  description: string
+  action: string
+  step?: number
+  completed?: number
+  total?: number
+}
+
 export default function ParentDashboardPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -60,6 +70,7 @@ export default function ParentDashboardPage() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [subscription, setSubscription] = useState<any>(null)
+  const [learningPlan, setLearningPlan] = useState<LearningPlanSummary | null>(null)
 
   // map childId → has availability?
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({})
@@ -98,6 +109,14 @@ export default function ParentDashboardPage() {
       .then(r => r.json())
       .then(d => setSubscription(d.subscription))
       .catch(() => setSubscription(null))
+  }, [])
+
+  // Keep the parent's next learning-plan action visible on every dashboard visit.
+  useEffect(() => {
+    fetch('/api/learning-plan')
+      .then(response => response.ok ? response.json() : null)
+      .then(data => setLearningPlan(data))
+      .catch(() => setLearningPlan(null))
   }, [])
 
   // 3) load upcoming sessions
@@ -267,6 +286,34 @@ export default function ParentDashboardPage() {
           </Link>
         </Button>
       </div>
+
+      {learningPlan && (
+        <Card className="border-secondary/30 bg-secondary/5 p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-secondary/10 p-2 text-secondary">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-semibold">{learningPlan.title}</h2>
+                  {learningPlan.step && <Badge variant="secondary">Step {learningPlan.step} of 5</Badge>}
+                  {learningPlan.total !== undefined && learningPlan.total > 1 && (
+                    <Badge variant="outline">{learningPlan.completed || 0} of {learningPlan.total} complete</Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">{learningPlan.description}</p>
+              </div>
+            </div>
+            <Button asChild className="shrink-0">
+              <Link href="/dashboard/learning-plan">
+                {learningPlan.action}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Initial Assessment Alert */}
       {children.some(c => !c.assessmentStatus.exists && c.assessmentStatus.canCreate) && (

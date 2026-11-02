@@ -1,4 +1,5 @@
 export const educationLevels = [
+  { label: "Personal learning / Not in school", value: "personal" },
   { label: "Primary School", value: "primary" },
   { label: "High School", value: "high_school" },
   { label: "Undergraduate", value: "undergraduate" },
@@ -7,6 +8,7 @@ export const educationLevels = [
 ] as const
 
 export const gradesByLevel = {
+  personal: [{ label: "Not applicable", value: "personal_learning" }],
   primary: [
     { label: "Grade 1", value: "1" },
     { label: "Grade 2", value: "2" },
