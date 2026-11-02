@@ -1,5 +1,5 @@
-import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import { LoadingLinkButton } from "@/components/ui/loading-link-button"
 
 export function CTASection() {
   return (
@@ -10,16 +10,17 @@ export function CTASection() {
             Begin Your African Learning Journey
           </h2>
           <p className="max-w-[85%] leading-normal text-sm sm:text-base lg:text-lg opacity-90">
-            Join our community of learners connecting with African languages and innovation
+            Help your child explore African languages, STEM and AI with a teacher who fits their needs.
           </p>
           <div className="mt-8">
-            <Link
-              href="/sign-up"
+            <LoadingLinkButton
+              href="/sign-up/parent"
+              loadingText="Loading..."
               className="inline-flex h-11 items-center justify-center rounded-md bg-primary-foreground px-8 text-sm font-medium text-primary hover:bg-primary-foreground/90 transition-colors group"
             >
               Start Learning Today
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+            </LoadingLinkButton>
           </div>
         </div>
       </div>

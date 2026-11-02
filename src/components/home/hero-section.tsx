@@ -7,7 +7,7 @@ import { CircularVectors } from '@/components/ui/circular-vectors'
 import { GraduationCap, Beaker, Globe2, Users, ArrowRight, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { StatsGrid } from './stats-grid'
-import { Button } from '@/components/ui/button'
+import { LoadingLinkButton } from '@/components/ui/loading-link-button'
 import Image from 'next/image'
 
 export function HeroSection() {
@@ -139,12 +139,12 @@ export function HeroSection() {
                 <span
                   className="block text-center text-primary"
                   style={{
-                    whiteSpace: "nowrap",
+                    whiteSpace: "normal",
                     fontSize: "clamp(1.25rem, 6vw, 2.5rem)",
                     fontWeight: 700,
                   }}
                 >
-                  STEM & African Languages
+                  STEM, AI & African Languages
                 </span>
               </motion.h1>
 
@@ -152,7 +152,7 @@ export function HeroSection() {
                 variants={slideVariants}
                 className="text-xl text-muted-foreground max-w-[42rem] leading-normal"
               >
-                Help your children excel in science and mathematics while connecting with African languages
+                Help your child build confidence in science, mathematics and artificial intelligence while connecting with African languages.
               </motion.p>
 
               <motion.div
@@ -164,8 +164,8 @@ export function HeroSection() {
                   <div className="absolute inset-0 bg-grid-slate-100 [mask-image:radial-gradient(ellipse_at_top,white,transparent)] dark:bg-grid-slate-700/50 opacity-20"></div>
                   <Beaker className="h-8 w-8 text-secondary flex-shrink-0 relative z-10" />
                   <div className="text-left relative z-10">
-                    <h3 className="font-semibold">STEM Education</h3>
-                    <p className="text-muted-foreground text-sm">Fun experiments and math games</p>
+                    <h3 className="font-semibold">STEM & AI Education</h3>
+                    <p className="text-muted-foreground text-sm">Science, maths and an introduction to AI</p>
                   </div>
                   <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-secondary/10 rounded-full blur-2xl group-hover:bg-secondary/20 transition-colors duration-300"></div>
                 </div>
@@ -183,30 +183,29 @@ export function HeroSection() {
               </motion.div>
 
               <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <Button 
-                  size="lg" 
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-lg px-8"
-                  onClick={() => window.open('https://calendly.com/ibrahim-saliman-workmateteam/new-meeting', '_blank')}
+                <LoadingLinkButton
+                  href="/sign-up/parent"
+                  loadingText="Loading..."
+                  className="h-10 whitespace-nowrap bg-primary px-6 text-sm text-primary-foreground hover:bg-primary/90"
                 >
-                  <Calendar className="mr-2 h-5 w-5" />
-                  Schedule a Free Discovery Call
-                </Button>
-                <Button 
+                  Get started
+                </LoadingLinkButton>
+                <LoadingLinkButton
+                  href="/pricing"
                   variant="outline" 
-                  size="lg"
-                  asChild
-                  className="w-full sm:w-[200px] bg-secondary/10 hover:bg-secondary/20 text-secondary border-secondary/20 h-12 text-lg px-8"
+                  loadingText="Loading..."
+                  className="h-10 w-full whitespace-nowrap border-secondary/20 bg-secondary/10 px-6 text-sm text-secondary hover:bg-secondary/20 sm:w-auto"
                 >
-                  <Link href="/sign-up">Get Started</Link>
-                </Button>
+                  View pricing
+                </LoadingLinkButton>
               </div>
 
               <div className="w-full border-t border-border mt-16 pt-16">
                 <div className="flex flex-col items-center gap-2 mb-8">
                   <div className="rounded-full bg-secondary/10 px-4 py-1.5 text-sm font-medium text-secondary flex items-center gap-2">
                     <Users className="h-4 w-4" />
-                    <span className="hidden sm:inline">Perfect for Ages 16+</span>
-                    <span className="sm:hidden">Ages 16+</span>
+                    <span className="hidden sm:inline">Independent accounts for ages 18+</span>
+                    <span className="sm:hidden">Adults 18+</span>
                   </div>
                   <h2 className="text-xl font-medium">Adults & Professionals</h2>
                 </div>

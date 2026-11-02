@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { IUser } from '@/types/user';
+import { RESIDENCE_COUNTRIES } from '@/lib/countries';
 
 // -----------------------------
 // Teacher-specific profile
@@ -55,6 +56,7 @@ const teacherProfileSchema = new Schema({
       endTime: String
     }]
   }],
+  introductionVideoUrl: { type: String, trim: true, maxlength: 500 },
   reviews: [{
     student: { type: Schema.Types.ObjectId, ref: 'User' },
     rating: { type: Number, min: 1, max: 5 },
@@ -147,6 +149,7 @@ const progressSchema = new Schema({
 // Student-specific profile
 // -----------------------------
 const studentProfileSchema = new Schema({
+  onboarding: { type: Schema.Types.Mixed, required: false },
   registeredAs: {
     type: String,
     enum: ['independent', 'child'],
@@ -201,6 +204,9 @@ const studentProfileSchema = new Schema({
 // Parent-specific profile
 // -----------------------------
 const parentProfileSchema = new Schema({
+  // Intake for assisted matching, validated by parentOnboardingSchema before writes.
+  // These learner profiles are not login accounts and do not grant trial entitlements.
+  onboarding: { type: Schema.Types.Mixed, required: false },
   phone:                 String,
   interestedInLearning:  { type: Boolean, default: false }, // <-- already present, ensure this is set
   educationLevel:        String,
@@ -264,6 +270,9 @@ const userSchema = new Schema<IUser>({
   bio:   String,
   language: { type: String, default: 'en' },
   timezone: String,
+  residenceCountry: { type: String, enum: RESIDENCE_COUNTRIES },
+  legalAcknowledgements: { type: Schema.Types.Mixed, required: false },
+  safeguarding: { type: Schema.Types.Mixed, required: false },
 
   teacherProfile: { type: teacherProfileSchema, required: false },
   studentProfile: { type: studentProfileSchema, required: false },
@@ -273,6 +282,9 @@ const userSchema = new Schema<IUser>({
   students: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 
   isActive: { type: Boolean, default: true },
+  schedulingRevision: { type: Number, default: 0 },
+  freeLessonClaims: { type: Schema.Types.Mixed, required: false },
+  freeLessonEligible: { type: Boolean, required: false },
   preferences: {
     notifications: {
       email:  { type: Boolean, default: true },
@@ -317,8 +329,8 @@ const userSchema = new Schema<IUser>({
 // -----------------------------
 // Indexes
 // -----------------------------
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 }, { sparse: true });
+// Email and username unique indexes are declared on their schema fields.
+
 userSchema.index({ role: 1 });
 
 // Export model

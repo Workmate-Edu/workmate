@@ -222,7 +222,7 @@ export default function ParentSubscriptionPage() {
             <div>{new Date(subscription.lastPayment).toLocaleDateString()}</div>
           </div>
           <div>
-            <span className="font-medium">Children:</span>
+            <span className="font-medium">{(subscription.children?.length || 0) === 1 ? 'Child:' : 'Children:'}</span>
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
               {subscription.children?.length || 0}

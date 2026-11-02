@@ -11,8 +11,12 @@ export async function GET(
 ) {
   try {
     await connectDB();
+    const session = await getServerSession(authOptions);
+    if (!session?.user || session.user.role !== 'parent') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const child = await User.findById(params.childId)
+    const child = await User.findOne({ _id: params.childId, role: 'student', 'studentProfile.parent': session.user.id })
       .populate('studentProfile.assignedTeachers.teacherId', 'name email')
       .lean();
 
@@ -55,8 +59,11 @@ export async function GET(
         name: child.name,
         email: child.email,
         username: child.username,
+        image: child.image,
+        phone: child.phone,
         grade: child.studentProfile?.grade,
         gender: child.gender,
+        subjects: allSubjects,
         allSubjects,
         activeCourses
       }
@@ -76,13 +83,14 @@ export async function DELETE(
     await connectDB();
     const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
+    if (!session?.user || session.user.role !== 'parent') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const child = await Child.findOneAndDelete({
+    const child = await User.findOneAndDelete({
       _id: params.childId,
-      parent: session.user.id
+      role: 'student',
+      'studentProfile.parent': session.user.id
     });
 
     if (!child) {
@@ -110,28 +118,36 @@ export async function PUT(
     await connectDB();
     const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
+    if (!session?.user || session.user.role !== 'parent') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, gender, educationLevel, grade, ageGroup, subjects } = await req.json();
+    const { name, gender, grade, subjects, image } = await req.json();
+    if (!name || !gender || !grade || !Array.isArray(subjects) || !subjects.length) {
+      return NextResponse.json({ error: 'Complete the required child details' }, { status: 400 });
+    }
+    if (image !== undefined && image !== '' && (typeof image !== 'string' || !image.startsWith('https://'))) {
+      return NextResponse.json({ error: 'Choose a valid profile image' }, { status: 400 });
+    }
 
-    const updatedChild = await Child.findOneAndUpdate(
-      { _id: params.childId, parent: session.user.id },
-      {
-        $set: {
-          name,
-          gender,
-          educationLevel,
-          grade,
-          ageGroup,
-          subjects: subjects.map((subject: { area: string, name: string }) => ({
-            area: subject.area,
-            name: subject.name,
-            progress: 0 // Set initial progress
-          }))
-        }
-      },
+    const update: any = {
+      $set: {
+        name,
+        gender,
+        ...(image ? { image } : {}),
+        'studentProfile.grade': grade,
+        'studentProfile.subjects': subjects.map((subject: { area: string, name: string }) => ({
+          area: subject.area,
+          name: subject.name,
+          progress: 0 // Set initial progress
+        }))
+      }
+    };
+    if (image === '') update.$unset = { image: 1 };
+
+    const updatedChild = await User.findOneAndUpdate(
+      { _id: params.childId, role: 'student', 'studentProfile.parent': session.user.id },
+      update,
       { new: true }
     ).lean();
 
@@ -143,7 +159,8 @@ export async function PUT(
     const transformedChild = {
       ...updatedChild,
       id: updatedChild._id,
-      subjects: updatedChild.subjects.map(subject => ({
+      image: updatedChild.image,
+      subjects: (updatedChild.studentProfile?.subjects || []).map(subject => ({
         area: subject.area,
         name: subject.name,
         progress: subject.progress || 0

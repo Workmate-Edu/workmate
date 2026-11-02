@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import mongoose from "mongoose";
 import { pusherServer } from "@/lib/pusher";
 import { encrypt, decrypt } from '@/lib/encryption';
+import { isConversationParticipant } from '@/lib/conversation-access';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,17 +23,7 @@ export async function GET(
 
     await connectDB();
 
-    // First verify user is part of conversation
-    const conversation = await Conversation.findOne({
-      _id: params.conversationId,
-      'participants': {
-        $elemMatch: { 
-          userId: session.user.id 
-        }
-      }
-    });
-
-    if (!conversation) {
+    if (!await isConversationParticipant(params.conversationId, session.user.id)) {
       return new NextResponse("Conversation not found", { status: 404 });
     }
 
@@ -98,6 +89,10 @@ export async function POST(
     await connectDB();
 
     // Store original content for last message
+    if (!await isConversationParticipant(params.conversationId, session.user.id)) {
+      return new NextResponse("Conversation not found", { status: 404 });
+    }
+
     const originalContent = content;
     const encryptedContent = encrypt(content);
 

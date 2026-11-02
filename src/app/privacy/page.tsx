@@ -1,111 +1,15 @@
-import { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title: 'Privacy Policy | Workmate',
-  description: 'Learn about our commitment to protecting your privacy and data on Workmate'
-}
-
-export default function PrivacyPage() {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-16 max-w-4xl">
-        <div className="space-y-8">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Privacy Policy</h1>
-            <p className="text-muted-foreground">
-              Last updated: {new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
-          </div>
-
-          <div className="prose prose-slate max-w-none space-y-12">
-            <section>
-              <h2 className="text-3xl font-semibold text-primary mb-6">1. Introduction</h2>
-              <p className="text-lg leading-relaxed">
-                At Workmate, we take your privacy seriously. This policy describes how we collect, 
-                use, and protect your personal information when you use our educational platform.
-              </p>
-            </section>
-
-            <section className="space-y-6">
-              <h2 className="text-3xl font-semibold text-primary">2. Information Collection</h2>
-              
-              <div>
-                <h3 className="text-xl font-medium mb-4">2.1 Account Information</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Full name and contact details</li>
-                  <li>Email address and password</li>
-                  <li>Profile information and preferences</li>
-                  <li>Role-specific information (student/teacher/parent)</li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-medium mb-4">2.2 Educational Data</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Learning progress and assessment results</li>
-                  <li>Course participation and completion data</li>
-                  <li>Teacher qualifications and experience</li>
-                  <li>Student academic history</li>
-                </ul>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-3xl font-semibold text-primary mb-6">3. Data Usage & Protection</h2>
-              <div className="grid gap-6">
-                <div className="bg-muted/50 p-6 rounded-lg">
-                  <h3 className="text-xl font-medium mb-4">How We Use Your Data</h3>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Personalize your learning experience</li>
-                    <li>Match students with appropriate teachers</li>
-                    <li>Track and report learning progress</li>
-                    <li>Improve our educational services</li>
-                    <li>Ensure platform security</li>
-                  </ul>
-                </div>
-
-                <div className="bg-muted/50 p-6 rounded-lg">
-                  <h3 className="text-xl font-medium mb-4">Data Protection Measures</h3>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Encryption of sensitive information</li>
-                    <li>Regular security audits</li>
-                    <li>Secure data storage practices</li>
-                    <li>Limited employee data access</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-3xl font-semibold text-primary mb-6">4. Your Rights</h2>
-              <div className="space-y-4">
-                <p>You have the right to:</p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Access your personal data</li>
-                  <li>Correct inaccurate information</li>
-                  <li>Request data deletion</li>
-                  <li>Export your data</li>
-                </ul>
-              </div>
-            </section>
-
-            <section className="border-t pt-8">
-              <h2 className="text-3xl font-semibold text-primary mb-6">5. Contact Us</h2>
-              <p className="mb-4">
-                For privacy-related inquiries, please contact our Data Protection Officer at:
-              </p>
-              <div className="bg-muted/50 p-6 rounded-lg inline-block">
-                <p>Email: <a href="mailto:privacy@workmateteam.com" className="text-primary hover:underline">privacy@workmateteam.com</a></p>
-                <p>Address: Lagos, Nigeria</p>
-              </div>
-            </section>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+import Link from 'next/link';
+import type { Metadata } from 'next';
+export const metadata: Metadata = { title: 'Privacy Policy | Workmate', description: 'How Workmate handles account, learning, communications and support information.' };
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => <section><h2 className="text-2xl font-semibold">{title}</h2><div className="mt-3 space-y-3 text-muted-foreground">{children}</div></section>;
+export default function PrivacyPage() { return <main className="container mx-auto max-w-4xl space-y-9 px-4 py-16">
+  <header><h1 className="text-4xl font-bold">Privacy Policy</h1><p className="mt-3 text-muted-foreground">Version 2026-10-18. This notice explains how Workmate collects, uses, stores and protects personal information.</p></header>
+  <Section title="Who and what this covers"><p>Workmate provides online tutoring for parent-managed children aged 6–16 and independent adults aged 18 or older in Nigeria, the United Kingdom, the United States and Canada. Teachers apply separately. A parent or guardian must provide and authorise information about a child; a child cannot use the adult signup route.</p></Section>
+  <Section title="Information we collect"><ul className="list-disc space-y-2 pl-6"><li>Account and verification details: name, email, username, password hash, phone, role and country of residence.</li><li>For learners: age or adult confirmation, subjects, goals, level, timezone, availability, teacher choices, bookings, attendance and learning records.</li><li>For teachers: subjects, biography, qualifications, availability, verification history and professional acknowledgements.</li><li>Messages, support/safeguarding/data requests, notifications and technical records needed to operate, diagnose and protect the service.</li><li>Payment and entitlement records when paid checkout is made available. Workmate must not use browser-supplied payment status as entitlement authority.</li></ul></Section>
+  <Section title="Why we use information and lawful bases"><p>We use information to create and secure accounts, arrange tutoring, provide communications, keep records of choices, support users, respond to safety concerns, and establish or defend rights. Depending on the person and country, the basis may be performance of a contract or steps requested before it, legitimate interests in operating and protecting the service, legal obligations, or consent where consent is required. Optional marketing is kept separate and can be refused without losing service messages.</p><p>Parental-authority acknowledgement is not presented as verified parental consent. Child matching and booking are held until Workmate records verification.</p></Section>
+  <Section title="Sharing and overseas processing"><p>Workmate uses Vercel for application hosting, MongoDB for application data, Zoho Mail and ZeptoMail for email, and teacher-created Google Meet or Zoom meetings. Those providers may process information in countries outside the user’s country. Teachers receive only information needed for authorised matching and lessons. Information may also be disclosed when legally required or needed to protect a person, the service or legal rights.</p><p>Workmate controls who can see meeting links inside the application, but teachers create meetings in external accounts and Workmate does not configure every Google or Zoom privacy setting.</p></Section>
+  <Section title="Retention and deletion"><p>Workmate keeps information while needed for active accounts, tutoring, safety, support, payment records, disputes and legal obligations. Workmate does not promise automatic deletion on a fixed date. A deletion request starts a review because some records may need to be retained for safety, payment, dispute or legal reasons.</p></Section>
+  <Section title="Your choices and rights"><p>Depending on applicable law, users may ask to access, correct, delete, restrict or obtain a copy of personal information, object to some uses, withdraw optional consent, or complain to the relevant regulator. A parent or guardian can make requests concerning their child. Identity and authority may need to be verified before a request is completed.</p><p><Link className="text-primary underline" href="/contact">Submit a privacy request</Link>. If a safety issue is urgent, use the safeguarding route and contact local emergency or child-protection services where appropriate.</p></Section>
+  <Section title="Storage and tracking"><p>Workmate uses necessary cookies or browser storage for authentication, preferences, dashboard guidance and temporary pricing selections. Workmate does not use advertising or behavioural analytics trackers that require consent. Such tracking will not be enabled without an appropriate consent mechanism and an updated notice.</p></Section>
+  <Section title="Contact and changes"><p>Use the <Link className="text-primary underline" href="/contact">support and data-request form</Link>. It records receipt in the application queue and provides a reference; it does not promise that the request has already been completed. Material notice changes require a new version and, where appropriate, a fresh acknowledgement.</p></Section>
+</main>; }

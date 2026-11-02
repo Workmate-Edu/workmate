@@ -1,133 +1,41 @@
-import { PricingCalculator } from "@/components/pricing-calculator"
-import { Check } from "lucide-react"
-
-const features = [
-	{
-		title: "Live 1-on-1 Sessions",
-		description: "Personalized attention from expert tutors",
-	},
-	{
-		title: "Interactive Learning",
-		description: "Engaging digital resources and learning materials",
-	},
-	{
-		title: "Flexible Scheduling",
-		description: "Book sessions at times that work for you",
-	},
-	{
-		title: "Progress Tracking",
-		description: "Regular assessments and progress reports",
-	},
-	{
-		title: "Learning Materials",
-		description: "Access to digital worksheets and resources",
-	},
-	{
-		title: "Parent Updates",
-		description: "Regular feedback and session summaries",
-	},
-]
-
+import { SessionPricing } from '@/components/session-pricing';
+import type { Metadata } from 'next';
+export const metadata: Metadata = { title: 'Lesson pricing | Workmate', description: 'Fixed prices for 60-minute Workmate lessons in USD, GBP, CAD and NGN.' };
 export default function PricingPage() {
-	return (
-		<>
-			{/* Enhanced animated background */}
-			<div className="fixed inset-0 -z-10 overflow-hidden">
-				<div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
-				<div className="absolute inset-0 animate-gradient">
-					<div
-						className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 bg-[size:200%_200%]"
-						style={{ backgroundPosition: "0 0" }}
-					/>
-				</div>
-				<div className="absolute inset-0 bg-grid-primary/10 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-			</div>
-
-			<div className="container relative max-w-6xl py-12 md:py-24">
-				<div className="text-center mb-12 relative z-10">
-					<div className="inline-block">
-						<h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-secondary via-primary to-secondary bg-clip-text text-transparent animate-gradient bg-[size:200%_auto]">
-							Simple, Transparent Pricing
-						</h1>
-					</div>
-					<p className="mt-4 text-lg text-foreground/80 max-w-2xl mx-auto">
-						Quality education shouldn't be complicated. Our simple pricing
-						structure helps you focus on what matters most - learning.
-					</p>
-				</div>
-
-				<div className="grid md:grid-cols-2 gap-12 items-start mb-16">
-					<div className="relative">
-						<div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 to-background blur-xl" />
-						<PricingCalculator />
-					</div>
-
-					<div className="space-y-8">
-						<div className="bg-card/60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-border/50">
-							<h3 className="text-xl font-semibold mb-2 text-foreground">
-								Why Choose Workmate?
-							</h3>
-							<p className="text-foreground/80">
-								Our pricing includes everything you need for an effective learning
-								experience - no hidden fees or surprise charges.
-							</p>
-						</div>
-
-						<div>
-							<h3 className="text-xl font-semibold mb-6">What's Included</h3>
-							<div className="grid gap-4">
-								{features.map((feature) => (
-									<div key={feature.title} className="flex gap-4">
-										<div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-											<Check className="h-4 w-4 text-primary" />
-										</div>
-										<div>
-											<h4 className="font-medium">{feature.title}</h4>
-											<p className="text-sm text-muted-foreground">
-												{feature.description}
-											</p>
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div className="bg-card/60 backdrop-blur-sm rounded-lg p-6 md:p-8 mt-12 shadow-sm border border-border/50">
-					<h2 className="text-xl font-semibold mb-4">Frequently Asked Questions</h2>
-					<div className="grid md:grid-cols-2 gap-6">
-						<div>
-							<h3 className="font-medium mb-2">How are payments handled?</h3>
-							<p className="text-sm text-muted-foreground">
-								Payments are processed securely weekly. We accept all major credit
-								cards and digital payments.
-							</p>
-						</div>
-						<div>
-							<h3 className="font-medium mb-2">Can I change my schedule?</h3>
-							<p className="text-sm text-muted-foreground">
-								Yes, you can modify your schedule with 24 hours notice without any
-								penalty.
-							</p>
-						</div>
-						<div>
-							<h3 className="font-medium mb-2">What if I need to cancel?</h3>
-							<p className="text-sm text-muted-foreground">
-								No long-term commitments required. You can cancel your subscription
-								at any time.
-							</p>
-						</div>
-						<div>
-							<h3 className="font-medium mb-2">Are there any additional fees?</h3>
-							<p className="text-sm text-muted-foreground">
-								No hidden fees. The price you see in the calculator is exactly what
-								you'll pay.
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</>
-	)
+  return <div className="relative isolate min-h-screen"><div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" /><div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 bg-[size:200%_200%] motion-safe:animate-gradient" /><div className="absolute inset-0 bg-grid-primary/10 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" /></div><div className="container max-w-6xl px-4 py-16 sm:py-24">
+    <header className="mx-auto mb-12 max-w-2xl text-center">
+      <p className="mb-3 font-semibold text-secondary">African languages, STEM &amp; AI</p>
+      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl bg-gradient-to-r from-secondary via-primary to-secondary bg-clip-text text-transparent">Simple, Transparent Pricing</h1>
+      <p className="mt-5 text-lg text-muted-foreground">Find a teacher who fits you or your child, then continue with 60-minute lessons.</p>
+    </header>
+    <div className="grid items-start gap-10 md:grid-cols-2"><SessionPricing />
+      <section aria-labelledby="trial-heading" className="rounded-xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-sm">
+        <h2 id="trial-heading" className="text-2xl font-bold">Start by finding your teacher</h2>
+        <p className="mt-3 text-muted-foreground">For new learners and families, browse teachers for your subject and choose before starting paid lessons.</p>
+        <ol className="mt-6 space-y-6">
+          <li><h3 className="font-semibold">1. Choose up to three teachers</h3><p className="mt-1 text-muted-foreground">Try a free 15-minute introduction with each of up to three teachers for your chosen subject.</p></li>
+          <li><h3 className="font-semibold">2. Choose your teacher</h3><p className="mt-1 text-muted-foreground">Compare teaching styles and choose the right fit for you or your child.</p></li>
+          <li><h3 className="font-semibold">3. Enjoy one free lesson</h3><p className="mt-1 text-muted-foreground">Each eligible learner gets one free 60-minute lesson per subject after choosing a teacher. For example, AI and Yoruba each include their own free lesson.</p></li>
+        </ol>
+        <p className="mt-6 text-sm text-muted-foreground">No payment is required for introductions or the free lesson. After choosing teachers, reserve an available time in Your Learning Plan. Parent-managed child journeys require completed parental verification first.</p>
+      </section>
+    </div>
+    <section className="mt-12 rounded-xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-sm sm:p-8">
+      <h2 className="text-2xl font-semibold">Why choose Workmate?</h2>
+      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+        <div><h3 className="font-semibold">Personal learning</h3><p className="mt-2 text-sm text-muted-foreground">Choose subjects, goals and a teacher that fit you or your child.</p></div>
+        <div><h3 className="font-semibold">Flexible planning</h3><p className="mt-2 text-sm text-muted-foreground">Share your timezone and preferred times. We confirm schedules with your teacher.</p></div>
+        <div><h3 className="font-semibold">Try before paying</h3><p className="mt-2 text-sm text-muted-foreground">New learners can meet teachers and take their free lesson before deciding on a paid plan.</p></div>
+      </div>
+    </section>
+    <section className="mt-8 rounded-xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-sm sm:p-8">
+      <h2 className="text-2xl font-semibold">Frequently asked questions</h2>
+      <div className="mt-6 grid gap-6 sm:grid-cols-2">
+        <div><h3 className="font-semibold">Can I register for myself?</h3><p className="mt-2 text-sm text-muted-foreground">Adults aged 18 or older can choose Student for their own learning. Learners aged 6–16 use a parent or guardian account. Teachers have a separate application.</p></div>
+        <div><h3 className="font-semibold">Do I pay to start?</h3><p className="mt-2 text-sm text-muted-foreground">No. Your introductory meetings and one free lesson per learner per subject require no payment.</p></div>
+        <div><h3 className="font-semibold">How do plan discounts work?</h3><p className="mt-2 text-sm text-muted-foreground">Weekly plans use the base rate. Monthly covers 4 weeks with 15% off; quarterly covers 12 weeks with 20% off.</p></div>
+        <div><h3 className="font-semibold">Does this reserve my lessons?</h3><p className="mt-2 text-sm text-muted-foreground">The calculator gives an estimate. Your teacher and schedule are confirmed before you approve a paid plan.</p></div>
+      </div>
+    </section>
+  </div></div>;
 }

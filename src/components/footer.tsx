@@ -15,8 +15,8 @@ const footerLinks = [
 		title: "Resources",
 		links: [
 			{ label: "African Languages", href: "/languages" },
-			{ label: "STEM", href: "/stem" },
-			{ label: "Blog", href: "/blog" },
+			{ label: "STEM & AI", href: "/stem" },
+			{ label: "Safety & safeguarding", href: "/safety" },
 		],
 	},
 	{
@@ -39,7 +39,7 @@ export function Footer() {
 							<span className="font-semibold">Workmate</span>
 						</Link>
 						<p className="text-sm text-muted-foreground">
-							Empowering African education through technology and culture
+							Online tutoring for children through guardians and for independent adults
 						</p>
 					</div>
 
@@ -113,7 +113,7 @@ export function Footer() {
 							<FaYoutube />
 						</a>
 					</div>
-					<p>© {new Date().getFullYear()} Workmate. All rights reserved.</p>
+					<p>© {new Date().getFullYear()} Workmate. <Link className="underline" href="/contact">Support, safeguarding and data requests</Link>.</p>
 				</div>
 			</div>
 		</footer>

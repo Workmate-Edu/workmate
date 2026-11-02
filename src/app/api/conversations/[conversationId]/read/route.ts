@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Conversation, NewMessage } from "@/models/message";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { isConversationParticipant } from '@/lib/conversation-access';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,9 @@ export async function POST(
     }
 
     await connectDB();
+    if (!await isConversationParticipant(params.conversationId, session.user.id)) {
+      return new NextResponse("Conversation not found", { status: 404 });
+    }
 
     // Mark all messages as read for this user
     await NewMessage.updateMany(

@@ -8,6 +8,7 @@ export const subjectAreas = [
     label: "STEM", 
     value: "stem",
     subjects: [
+      { label: "Artificial Intelligence", value: "ai" },
       { 
         label: "Math", 
         value: "math",
@@ -101,6 +102,7 @@ export function getSubjectsByArea(areaValue: string) {
 
 export const subjects = [
   // STEM Subjects
+  { id: "ai", label: "Artificial Intelligence", category: "STEM" },
   { id: "math", label: "Math", category: "STEM" }, // Changed from mathematics to math
   { id: "physics", label: "Physics", category: "STEM" },
   { id: "chemistry", label: "Chemistry", category: "STEM" },

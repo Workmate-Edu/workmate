@@ -45,7 +45,6 @@ export async function GET() {
       parentId: student.studentProfile?.parent
     }));
 
-    console.log('Found students:', formattedStudents); // Debug log
     return NextResponse.json(formattedStudents);
 
   } catch (error) {

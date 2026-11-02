@@ -29,6 +29,7 @@ export function ParentSidebar({ mobile = false }: ParentSidebarProps) {
 
   const navigation = [
     { name: "Overview", href: "/dashboard/parent", icon: FiHome },
+    { name: "Your Learning Plan", href: "/dashboard/learning-plan", icon: FiBook },
     { name: "Children", href: "/dashboard/parent/children", icon: FiUsers },
     { name: "Courses", href: "/dashboard/parent/courses", icon: FiBook },
     { name: "Schedule", href: "/dashboard/parent/schedule", icon: FiCalendar },

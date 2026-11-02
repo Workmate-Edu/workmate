@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>Workmate</title>
+  <style>{{emailStyles}}</style>
+</head>
+<body style="margin:0;padding:0;background-color:{{brandBackground}};color:{{brandText}};font-family:Inter,Arial,Helvetica,sans-serif;line-height:1.6;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="table-layout:fixed;background-color:{{brandBackground}};">
+    <tr><td align="center" class="email-outer" style="padding:32px 12px;">
+      <!--[if mso]><table role="presentation" width="600" align="center"><tr><td><![endif]-->
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="table-layout:fixed;max-width:600px;background-color:{{brandSurface}};border:1px solid {{brandBorder}};border-radius:12px;">
+        <tr><td style="height:6px;background-color:{{brandPrimary}};border-radius:12px 12px 0 0;font-size:1px;line-height:6px;">&nbsp;</td></tr>
+        <tr><td class="email-padding" style="padding:28px 32px 24px;border-bottom:1px solid {{brandBorder}};">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+            <td width="56" valign="middle"><a href="{{brandUrl}}" style="text-decoration:none;"><img src="{{brandLogoUrl}}" alt="Workmate logo" width="44" height="44" style="display:block;border:0;"></a></td>
+            <td valign="middle"><a href="{{brandUrl}}" style="font-size:23px;font-weight:700;color:{{brandText}};text-decoration:none;">Workmate</a><br><span style="font-size:12px;color:{{brandSecondary}};">African Languages &amp; STEM Education</span></td>
+          </tr></table>
+        </td></tr>
+        <tr><td class="email-padding email-content" style="padding:28px 32px;font-size:16px;color:{{brandText}};overflow-wrap:anywhere;word-wrap:break-word;">
+          {{emailContent}}
+        </td></tr>
+        <tr><td class="email-padding" style="padding:24px 32px;background-color:{{brandBackgroundAccent}};border-top:1px solid {{brandBorder}};border-radius:0 0 12px 12px;font-size:12px;color:{{brandTextMuted}};line-height:1.8;">
+          <p style="margin:0 0 12px;font-weight:600;color:{{brandText}};">Empowering African education through technology and culture</p>
+          <p style="margin:0 0 12px;"><a href="{{brandUrl}}/contact" style="color:{{brandSecondary}};">Contact us</a> &nbsp;&middot;&nbsp; <a href="{{brandUrl}}/privacy" style="color:{{brandSecondary}};">Privacy</a> &nbsp;&middot;&nbsp; <a href="{{brandUrl}}/terms" style="color:{{brandSecondary}};">Terms</a></p>
+          <p style="margin:0;">&copy; {{currentYear}} Workmate. All rights reserved.<br>This is an automated message. For help, use our contact page.</p>
+        </td></tr>
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </td></tr>
+  </table>
+</body>
+</html>

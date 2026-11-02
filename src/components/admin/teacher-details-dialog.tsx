@@ -12,6 +12,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { CircleUser, Mail, Phone, Star, Users, GraduationCap, X } from "lucide-react" // Add icons
 import { useEffect, useState } from "react"
+import { Input } from '@/components/ui/input'
+import { toast } from 'sonner'
+import { publicHttpsUrl } from '@/lib/safe-url'
 
 interface TeacherDetailsDialogProps {
   teacher: any;
@@ -19,6 +22,7 @@ interface TeacherDetailsDialogProps {
   isOpen: boolean;
   onVerify?: (teacher: any) => void;
   onReject?: (teacher: any) => void;
+  onIntroductionVideoUpdated?: (teacherId: string, introductionVideoUrl: string) => void;
 }
 
 export function TeacherDetailsDialog({
@@ -26,8 +30,51 @@ export function TeacherDetailsDialog({
   onClose,
   isOpen,
   onVerify,
-  onReject
+  onReject,
+  onIntroductionVideoUpdated
 }: TeacherDetailsDialogProps) {
+  const [externalReviews, setExternalReviews] = useState<any[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [introductionVideoUrl, setIntroductionVideoUrl] = useState('')
+  const [savingIntroductionVideo, setSavingIntroductionVideo] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen || !teacher?._id) return
+    setReviewsLoading(true)
+    fetch(`/api/teacher/reviews?teacherId=${teacher?._id}`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setExternalReviews(Array.isArray(data) ? data : []))
+      .finally(() => setReviewsLoading(false))
+  }, [isOpen, teacher?._id])
+
+  useEffect(() => {
+    setIntroductionVideoUrl(teacher?.teacherProfile?.introductionVideoUrl || '')
+  }, [teacher?._id, teacher?.teacherProfile?.introductionVideoUrl])
+
+  const saveIntroductionVideo = async () => {
+    const normalizedVideoUrl = introductionVideoUrl.trim() ? publicHttpsUrl(introductionVideoUrl) : ''
+    if (introductionVideoUrl.trim() && !normalizedVideoUrl) {
+      toast.error('Use a public HTTPS introduction video link without embedded credentials')
+      return
+    }
+    setSavingIntroductionVideo(true)
+    try {
+      const response = await fetch(`/api/admin/teachers/${teacher._id}/introduction-video`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ introductionVideoUrl: normalizedVideoUrl }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Unable to save introduction video')
+      setIntroductionVideoUrl(result.introductionVideoUrl)
+      onIntroductionVideoUpdated?.(teacher._id, result.introductionVideoUrl)
+      toast.success(result.introductionVideoUrl ? 'Introduction video saved' : 'Introduction video removed')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to save introduction video')
+    } finally {
+      setSavingIntroductionVideo(false)
+    }
+  }
+
   if (!teacher) return null;
 
   // --- NEW: Get students count from teacherProfile.students array ---
@@ -35,19 +82,6 @@ export function TeacherDetailsDialog({
     Array.isArray(teacher.teacherProfile?.assignedStudents)
       ? teacher.teacherProfile.assignedStudents.length
       : 0
-    
-  // --- NEW: Fetch reviews from Review model by teacherId ---
-  const [externalReviews, setExternalReviews] = useState<any[]>([])
-  const [reviewsLoading, setReviewsLoading] = useState(false)
-
-  useEffect(() => {
-    if (!isOpen || !teacher?._id) return
-    setReviewsLoading(true)
-    fetch(`/api/teacher/reviews?teacherId=${teacher._id}`)
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setExternalReviews(Array.isArray(data) ? data : []))
-      .finally(() => setReviewsLoading(false))
-  }, [isOpen, teacher?._id])
 
   // Helper: reviews from teacherProfile.reviews (legacy) or show ratings/count from teacherProfile.ratings
   const reviews: Array<any> = Array.isArray(teacher.teacherProfile?.reviews)
@@ -144,6 +178,12 @@ export function TeacherDetailsDialog({
                 </div>
               </div>
             )}
+
+            <div className="space-y-2 rounded-lg border p-4">
+              <h4 className="text-sm font-medium">Parent-facing introduction video</h4>
+              <p className="text-xs text-muted-foreground">Add or replace an optional public HTTPS link when helping this teacher complete their profile.</p>
+              <div className="flex flex-col gap-2 sm:flex-row"><Input type="url" value={introductionVideoUrl} onChange={event => setIntroductionVideoUrl(event.target.value)} placeholder="https://…" disabled={savingIntroductionVideo} /><Button type="button" className="whitespace-nowrap" onClick={saveIntroductionVideo} disabled={savingIntroductionVideo}>{savingIntroductionVideo ? 'Saving…' : introductionVideoUrl ? 'Save link' : 'Add link'}</Button></div>
+            </div>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-3 gap-4">

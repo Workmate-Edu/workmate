@@ -73,8 +73,6 @@ export function AssignTeacherButton({
     setDialogOpen(true)
   }
 
-  console.log('currentAssignments', currentAssignments)
-
   return (
     <>
       <Button 

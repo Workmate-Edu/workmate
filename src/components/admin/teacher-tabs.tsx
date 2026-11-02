@@ -1,11 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TeacherList } from "./teacher-list"
 
 export function TeacherTabs() {
+  const [status, setStatus] = useState('pending')
   return (
-    <Tabs defaultValue="pending" className="space-y-4">
+    <Tabs value={status} onValueChange={setStatus} className="space-y-4">
       <TabsList>
         <TabsTrigger value="pending">Pending</TabsTrigger>
         <TabsTrigger value="approved">Approved</TabsTrigger>
@@ -13,15 +15,15 @@ export function TeacherTabs() {
       </TabsList>
 
       <TabsContent value="pending">
-        <TeacherList status="pending" />
+        {status === 'pending' && <TeacherList status="pending" />}
       </TabsContent>
 
       <TabsContent value="approved">
-        <TeacherList status="verified" />
+        {status === 'approved' && <TeacherList status="verified" />}
       </TabsContent>
 
       <TabsContent value="rejected">
-        <TeacherList status="rejected" />
+        {status === 'rejected' && <TeacherList status="rejected" />}
       </TabsContent>
     </Tabs>
   )

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/user"
+import { getAuthSession } from '@/lib/auth';
+import { approvedTeacherFilter } from '@/lib/teacher-shortlist';
 
 export const runtime = 'nodejs'
 
@@ -9,10 +11,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getAuthSession();
+    if (!session?.user || !['admin', 'parent', 'student'].includes(session.user.role)) return NextResponse.json({ error: 'Sign in to view teacher profiles' }, { status: 403 });
     await connectDB()
 
-    const teacher = await User.findById(params.id)
-      .select('name bio teacherProfile.qualifications teacherProfile.subjects teacherProfile.ratings')
+    const teacher = await User.findOne({ ...approvedTeacherFilter, _id: params.id })
+      .select('name bio teacherProfile.bio teacherProfile.subjects teacherProfile.ratings')
       .lean()
 
     if (!teacher) {

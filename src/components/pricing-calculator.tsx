@@ -30,7 +30,7 @@ const LANGUAGE_SUBJECTS = [
 const PLAN_OPTIONS = [
   { value: "weekly", label: "Weekly", multiplier: 1, display: "Weekly", discount: 0 },
   { value: "monthly", label: "Monthly", multiplier: 4, display: "Monthly (4 weeks)", discount: 0.15 }, // 15% discount
-  { value: "quarterly", label: "Quarterly", multiplier: 12, display: "Quarterly (12 weeks)", discount: 0.25 } // 25% discount
+  { value: "quarterly", label: "Quarterly", multiplier: 12, display: "Quarterly (12 weeks)", discount: 0.20 } // 20% discount
 ]
 
 interface SubjectConfig {

@@ -24,12 +24,20 @@ import { useSocketContext } from "@/contexts/socket-context"
 
 // Single source of routes with role-based visibility
 const routes = [
+  { label: 'Introductions', icon: Calendar, href: (role: string) => '/dashboard/teacher/introductions', color: 'text-violet-500', roles: ['teacher'] },
   {
     label: 'Dashboard',
     icon: LayoutDashboard,
     href: (role: string) => `/dashboard/${role}`,
     color: "text-sky-500",
     roles: ['admin', 'teacher', 'student', 'parent'] // Available to all
+  },
+  {
+    label: 'Your Learning Plan',
+    icon: ClipboardList,
+    href: (role: string) => `/dashboard/learning-plan`,
+    color: "text-violet-500",
+    roles: ['parent', 'student']
   },
   {
     label: 'Initial Assessment',
@@ -191,7 +199,21 @@ const routes = [
     roles: ['admin']
   },
   {
-    label: 'Inital Assessments',
+    label: 'Teacher Matching',
+    icon: ClipboardList,
+    href: (role: string) => `/dashboard/admin/matching-requests`,
+    color: "text-violet-500",
+    roles: ['admin']
+  },
+  {
+    label: 'Introduction Requests',
+    icon: Calendar,
+    href: (role: string) => `/dashboard/admin/introduction-requests`,
+    color: "text-pink-500",
+    roles: ['admin']
+  },
+  {
+    label: 'Initial Assessments',
     icon: ClipboardList,
     href: (role: string) => `/dashboard/admin/assessments`,
     color: "text-violet-500",

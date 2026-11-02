@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { readPricingDraft } from "@/lib/parent-onboarding"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -12,26 +13,29 @@ import { Stepper } from "@/components/ui/stepper"
 import { BasicInfoStep, EducationStep, SubjectsStep } from "./student-sign-up-steps"
 import { educationLevels, gradesByLevel } from "@/lib/constants/education" // Add this import
 import { genderOptions, ageGroups } from "@/lib/constants/general"
-import { TermsAgreement } from "./terms-agreement"
+import { LegalConsentFields } from './legal-consent-fields';
+import { residenceCountrySchema } from '@/lib/legal-consent';
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import { phoneNumberSchema } from '@/lib/phone-number';
+import { firstSignupErrorMessage } from '@/lib/signup-validation';
 
-const usernameSchema = z.string().min(3).max(20).regex(
+const usernameSchema = z.string().min(1, 'Username is required').min(3, 'Username must be at least 3 characters').max(20, 'Username must be no more than 20 characters').regex(
   /^[a-zA-Z0-9_-]{3,20}$/,
   "Username must be 3-20 chars and only letters, numbers, underscores, hyphens"
 )
 
 const studentFormSchema = z.object({
-  name: z.string().min(2, "Name is required"),
+  name: z.string().min(2, "Full Name is required"),
   username: usernameSchema,
-  email: z.string().email("Valid email required"),
+  email: z.string().min(1, "Email is required").email("Email must be a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  phone: z.string().min(10, "Phone number is required"),
+  phone: phoneNumberSchema,
   gender: z.string().min(1, "Gender is required"),
-  ageGroup: z.string().min(1, "Age group is required"),
-  educationLevel: z.string().min(1, "Education level is required"),
-  grade: z.string().min(1, "Grade is required"),
-  subjectAreas: z.array(z.string()).min(1, "Select at least one subject area"),
+  ageGroup: z.literal('18+', { errorMap: () => ({ message: 'Independent accounts are for adults aged 18 or older' }) }),
+  educationLevel: z.string().min(1, "Education Level is required"),
+  grade: z.string().min(1, "Grade/Year Level is required"),
+  subjectAreas: z.array(z.string()).min(1, "Subject Areas: select at least one"),
   subjects: z
     .array(
       z.object({
@@ -39,7 +43,12 @@ const studentFormSchema = z.object({
         area: z.string()
       })
     )
-    .min(1, "Select at least one subject")
+    .min(1, "Subjects of Interest: select at least one"),
+  residenceCountry: residenceCountrySchema.or(z.literal('')).refine(Boolean, 'Country of residence is required'),
+  termsAccepted: z.boolean().refine(Boolean, 'Terms of Service must be accepted'),
+  privacyAcknowledged: z.boolean().refine(Boolean, 'Privacy Policy must be acknowledged'),
+  adultConfirmed: z.boolean().refine(Boolean, 'Age confirmation is required: confirm that you are 18 or older'),
+  marketingOptIn: z.boolean(),
 });
 
 const subjectAreas = [
@@ -47,6 +56,7 @@ const subjectAreas = [
     label: "STEM", 
     value: "stem",
     subjects: [
+      { label: "Artificial Intelligence", value: "ai" },
       { label: "Math", value: "math" },
       { label: "Physics", value: "physics" },
       { label: "Chemistry", value: "chemistry" },
@@ -87,15 +97,33 @@ export function StudentSignUpForm() {
       password: "",
       phone: "",
       gender: "",
-      ageGroup: "",
+      ageGroup: "18+",
       educationLevel: "",
       grade: "",
       subjectAreas: [],
-      subjects: []
+      subjects: [],
+      residenceCountry: '',
+      termsAccepted: false,
+      privacyAcknowledged: false,
+      adultConfirmed: false,
+      marketingOptIn: false,
     }
   })
 
   const { register, handleSubmit, formState: { errors }, setValue, trigger } = form
+  React.useEffect(() => {
+    const draft = readPricingDraft();
+    if (!draft) return;
+    const aliases: Record<string, string> = { Mathematics: 'math', 'Computer Science': 'cs', 'Artificial Intelligence': 'ai' };
+    const subjects = draft.subjects.map(item => {
+      const name = aliases[item.subject] || item.subject.toLowerCase();
+      return { name, area: subjectAreas.find(group => group.subjects.some(subject => subject.value === name))?.value || 'languages' };
+    });
+    const areas = Array.from(new Set(subjects.map(subject => subject.area)));
+    setSelectedSubjects(subjects.map(subject => subject.name)); setSelectedAreas(areas);
+    form.setValue('subjects', subjects); form.setValue('subjectAreas', areas);
+  }, [form]);
+
 
   const availableSubjects = React.useMemo(() => {
     return selectedAreas.flatMap(area => {
@@ -122,7 +150,7 @@ export function StudentSignUpForm() {
         const areaSubjects = area?.subjects.map(s => s.value) || []
         const newSubjects = selectedSubjects.filter(s => !areaSubjects.includes(s));
         setSelectedSubjects(newSubjects);
-        form.setValue("subjects", newSubjects, { shouldValidate: true });
+        form.setValue("subjects", newSubjects.map(value => ({ name: value, area: subjectAreas.find(group => group.subjects.some(subject => subject.value === value))?.value || "languages" })), { shouldValidate: true });
       }
       return newAreas;
     });
@@ -175,18 +203,22 @@ export function StudentSignUpForm() {
     fieldsToValidate = [
       "name","username","email","password","phone","gender","ageGroup",
       "educationLevel","grade","subjectAreas","subjects"
+      ,"residenceCountry","termsAccepted","privacyAcknowledged","adultConfirmed"
     ];
   }
 
   const isValid = await trigger(fieldsToValidate);
-  console.log({ currentStep, isValid, errors: form.formState.errors });
 
   if (isValid) {
     if (currentStep === steps.length - 1) {
-      await handleSubmit(onSubmit)();
+      await handleSubmit(onSubmit, () => {
+        toast.error(firstSignupErrorMessage(form.getFieldState, fieldsToValidate, "Review the highlighted fields"));
+      })();
     } else {
       setCurrentStep(prev => prev + 1);
     }
+  } else {
+    toast.error(firstSignupErrorMessage(form.getFieldState, fieldsToValidate, "Review the highlighted fields"));
   }
 };
 
@@ -204,6 +236,12 @@ export function StudentSignUpForm() {
       const formData = {
         ...data,
         role: 'student',
+        registeredAs: 'independent',
+        residenceCountry: data.residenceCountry,
+        termsAccepted: data.termsAccepted,
+        privacyAcknowledged: data.privacyAcknowledged,
+        adultConfirmed: data.adultConfirmed,
+        marketingOptIn: data.marketingOptIn,
         studentProfile: {
           grade: data.grade,
           subjects: selectedSubjects.map(subject => ({
@@ -216,7 +254,7 @@ export function StudentSignUpForm() {
         }
       };
 
-      console.log('Form values:', formData);
+
 
       const response = await fetch('/api/auth/sign-up', {
         method: 'POST',
@@ -252,7 +290,7 @@ export function StudentSignUpForm() {
       <div className="text-center">
         <h1 className="text-2xl font-semibold">Create Student Account</h1>
         <p className="text-sm text-muted-foreground">
-          Start your learning journey with Workmate
+          Independent accounts are for adults aged 18 or older. Learners aged 6–16 must join through a parent or guardian account.
         </p>
       </div>
 
@@ -313,7 +351,7 @@ export function StudentSignUpForm() {
           />
         )}
 
-        <TermsAgreement />
+        <LegalConsentFields register={form.register} errors={form.formState.errors} role="student" residenceCountry={form.watch('residenceCountry')} onResidenceCountryChange={value => form.setValue('residenceCountry', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true })} />
 
         <div className="flex justify-center gap-8 pt-4">
           {currentStep > 0 && (

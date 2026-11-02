@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { getSession, signIn } from "next-auth/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -24,6 +24,16 @@ const formSchema = z.object({
 })
 
 type FormData = z.infer<typeof formSchema>
+
+function safeInternalRedirect(value: string | null): string | null {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
+  try {
+    const target = new URL(value, window.location.origin)
+    return target.origin === window.location.origin ? `${target.pathname}${target.search}${target.hash}` : null
+  } catch {
+    return null
+  }
+}
 
 export function SignInForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -75,8 +85,10 @@ export function SignInForm() {
     }
 
     // on success → standard redirect
-    const callbackUrl = searchParams.get("callbackUrl")
-    router.push(callbackUrl || "/dashboard")
+    const callbackUrl = safeInternalRedirect(searchParams.get("callbackUrl"))
+    const session = await getSession()
+    const defaultDestination = session?.user?.role === 'parent' ? '/dashboard/learning-plan' : '/dashboard'
+    router.push(callbackUrl || defaultDestination)
   }
 
   return (

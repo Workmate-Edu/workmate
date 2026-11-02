@@ -24,7 +24,6 @@ export async function GET() {
     .populate('studentProfile.parent', '_id name email')
     .lean();
 
-    console.log('Found child students:', childStudents); // Debug log
 
     // Extract parent info with their children
     const parentMap = new Map();
@@ -56,7 +55,6 @@ export async function GET() {
     });
 
     const parents = Array.from(parentMap.values());
-    console.log('Found parents:', parents); // Debug log
 
     return NextResponse.json(parents);
 

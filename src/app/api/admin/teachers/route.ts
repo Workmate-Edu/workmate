@@ -21,6 +21,7 @@ export async function GET(req: Request) {
       'teacherProfile.verificationStatus': status
     })
     .select('name email bio phone teacherProfile')
+    .sort({ updatedAt: -1, createdAt: -1 })
     .lean()
 
     console.log(`Found ${teachers.length} teachers with status: ${status}`)

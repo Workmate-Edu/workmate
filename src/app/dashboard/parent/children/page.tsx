@@ -9,12 +9,16 @@ import { Users, Plus, ClipboardCheck, Edit, BookOpen, GraduationCap, MessageSqua
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface Child {
   id: string
   name: string
-  email: string
+  email?: string
+  image?: string
   grade?: string
+  ageGroup?: string
+  source?: "learning-plan"
   subjects?: Array<{
     name: string
     teacher?: { name: string }
@@ -147,10 +151,10 @@ export default function ChildrenPage() {
     <div className="container py-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">My Children</h1>
+          <h1 className="text-2xl font-bold">{children.length === 1 ? 'My Child' : 'My Children'}</h1>
           <p className="text-muted-foreground">
             {children.length > 0
-              ? "Monitor your children's academic progress and activities"
+              ? children.length === 1 ? "Monitor your child's academic progress and activities" : "Monitor your children's academic progress and activities"
               : "Get started by adding your child to Workmate"}
           </p>
         </div>
@@ -181,6 +185,7 @@ export default function ChildrenPage() {
           {children.map((child) => {
             const hasAvail = Boolean(availabilities[child.id])
             const subscribed = getChildAllowedSubjects(child.id)
+            const displayedSubjects = child.source === "learning-plan" ? child.subjects?.map(subject => subject.name) || [] : subscribed
 
             return (
               <Card
@@ -191,33 +196,28 @@ export default function ChildrenPage() {
                 <div className="p-6 flex flex-col justify-between h-full">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h2 className="text-xl font-semibold capitalize">{child.name}</h2>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {child.email}
-                      </p>
-                    </div>
+                    <div className="flex min-w-0 items-center gap-3"><Avatar className="h-11 w-11 border"><AvatarImage src={child.image} alt={`${child.name}'s profile`} /><AvatarFallback className="bg-primary/10 font-semibold text-primary">{child.name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()}</AvatarFallback></Avatar><div className="min-w-0"><h2 className="truncate text-xl font-semibold capitalize">{child.name}</h2><p className="mt-1 truncate text-sm text-muted-foreground">{child.source === "learning-plan" ? "Learning plan learner" : child.email}</p></div></div>
                     <Badge variant={child.grade ? "default" : "secondary"}>
                       {child.grade || "No Grade"}
                     </Badge>
                   </div>
 
-                  {/* Subscribed Subjects */}
+                  {/* Subjects */}
                   <div className="space-y-1 mb-4">
                     <p className="text-sm font-medium flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      Subscribed Subjects
+                      {child.source === "learning-plan" ? "Learning Plan Subjects" : "Subscribed Subjects"}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {subscribed.length > 0 ? (
-                        subscribed.map((subj, i) => (
+                      {displayedSubjects.length > 0 ? (
+                        displayedSubjects.map((subj, i) => (
                           <Badge key={i} variant="secondary">
                             {subj}
                           </Badge>
                         ))
                       ) : (
                         <span className="text-xs text-muted-foreground">
-                          No subscriptions
+                          {child.source === "learning-plan" ? "No planned subjects" : "No subscriptions"}
                         </span>
                       )}
                     </div>
@@ -256,6 +256,7 @@ export default function ChildrenPage() {
                     </div>
                   )}
 
+                  {child.source === "learning-plan" ? <div className="mb-3"><Button asChild className="w-full"><Link href="/dashboard/learning-plan"><GraduationCap className="mr-2 h-4 w-4" />Open Learning Plan</Link></Button><p className="mt-2 text-xs text-muted-foreground">Teacher selection, introductions and learning goals are managed in the Learning Plan.</p></div> : <>
                   {/* Actions */}
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <Link href={`/dashboard/parent/children/${child.id}`}>
@@ -293,6 +294,7 @@ export default function ChildrenPage() {
 
                   {/* Assessment */}
                   {renderAssessmentButton(child)}
+                  </>}
                 </div>
               </Card>
             )

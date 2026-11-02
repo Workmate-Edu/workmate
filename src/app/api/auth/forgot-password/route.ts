@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
     await sendEmail({
       to: user.email,
-      subject: "Reset Password",
+      subject: "Reset your Workmate password",
       template: "passwordReset",
       replacements: {
         userName: user.name,

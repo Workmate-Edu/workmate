@@ -81,11 +81,3 @@ export function PaymentButton({
     </Button>
   )
 }
-      onClick={handlePayment} 
-      disabled={isLoading}
-      className="w-full"
-    >
-      {isLoading ? "Processing..." : "Get Started Now"}
-    </Button>
-  )
-}

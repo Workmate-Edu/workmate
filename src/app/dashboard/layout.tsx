@@ -86,7 +86,9 @@ export default function DashboardLayout({
           <MobileToggle />
         </div>
 
-        <main className="p-4">{children}</main>
+        <main className="p-4">
+          {children}
+        </main>
       </div>
     </div>
   )

@@ -16,6 +16,7 @@ import { X, Eye, EyeOff } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import { ProfileImageUpload } from '@/components/profile-image-upload'
 
 const ageGroupOptions = [
   { value: '3-5', label: '3-5 years' },
@@ -31,6 +32,7 @@ const subjectAreas = [
     label: "STEM", 
     value: "stem",
     subjects: [
+      { label: "Artificial Intelligence", value: "ai" },
       { label: "Math", value: "math" },
       { label: "Physics", value: "physics" },
       { label: "Chemistry", value: "chemistry" },
@@ -88,6 +90,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
   const [isLoading, setIsLoading] = React.useState(true)
   const [selectedSubjects, setSelectedSubjects] = React.useState<Array<{ area: string, name: string }>>([])
   const [showPassword, setShowPassword] = React.useState(false)
+  const [profileImage, setProfileImage] = React.useState('')
 
   const form = useForm<ChildFormData>({
     resolver: zodResolver(childFormSchema),
@@ -147,6 +150,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
             ageGroup: data.child.ageGroup,
             subjects: transformedSubjects
           })
+          setProfileImage(data.child.image || '')
 
           setSelectedSubjects(transformedSubjects)
         } catch {
@@ -175,7 +179,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, image: profileImage }),
       })
 
       const result = await response.json()
@@ -201,6 +205,7 @@ export function AddChildForm({ mode = 'create', childId }: AddChildFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <ProfileImageUpload value={profileImage} name={form.watch('name') || 'Child'} onChange={setProfileImage} disabled={isLoading} />
       <Input placeholder="Child's Name" {...register("name")} />
       {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
 

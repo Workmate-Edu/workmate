@@ -4,6 +4,11 @@ import { User } from "@/models/user";
 import bcrypt from "bcryptjs";
 import { generateVerificationToken } from "@/lib/tokens";
 import sendEmail from "@/lib/sendSmtpMail";
+import { parentOnboardingSchema } from '@/lib/parent-onboarding';
+import { assignLearnerIdentities } from '@/lib/learner-identity';
+import { legalRecord, TEACHER_CONDUCT_VERSION, validateCommonLegalChoices } from '@/lib/legal-consent';
+import { isValidInternationalPhoneNumber, normalizePhoneNumber } from '@/lib/phone-number';
+import { notifyAdminsOfTeacherReview } from '@/lib/admin-teacher-review-notifications';
 
 const getRoleSpecificContent = (role: string, user: any) => {
   switch (role) {
@@ -54,9 +59,9 @@ const getRoleSpecificContent = (role: string, user: any) => {
           username: user.username,
           verificationLink: `${process.env.NEXTAUTH_URL}/verify-email?token=${user.verificationToken}`,
           childrenDetails: user.parentProfile?.children?.length 
-            ? `<div class="info-card">
-                <h3>Children's Accounts</h3>
-                <p>You'll receive separate emails with their credentials.</p>
+            ? `<div class="info-card" style="background-color:#F5F7FA;border:1px solid #E2E8F0;border-radius:8px;padding:20px;margin:20px 0;">
+                <h3 style="margin:0 0 12px;font-size:18px;color:#1E293B;">Children's Accounts</h3>
+                <p style="margin:0;line-height:1.6;">You'll receive separate emails with their credentials.</p>
               </div>`
             : ''
         }
@@ -68,44 +73,38 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { phone, role } = body;
+    let onboarding;
+    if (role === 'parent' && body.parentProfile?.onboarding !== undefined) {
+      const parsed = parentOnboardingSchema.safeParse(body.parentProfile.onboarding);
+      if (!parsed.success) return NextResponse.json({ error: 'Please check your children and availability details' }, { status: 400 });
+      onboarding = parsed.data;
+    }
 
-    // Validate phone for teachers
-    if (role === 'teacher') {
-      if (!phone || !phone.startsWith('+')) {
-        return NextResponse.json({ 
-          error: "Phone number must include country code" 
-        }, { status: 400 });
+    if (!["parent", "student", "teacher"].includes(role)) {
+      return NextResponse.json({ error: "Invalid account role" }, { status: 400 });
+    }
+
+    const legalError = validateCommonLegalChoices(body);
+    if (legalError) return NextResponse.json({ error: legalError }, { status: 400 });
+    if (role === 'student' && (body.ageGroup !== '18+' || body.adultConfirmed !== true || body.registeredAs === 'child' || body.parentId)) {
+      return NextResponse.json({ error: 'Independent learner accounts are only for adults aged 18 or older. A parent or guardian must create the account for a minor.' }, { status: 400 });
+    }
+    if (role === 'parent') {
+      if (body.parentalAuthority !== true) return NextResponse.json({ error: 'Confirm that you are the parent or legal guardian for each child' }, { status: 400 });
+      if (!onboarding?.learners.every(learner => Number.isInteger(learner.age) && learner.age! >= 6 && learner.age! <= 16)) {
+        return NextResponse.json({ error: 'Enter an age from 6 to 16 for each child' }, { status: 400 });
       }
     }
-
-    // Debug log
-    console.log('Received phone number:', phone);
-
-    // Improve phone validation
-    if (!phone) {
-      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+    if (role === 'teacher' && body.teacherConductAccepted !== true) {
+      return NextResponse.json({ error: 'Accept the current teacher confidentiality, conduct and meeting rules' }, { status: 400 });
     }
 
-    // Clean and validate phone number
-    const cleanPhone = phone.trim();
-    const hasCountryCode = cleanPhone.startsWith('+') || cleanPhone.startsWith('00');
-
-    if (!hasCountryCode) {
-      return NextResponse.json({ 
-        error: "Phone number must include country code starting with + or 00" 
+    const normalizedPhone = normalizePhoneNumber(phone);
+    if (!normalizedPhone || !isValidInternationalPhoneNumber(normalizedPhone)) {
+      return NextResponse.json({
+        error: 'Enter a valid phone number with its country code, for example +2348012345678',
       }, { status: 400 });
     }
-
-    if (cleanPhone.length < 10) {
-      return NextResponse.json({ 
-        error: "Phone number is too short" 
-      }, { status: 400 });
-    }
-
-    // Normalize phone number to always use + format
-    const normalizedPhone = cleanPhone.startsWith('00') 
-      ? `+${cleanPhone.slice(2)}` 
-      : cleanPhone;
 
     // Update the body with normalized phone
     body.phone = normalizedPhone;
@@ -122,7 +121,11 @@ export async function POST(req: Request) {
       teacherProfile = {}, 
     } = body;
 
-    if (!name || !username || !password || !role || !gender) {
+    if (!gender) {
+      return NextResponse.json({ error: "Gender is required" }, { status: 400 });
+    }
+
+    if (!name || !username || !password || !role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -152,6 +155,16 @@ export async function POST(req: Request) {
       gender,
       emailVerified: false,
       phone: normalizedPhone,
+      residenceCountry: body.residenceCountry,
+      legalAcknowledgements: {
+        ...legalRecord(body),
+        ...(role === 'teacher' ? { teacherConduct: { version: TEACHER_CONDUCT_VERSION, acceptedAt: new Date() } } : {}),
+        ...(role === 'parent' ? { parentalAuthority: { noticeVersion: '2026-10-18', acknowledgedAt: new Date(), verificationStatus: 'pending' } } : {}),
+        ...(role === 'student' ? { adultStatus: { confirmedAt: new Date() } } : {}),
+      },
+      safeguarding: role === 'parent'
+        ? { parentalVerification: { status: 'pending', requestedAt: new Date() } }
+        : { parentalVerification: { status: 'not_required' } },
     };
 
     // 🧒 Student (independent or child)
@@ -172,10 +185,7 @@ export async function POST(req: Request) {
         })),
       };
 
-      if (registeredAs === "child") {
-        userData.email = `${normalizedUsername}@workmateteam.com`;
-        userData.studentProfile.parent = parentId || null;
-      }
+      // Public signup never creates a child account. Minors use the guardian journey.
     }
 
     // 👨‍🏫 Teacher
@@ -186,7 +196,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Subjects are required for teacher sign-up" }, { status: 400 });
       }
 
-      userData.phone = phone;
+      userData.phone = normalizedPhone;
       userData.teacherProfile = {
         subjects: teacherSubjects.map((s: any) => ({
           area: s.area,
@@ -199,7 +209,7 @@ export async function POST(req: Request) {
         availability: teacherProfile.availability || [],
         reviews: [],
         bio: teacherProfile.bio || "",
-        phone,
+        phone: normalizedPhone,
       };
     }
 
@@ -207,6 +217,7 @@ export async function POST(req: Request) {
     
       if (role === "parent") {
       userData.parentProfile = {
+        ...(onboarding ? { onboarding: { ...onboarding, learners: assignLearnerIdentities({ role: 'parent', ownerId: '', learners: onboarding.learners }), status: 'pending', submittedAt: new Date() } } : {}),
         phone: body.phone || "",
         // NOW reading from nested parentProfile payload
         educationLevel:       body.parentProfile?.educationLevel || "",
@@ -268,6 +279,10 @@ export async function POST(req: Request) {
 
     await user.save();
 
+    if (role === 'teacher') {
+      await notifyAdminsOfTeacherReview({ id: String(user._id), name: user.name, email: user.email }, 'application');
+    }
+
     const emailConfig = getRoleSpecificContent(role, user);
     
     await sendEmail({
@@ -277,10 +292,8 @@ export async function POST(req: Request) {
       replacements: emailConfig.data
     });
 
-    const { password: _, ...userWithoutPassword } = user.toObject();
-
     return NextResponse.json({
-      user: userWithoutPassword,
+      user: { id: String(user._id), name: user.name, email: user.email, role: user.role, emailVerified: user.emailVerified },
       message: "Verification email sent",
       emailVerificationSent: true,
     });

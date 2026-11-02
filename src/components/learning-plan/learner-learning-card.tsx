@@ -1,0 +1,8 @@
+import { GraduationCap, Target } from 'lucide-react';
+import { TeacherShortlist } from '@/components/teacher-shortlist';
+import { publicShortlist } from '@/lib/teacher-shortlist';
+import type { LearnerIntake } from '@/lib/parent-onboarding';
+
+export function LearnerLearningCard({ learner, learnerIndex, ownerId, role, matches }: { learner: LearnerIntake; learnerIndex: number; ownerId: string; role: string; matches?: Record<string, unknown> }) {
+  return <section className="overflow-hidden rounded-2xl border bg-card shadow-sm"><div className="border-b bg-gradient-to-r from-secondary/10 via-background to-background px-5 py-5 sm:px-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="flex gap-3"><div className="rounded-xl bg-secondary/15 p-2.5 text-secondary"><GraduationCap className="h-5 w-5" /></div><div><h2 className="text-xl font-bold">{learner.name}</h2><p className="mt-1 text-sm text-muted-foreground">{learner.ageGroup} · {learner.level} learner</p></div></div><span className="w-fit rounded-full bg-background px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">{learner.subjects.length} {learner.subjects.length === 1 ? 'subject' : 'subjects'}</span></div><div className="mt-4 flex gap-2 text-sm text-muted-foreground"><Target className="mt-0.5 h-4 w-4 shrink-0 text-secondary" /><p>{learner.goals}</p></div></div><div className="space-y-1 p-3 sm:p-4">{learner.subjects.map((subject, subjectIndex) => <TeacherShortlist key={subject} ownerId={ownerId} role={role} learner={learnerIndex} subjectIndex={subjectIndex} subject={subject} match={publicShortlist(matches?.[`${learnerIndex}_${subjectIndex}`])} />)}</div></section>;
+}

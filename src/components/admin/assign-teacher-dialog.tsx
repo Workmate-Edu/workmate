@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -63,7 +63,10 @@ export function AssignTeacherDialog({
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
   const [selectedTeachers, setSelectedTeachers] = useState<Record<string, string[]>>({});
-  const [assignmentData, setAssignmentData] = useState<any[]>([]);
+  const assignmentData = useMemo(() => Object.entries(selectedTeachers).flatMap(([key, teacherIds]) => {
+    const [name, area] = key.split(":");
+    return teacherIds.map((teacherId) => ({ teacherId, subject: { name, area } }));
+  }), [selectedTeachers]);
 
   useEffect(() => {
     if (open) fetchEligibleTeachers();
@@ -154,7 +157,6 @@ export function AssignTeacherDialog({
     const assignments: any[] = [];
     Object.entries(selectedTeachers).forEach(([key, teacherIds]) => {
 
-      console.log("Selected Teachers for", key, ":", teacherIds);
 
       const [name, area] = key.split(":");
       teacherIds.forEach((id) => {
@@ -162,11 +164,9 @@ export function AssignTeacherDialog({
       });
     });
     console.log("🧠 Structuring assignments:", assignments);
-    setAssignmentData(assignments);
   }, [selectedTeachers]);
  
  
-  console.log("Final Payload for Assignment:", assignmentData);
 
   const handleAssign = async () => {
     setAssigning(true);

@@ -64,7 +64,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     await connectDB()
     const { answers } = await req.json()
-    console.log('Incoming submission data:', answers)
 
     const assessment = await TeacherAssessment.findById(params.id)
     if (!assessment) {
@@ -117,7 +116,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     // Save the updated assessment
     const updatedAssessment = await assessment.save()
-    console.log('Saved submission data:', JSON.stringify(submissionData, null, 2))
 
     return NextResponse.json({ 
       success: true,

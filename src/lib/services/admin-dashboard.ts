@@ -30,7 +30,7 @@ export async function getDashboardStats() {
                   {
                     $and: [
                       { $eq: ['$isActive', true] },
-                      { $eq: ['$teacherProfile.verificationStatus', 'approved'] }
+                      { $eq: ['$teacherProfile.verificationStatus', 'verified'] }
                     ]
                   },
                   1,

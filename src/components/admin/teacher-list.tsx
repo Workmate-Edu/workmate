@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { columns } from "./teacher-columns"
 import { DataTable } from "@/components/ui/data-table"
 import { Card } from "@/components/ui/card"
@@ -8,6 +8,7 @@ import { TeacherDetailsDialog } from "./teacher-details-dialog"
 import { toast } from "sonner"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TeacherRejectionDialog } from "./teacher-rejection-dialog"
+import { ListSearch } from "@/components/ui/list-search"
 
 interface Teacher {
   _id: string
@@ -34,6 +35,7 @@ interface Teacher {
     }>
     reapplicationCount: number
     lastUpdated: Date
+    introductionVideoUrl?: string
   }
 }
 
@@ -50,6 +52,17 @@ export function TeacherList({ status }: { status: string }) {
     teacher: Teacher | null;
   }>({ isOpen: false, teacher: null });
   const [verifyLoading, setVerifyLoading] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filteredTeachers = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return teachers
+    return teachers.filter(teacher => [
+      teacher.name,
+      teacher.email,
+      ...((teacher.teacherProfile?.subjects || []).flatMap(group => [group.area, ...group.subjects])),
+    ].some(value => String(value || '').toLowerCase().includes(query)))
+  }, [search, teachers])
 
   useEffect(() => {
     fetchTeachers()
@@ -136,14 +149,24 @@ export function TeacherList({ status }: { status: string }) {
     setSelectedTeacher(teacher);
   };
 
+  const handleIntroductionVideoUpdated = (teacherId: string, introductionVideoUrl: string) => {
+    setTeachers(current => current.map(teacher => teacher._id === teacherId ? {
+      ...teacher,
+      teacherProfile: { ...teacher.teacherProfile, introductionVideoUrl: introductionVideoUrl || undefined },
+    } : teacher));
+    setSelectedTeacher(current => current?._id === teacherId ? {
+      ...current,
+      teacherProfile: { ...current.teacherProfile, introductionVideoUrl: introductionVideoUrl || undefined },
+    } : current);
+  };
+
   return (
     <div className="space-y-4">
       <Card className="p-4">
+        <div className="mb-4"><ListSearch value={search} onValueChange={setSearch} placeholder="Search teachers, email, or subject..." /></div>
         <DataTable
           columns={columns}
-          data={teachers}
-          searchKey="name"
-          searchPlaceholder="Search teachers..."
+          data={filteredTeachers}
           loading={loading}
           onRowClick={handleViewDetails} // Add this prop
           meta={{
@@ -185,6 +208,7 @@ export function TeacherList({ status }: { status: string }) {
             ? (teacher) => setRejectionDialog({ isOpen: true, teacher })
             : undefined
         }
+        onIntroductionVideoUpdated={handleIntroductionVideoUpdated}
       />
 
       {/* Existing TeacherRejectionDialog */}

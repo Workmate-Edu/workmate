@@ -17,18 +17,10 @@ export default function VerifyPaymentPage() {
       return
     }
 
-    // Always verify transaction on your server here for reliability
-    fetch(`/api/payment/verify?transaction_id=${transaction_id}&status=${status}`)
-      .then(() => {
-        if (status === 'successful') {
-          router.replace('/payment/success')
-        } else {
-          router.replace('/payment/failed')
-        }
-      })
-      .catch(() => {
-        router.replace('/payment/failed')
-      })
+    // The server owns the outcome. Fetching a redirect and then trusting the
+    // browser's status could show success even when verification failed.
+    const query = new URLSearchParams({ transaction_id, status });
+    window.location.replace(`/api/payment/verify?${query.toString()}`)
   }, [router, searchParams])
 
   return (

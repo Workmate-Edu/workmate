@@ -101,7 +101,7 @@ export default function CurriculumPage() {
             </Button>
           </Link>
           <p className="mt-4 text-sm text-muted-foreground">
-            14-day free trial • No credit card required
+            Up to three free 15-minute introductions per learner and subject, then one free 60-minute class with the selected teacher. No payment required.
           </p>
         </div>
       </div>

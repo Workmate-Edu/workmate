@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { pusherServer } from "@/lib/pusher";
+import { connectDB } from '@/lib/mongodb';
+import { isConversationParticipant } from '@/lib/conversation-access';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,8 +20,13 @@ export async function POST(
 
     const { isTyping } = await req.json();
 
+    await connectDB();
+    if (!await isConversationParticipant(params.conversationId, session.user.id)) {
+      return new NextResponse("Conversation not found", { status: 404 });
+    }
+
     await pusherServer.trigger(
-      `chat-${params.conversationId}`,
+      `private-chat-${params.conversationId}`,
       'typing-status',
       {
         userId: session.user.id,

@@ -32,6 +32,11 @@ export async function POST(
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
+    if (sess.user.role === "teacher" &&
+        (!sess.user.id || String(sessionDoc.teacherId) !== sess.user.id)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // 3) Ensure teacher marked it first
     if (sessionDoc.status !== "teacher-completed") {
       console.log(`[COMPLETE_SESSION] Wrong status "${sessionDoc.status}"`);
